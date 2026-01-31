@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/models/device.dart';
 import '../../core/services/transfer_service.dart';
 import '../../core/providers/transfer_provider.dart';
 import '../theme/app_theme.dart';
+import '../screens/transfer_progress_screen.dart';
 
 class TransferRequestSheet extends ConsumerWidget {
   final PendingTransferRequest request;
@@ -16,13 +18,14 @@ class TransferRequestSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final totalSize = request.items.fold<int>(0, (sum, item) => sum + item.size);
+    final totalSize =
+        request.items.fold<int>(0, (sum, item) => sum + item.size);
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppTheme.surfaceColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -45,7 +48,7 @@ class TransferRequestSheet extends ConsumerWidget {
               color: AppTheme.primaryColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(
+            child: const Icon(
               Icons.download,
               color: AppTheme.primaryColor,
               size: 48,
@@ -99,7 +102,7 @@ class TransferRequestSheet extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text(
                         _formatBytes(totalSize),
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppTheme.textTertiary,
                           fontSize: 12,
                         ),
@@ -133,7 +136,7 @@ class TransferRequestSheet extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.insert_drive_file,
                           size: 16,
                           color: AppTheme.textTertiary,
@@ -142,7 +145,7 @@ class TransferRequestSheet extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             item.name,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
                               color: AppTheme.textSecondary,
                             ),
@@ -151,7 +154,7 @@ class TransferRequestSheet extends ConsumerWidget {
                         ),
                         Text(
                           _formatBytes(item.size),
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 11,
                             color: AppTheme.textTertiary,
                           ),
@@ -163,7 +166,6 @@ class TransferRequestSheet extends ConsumerWidget {
               ),
             ),
           ],
-
           const SizedBox(height: 24),
 
           // Action buttons
@@ -178,12 +180,12 @@ class TransferRequestSheet extends ConsumerWidget {
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: BorderSide(color: AppTheme.errorColor),
+                    side: const BorderSide(color: AppTheme.errorColor),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
+                  child: const Text(
                     'Decline',
                     style: TextStyle(color: AppTheme.errorColor),
                   ),
@@ -193,9 +195,7 @@ class TransferRequestSheet extends ConsumerWidget {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    final transferService = ref.read(transferServiceProvider);
-                    transferService.approveTransfer(request.requestId);
-                    onDismiss();
+                    _acceptTransfer(context, ref, false);
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -217,14 +217,9 @@ class TransferRequestSheet extends ConsumerWidget {
           // Trust option
           TextButton(
             onPressed: () {
-              final transferService = ref.read(transferServiceProvider);
-              transferService.approveTransfer(
-                request.requestId,
-                trustSender: true,
-              );
-              onDismiss();
+              _acceptTransfer(context, ref, true);
             },
-            child: Text(
+            child: const Text(
               'Accept & Always Trust This Device',
               style: TextStyle(
                 color: AppTheme.primaryColor,
@@ -233,6 +228,34 @@ class TransferRequestSheet extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _acceptTransfer(BuildContext context, WidgetRef ref, bool trustSender) {
+    // Approve the transfer
+    final transferService = ref.read(transferServiceProvider);
+    transferService.approveTransfer(request.requestId, trustSender: trustSender);
+
+    // Close the bottom sheet
+    onDismiss();
+
+    // Navigate to progress screen for receiver
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TransferProgressScreen(
+          transferId: request.requestId,
+          remoteDevice: Device(
+            id: request.senderId,
+            name: request.senderName,
+            platform: DevicePlatform.unknown,
+            ipAddress: '',
+            port: 0,
+            lastSeen: DateTime.now(),
+          ),
+          isSender: false,
+          items: request.items,
+        ),
       ),
     );
   }
