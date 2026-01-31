@@ -17,7 +17,8 @@ class FileServiceException implements Exception {
   FileServiceException(this.message, {this.code, this.originalError});
 
   @override
-  String toString() => 'FileServiceException: $message${code != null ? ' (code: $code)' : ''}';
+  String toString() =>
+      'FileServiceException: $message${code != null ? ' (code: $code)' : ''}';
 }
 
 /// Progress callback for streaming operations
@@ -31,34 +32,29 @@ class FileService {
   static const int maxDirectReadSize = 10 * 1024 * 1024;
 
   /// Sanitize filename to prevent path traversal attacks
-  /// Removes dangerous characters and path components
   String sanitizeFilename(String filename) {
     if (filename.isEmpty) {
-      throw FileServiceException('Filename cannot be empty', code: 'EMPTY_FILENAME');
+      throw FileServiceException('Filename cannot be empty',
+          code: 'EMPTY_FILENAME');
     }
 
-    // Remove any path separators (both Unix and Windows style)
     String sanitized = filename
         .replaceAll('/', '_')
         .replaceAll('\\', '_')
-        .replaceAll(RegExp(r'\.\.+'), '_')  // Remove .. sequences
-        .replaceAll(RegExp(r'^\.'), '_');    // Remove leading dots
+        .replaceAll(RegExp(r'\.\.+'), '_')
+        .replaceAll(RegExp(r'^\.'), '_');
 
-    // Remove other dangerous characters for cross-platform compatibility
     sanitized = sanitized.replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_');
 
-    // Trim whitespace and dots from ends
     sanitized = sanitized.trim();
     while (sanitized.endsWith('.')) {
       sanitized = sanitized.substring(0, sanitized.length - 1);
     }
 
-    // Ensure filename is not empty after sanitization
     if (sanitized.isEmpty) {
       sanitized = 'unnamed_file';
     }
 
-    // Limit filename length (255 is common filesystem limit)
     if (sanitized.length > 200) {
       final ext = path.extension(sanitized);
       final nameWithoutExt = path.basenameWithoutExtension(sanitized);
@@ -68,7 +64,7 @@ class FileService {
     return sanitized;
   }
 
-  /// Validate that a path is within an allowed directory (prevent path traversal)
+  /// Validate that a path is within an allowed directory
   bool isPathWithinDirectory(String filePath, String allowedDirectory) {
     try {
       final normalizedFile = path.normalize(path.absolute(filePath));
@@ -85,15 +81,14 @@ class FileService {
     final sanitizedName = sanitizeFilename(filename);
     final downloadDir = await getDownloadDirectory();
     final filePath = path.join(downloadDir, sanitizedName);
-    
-    // Double-check the path is within allowed directory
+
     if (!isPathWithinDirectory(filePath, downloadDir)) {
       throw FileServiceException(
         'Invalid filename: path traversal detected',
         code: 'PATH_TRAVERSAL',
       );
     }
-    
+
     return filePath;
   }
 
@@ -129,7 +124,6 @@ class FileService {
     }
   }
 
-  // Pick a folder for scanning
   Future<String?> pickFolder() async {
     try {
       final result = await FilePicker.platform.getDirectoryPath();
@@ -140,16 +134,14 @@ class FileService {
     }
   }
 
-  // Scan folder and create structure
   Future<FolderStructure> scanFolder(String folderPath) async {
     final directory = Directory(folderPath);
-    
     if (!await directory.exists()) {
-      throw FileServiceException('Directory does not exist: $folderPath', code: 'DIR_NOT_FOUND');
+      throw FileServiceException('Directory does not exist: $folderPath',
+          code: 'DIR_NOT_FOUND');
     }
-    
-    final rootName = path.basename(folderPath);
 
+    final rootName = path.basename(folderPath);
     final items = <TransferItem>[];
     final hierarchy = <String, List<String>>{};
 
@@ -196,8 +188,8 @@ class FileService {
           ));
           children.add(entityRelativePath);
         } else if (entity is Directory) {
-          // Count files in this directory
           final fileCount = await _countFilesInDirectory(entity);
+
           items.add(TransferItem(
             name: entityName,
             path: entity.path,
@@ -208,7 +200,6 @@ class FileService {
           ));
           children.add(entityRelativePath);
 
-          // Recursively scan subdirectory
           await _scanDirectoryRecursive(
             entity,
             rootPath,
@@ -222,7 +213,8 @@ class FileService {
       hierarchy[relativePath] = children;
     } catch (e) {
       print('Error scanning directory: $e');
-      throw FileServiceException('Failed to scan directory: $relativePath', originalError: e);
+      throw FileServiceException('Failed to scan directory: $relativePath',
+          originalError: e);
     }
   }
 
@@ -234,45 +226,39 @@ class FileService {
       }
     } catch (e) {
       print('Error counting files in directory: $e');
-      // Return 0 instead of throwing - this is a non-critical operation
     }
     return count;
   }
 
-  // Get all files from a folder structure (flattened)
   List<TransferItem> getAllFilesInFolder(FolderStructure structure) {
     return structure.items.where((item) => !item.isDirectory).toList();
   }
 
-  // Recreate folder structure on receiver
   Future<void> recreateFolderStructure(
     String basePath,
     FolderStructure structure,
   ) async {
-    // Validate base path
     final downloadDir = await getDownloadDirectory();
     if (!isPathWithinDirectory(basePath, downloadDir)) {
       throw FileServiceException('Invalid base path', code: 'PATH_TRAVERSAL');
     }
 
-    // Create all directories first
     for (final item in structure.directories) {
-      // Sanitize the relative path components
       final sanitizedRelPath = item.relativePath
           .split('/')
           .map((part) => sanitizeFilename(part))
           .join(Platform.pathSeparator);
-      
-      final dirPath = path.join(basePath, sanitizeFilename(structure.rootName), sanitizedRelPath);
-      
-      // Verify path is still within allowed directory
+
+      final dirPath = path.join(basePath, sanitizeFilename(structure.rootName),
+          sanitizedRelPath);
+
       if (!isPathWithinDirectory(dirPath, downloadDir)) {
         throw FileServiceException(
           'Path traversal detected in folder structure',
           code: 'PATH_TRAVERSAL',
         );
       }
-      
+
       final dir = Directory(dirPath);
       if (!await dir.exists()) {
         await dir.create(recursive: true);
@@ -280,34 +266,12 @@ class FileService {
     }
   }
 
-  // ============================================================
-  // STREAMING FILE OPERATIONS (Memory Efficient)
-  // ============================================================
-
-  /// Get a stream of file chunks for memory-efficient reading
-  /// Use this for large files instead of readFile()
-  /// 
-  /// Example:
-  /// ```dart
-  /// await for (final chunk in fileService.readFileStream(path)) {
-  ///   socket.add(chunk);  // Send chunk immediately, don't store in memory
-  /// }
-  /// ```
-  Stream<List<int>> readFileStream(String filePath, {int chunkSize = defaultChunkSize}) {
+  Stream<List<int>> readFileStream(String filePath,
+      {int chunkSize = defaultChunkSize}) {
     final file = File(filePath);
     return file.openRead();
   }
 
-  /// Stream a file with progress callback
-  /// 
-  /// Example:
-  /// ```dart
-  /// await fileService.streamFileWithProgress(
-  ///   filePath: '/path/to/large_video.mp4',
-  ///   onChunk: (chunk) => socket.add(chunk),
-  ///   onProgress: (bytes, total) => print('$bytes / $total'),
-  /// );
-  /// ```
   Future<void> streamFileWithProgress({
     required String filePath,
     required Future<void> Function(List<int> chunk) onChunk,
@@ -315,9 +279,9 @@ class FileService {
     int chunkSize = defaultChunkSize,
   }) async {
     final file = File(filePath);
-    
     if (!await file.exists()) {
-      throw FileServiceException('File does not exist: $filePath', code: 'FILE_NOT_FOUND');
+      throw FileServiceException('File does not exist: $filePath',
+          code: 'FILE_NOT_FOUND');
     }
 
     final fileSize = await file.length();
@@ -325,7 +289,6 @@ class FileService {
 
     try {
       final stream = file.openRead();
-      
       await for (final chunk in stream) {
         await onChunk(chunk);
         bytesRead += chunk.length;
@@ -337,17 +300,6 @@ class FileService {
     }
   }
 
-  /// Save file from stream (memory efficient for large files)
-  /// 
-  /// Example:
-  /// ```dart
-  /// await fileService.saveFileFromStream(
-  ///   fileName: 'large_video.mp4',
-  ///   dataStream: request,  // HttpRequest is a Stream<List<int>>
-  ///   expectedSize: fileSize,
-  ///   onProgress: (bytes, total) => updateUI(bytes / total),
-  /// );
-  /// ```
   Future<File> saveFileFromStream({
     required String fileName,
     required Stream<List<int>> dataStream,
@@ -359,12 +311,11 @@ class FileService {
     final finalPath = '$downloadDir${Platform.pathSeparator}$sanitizedName';
     final tempPath = '$finalPath.tmp';
 
-    // Verify path is safe
     if (!isPathWithinDirectory(finalPath, downloadDir)) {
-      throw FileServiceException('Invalid filename: path traversal detected', code: 'PATH_TRAVERSAL');
+      throw FileServiceException('Invalid filename: path traversal detected',
+          code: 'PATH_TRAVERSAL');
     }
 
-    // Ensure directory exists
     final dir = Directory(downloadDir);
     if (!await dir.exists()) {
       await dir.create(recursive: true);
@@ -374,7 +325,6 @@ class FileService {
     try {
       final tempFile = File(tempPath);
       sink = tempFile.openWrite();
-
       int bytesWritten = 0;
 
       await for (final chunk in dataStream) {
@@ -387,7 +337,6 @@ class FileService {
       await sink.close();
       sink = null;
 
-      // Rename temp to final
       final finalFile = File(finalPath);
       if (await finalFile.exists()) {
         await finalFile.delete();
@@ -396,9 +345,10 @@ class FileService {
 
       return File(finalPath);
     } catch (e) {
-      // Cleanup on error
       if (sink != null) {
-        try { await sink.close(); } catch (_) {}
+        try {
+          await sink.close();
+        } catch (_) {}
       }
       try {
         final tempFile = File(tempPath);
@@ -406,23 +356,20 @@ class FileService {
           await tempFile.delete();
         }
       } catch (_) {}
-
       print('Error saving file from stream: $e');
       throw FileServiceException('Failed to save file', originalError: e);
     }
   }
 
-  /// Copy file using streams (memory efficient)
-  /// Use this instead of reading entire file into memory
   Future<File> copyFileStreaming({
     required String sourcePath,
     required String destinationPath,
     ProgressCallback? onProgress,
   }) async {
     final sourceFile = File(sourcePath);
-    
     if (!await sourceFile.exists()) {
-      throw FileServiceException('Source file not found: $sourcePath', code: 'FILE_NOT_FOUND');
+      throw FileServiceException('Source file not found: $sourcePath',
+          code: 'FILE_NOT_FOUND');
     }
 
     final fileSize = await sourceFile.length();
@@ -430,7 +377,6 @@ class FileService {
 
     IOSink? sink;
     try {
-      // Ensure destination directory exists
       final destDir = Directory(path.dirname(destinationPath));
       if (!await destDir.exists()) {
         await destDir.create(recursive: true);
@@ -438,10 +384,9 @@ class FileService {
 
       final tempFile = File(tempPath);
       sink = tempFile.openWrite();
-
       int bytesCopied = 0;
-      final stream = sourceFile.openRead();
 
+      final stream = sourceFile.openRead();
       await for (final chunk in stream) {
         sink.add(chunk);
         bytesCopied += chunk.length;
@@ -452,7 +397,6 @@ class FileService {
       await sink.close();
       sink = null;
 
-      // Rename temp to final
       final destFile = File(destinationPath);
       if (await destFile.exists()) {
         await destFile.delete();
@@ -462,7 +406,9 @@ class FileService {
       return File(destinationPath);
     } catch (e) {
       if (sink != null) {
-        try { await sink.close(); } catch (_) {}
+        try {
+          await sink.close();
+        } catch (_) {}
       }
       try {
         final tempFile = File(tempPath);
@@ -470,25 +416,21 @@ class FileService {
           await tempFile.delete();
         }
       } catch (_) {}
-
       print('Error copying file: $e');
       throw FileServiceException('Failed to copy file', originalError: e);
     }
   }
 
-  // Save file with relative path (for folder transfers) - STREAMING VERSION
   Future<File> saveFileWithPath(
       String basePath, String relativePath, List<int> bytes) async {
     try {
-      // Sanitize path components
       final sanitizedRelPath = relativePath
           .split('/')
           .map((part) => sanitizeFilename(part))
           .join(Platform.pathSeparator);
-      
+
       final filePath = path.join(basePath, sanitizedRelPath);
-      
-      // Verify path is within allowed directory
+
       final downloadDir = await getDownloadDirectory();
       if (!isPathWithinDirectory(filePath, downloadDir)) {
         throw FileServiceException(
@@ -497,7 +439,6 @@ class FileService {
         );
       }
 
-      // Ensure parent directory exists
       final parentDir = Directory(path.dirname(filePath));
       if (!await parentDir.exists()) {
         await parentDir.create(recursive: true);
@@ -513,7 +454,6 @@ class FileService {
     }
   }
 
-  /// Save file with relative path using stream (memory efficient)
   Future<File> saveFileWithPathFromStream({
     required String basePath,
     required String relativePath,
@@ -521,15 +461,13 @@ class FileService {
     int? expectedSize,
     ProgressCallback? onProgress,
   }) async {
-    // Sanitize path components
     final sanitizedRelPath = relativePath
         .split('/')
         .map((part) => sanitizeFilename(part))
         .join(Platform.pathSeparator);
-    
+
     final filePath = path.join(basePath, sanitizedRelPath);
-    
-    // Verify path is within allowed directory
+
     final downloadDir = await getDownloadDirectory();
     if (!isPathWithinDirectory(filePath, downloadDir)) {
       throw FileServiceException(
@@ -542,7 +480,6 @@ class FileService {
 
     IOSink? sink;
     try {
-      // Ensure parent directory exists
       final parentDir = Directory(path.dirname(filePath));
       if (!await parentDir.exists()) {
         await parentDir.create(recursive: true);
@@ -550,7 +487,6 @@ class FileService {
 
       final tempFile = File(tempPath);
       sink = tempFile.openWrite();
-
       int bytesWritten = 0;
 
       await for (final chunk in dataStream) {
@@ -563,7 +499,6 @@ class FileService {
       await sink.close();
       sink = null;
 
-      // Rename temp to final
       final finalFile = File(filePath);
       if (await finalFile.exists()) {
         await finalFile.delete();
@@ -573,7 +508,9 @@ class FileService {
       return File(filePath);
     } catch (e) {
       if (sink != null) {
-        try { await sink.close(); } catch (_) {}
+        try {
+          await sink.close();
+        } catch (_) {}
       }
       try {
         final tempFile = File(tempPath);
@@ -581,31 +518,59 @@ class FileService {
           await tempFile.delete();
         }
       } catch (_) {}
-
       if (e is FileServiceException) rethrow;
       print('Error saving file from stream: $e');
       throw FileServiceException('Failed to save file', originalError: e);
     }
   }
 
+  /// Get download directory - FIXED FOR ANDROID
   Future<String> getDownloadDirectory() async {
     try {
       if (Platform.isAndroid) {
+        // Use public Downloads folder that user can access
+        const downloadsPath = '/storage/emulated/0/Download';
+        final downloadsDir = Directory(downloadsPath);
+        
+        // Create Syndro subfolder in Downloads
+        final syndroDir = Directory('$downloadsPath/Syndro');
+        if (!await syndroDir.exists()) {
+          await syndroDir.create(recursive: true);
+        }
+        
+        // Check if we can write to it
+        if (await syndroDir.exists()) {
+          print('📁 Using download directory: ${syndroDir.path}');
+          return syndroDir.path;
+        }
+        
+        // Fallback to external storage directory if Downloads doesn't work
         final directory = await getExternalStorageDirectory();
-        return directory?.path ?? '/storage/emulated/0/Download';
+        if (directory != null) {
+          print('📁 Fallback to: ${directory.path}');
+          return directory.path;
+        }
+        
+        return downloadsPath;
       } else if (Platform.isWindows) {
         final userProfile = Platform.environment['USERPROFILE'];
         if (userProfile != null && userProfile.isNotEmpty) {
-          return '$userProfile\\Downloads';
+          final syndroDir = Directory('$userProfile\\Downloads\\Syndro');
+          if (!await syndroDir.exists()) {
+            await syndroDir.create(recursive: true);
+          }
+          return syndroDir.path;
         }
-        // Fallback if USERPROFILE is not set
         return 'C:\\Users\\Public\\Downloads';
       } else if (Platform.isLinux) {
         final home = Platform.environment['HOME'];
         if (home != null && home.isNotEmpty) {
-          return '$home/Downloads';
+          final syndroDir = Directory('$home/Downloads/Syndro');
+          if (!await syndroDir.exists()) {
+            await syndroDir.create(recursive: true);
+          }
+          return syndroDir.path;
         }
-        // Fallback if HOME is not set
         return '/tmp';
       }
     } catch (e) {
@@ -618,21 +583,26 @@ class FileService {
 
   Future<File> saveFile(String fileName, List<int> bytes) async {
     try {
-      // Sanitize filename to prevent path traversal
       final sanitizedName = sanitizeFilename(fileName);
       final downloadDir = await getDownloadDirectory();
       final filePath = '$downloadDir${Platform.pathSeparator}$sanitizedName';
-      
-      // Double-check path is within download directory
+
       if (!isPathWithinDirectory(filePath, downloadDir)) {
         throw FileServiceException(
           'Invalid filename: path traversal detected',
           code: 'PATH_TRAVERSAL',
         );
       }
-      
+
+      // Ensure directory exists
+      final dir = Directory(downloadDir);
+      if (!await dir.exists()) {
+        await dir.create(recursive: true);
+      }
+
       final file = File(filePath);
       await file.writeAsBytes(bytes);
+      print('✅ File saved to: $filePath');
       return file;
     } catch (e) {
       if (e is FileServiceException) rethrow;
@@ -652,17 +622,14 @@ class FileService {
     }
   }
 
-  /// Read entire file into memory
-  /// WARNING: Only use for small files (< 10MB)
-  /// For large files, use readFileStream() instead
   Future<List<int>> readFile(String filePath) async {
     try {
       final file = File(filePath);
       if (!await file.exists()) {
-        throw FileServiceException('File does not exist: $filePath', code: 'FILE_NOT_FOUND');
+        throw FileServiceException('File does not exist: $filePath',
+            code: 'FILE_NOT_FOUND');
       }
 
-      // Check file size before loading into memory
       final fileSize = await file.length();
       if (fileSize > maxDirectReadSize) {
         throw FileServiceException(
@@ -689,7 +656,6 @@ class FileService {
     final extension = getFileExtension(fileName);
 
     const mimeTypes = {
-      // Images
       'jpg': 'image/jpeg',
       'jpeg': 'image/jpeg',
       'png': 'image/png',
@@ -697,23 +663,17 @@ class FileService {
       'webp': 'image/webp',
       'bmp': 'image/bmp',
       'svg': 'image/svg+xml',
-
-      // Videos
       'mp4': 'video/mp4',
       'mov': 'video/quicktime',
       'avi': 'video/x-msvideo',
       'mkv': 'video/x-matroska',
       'webm': 'video/webm',
       'flv': 'video/x-flv',
-
-      // Audio
       'mp3': 'audio/mpeg',
       'wav': 'audio/wav',
       'flac': 'audio/flac',
       'aac': 'audio/aac',
       'ogg': 'audio/ogg',
-
-      // Documents
       'pdf': 'application/pdf',
       'doc': 'application/msword',
       'docx':
@@ -724,15 +684,11 @@ class FileService {
       'ppt': 'application/vnd.ms-powerpoint',
       'pptx':
           'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-
-      // Archives
       'zip': 'application/zip',
       'rar': 'application/x-rar-compressed',
       '7z': 'application/x-7z-compressed',
       'tar': 'application/x-tar',
       'gz': 'application/gzip',
-
-      // Text
       'txt': 'text/plain',
       'json': 'application/json',
       'xml': 'application/xml',
@@ -740,8 +696,6 @@ class FileService {
       'css': 'text/css',
       'js': 'application/javascript',
       'dart': 'text/plain',
-
-      // Executables
       'apk': 'application/vnd.android.package-archive',
       'exe': 'application/x-msdownload',
     };
