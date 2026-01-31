@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // Colors
-  static const Color primaryColor = Color(0xFF6366F1); // Indigo
-  static const Color secondaryColor = Color(0xFF8B5CF6); // Purple
-  static const Color accentColor = Color(0xFF06B6D4); // Cyan
+  static const Color primaryColor = Color(0xFF682CA8);    // Purple (NEW)
+  static const Color secondaryColor = Color(0xFF592297);  // Darker Purple (NEW)
+  static const Color accentColor = Color(0xFF06B6D4);     // Cyan
   static const Color backgroundColor = Color(0xFF0F172A); // Dark navy
-  static const Color surfaceColor = Color(0xFF1E293B); // Lighter navy
-  static const Color cardColor = Color(0xFF334155); // Card background
-  
-  static const Color successColor = Color(0xFF10B981); // Green
-  static const Color errorColor = Color(0xFFEF4444); // Red
-  static const Color warningColor = Color(0xFFF59E0B); // Amber
-  
+  static const Color surfaceColor = Color(0xFF1E293B);    // Lighter navy
+  static const Color cardColor = Color(0xFF334155);       // Card background
+
+  static const Color successColor = Color(0xFF10B981);    // Green
+  static const Color errorColor = Color(0xFFEF4444);      // Red
+  static const Color warningColor = Color(0xFFF59E0B);    // Amber
+
   static const Color textPrimary = Color(0xFFF8FAFC);
   static const Color textSecondary = Color(0xFFCBD5E1);
   static const Color textTertiary = Color(0xFF94A3B8);
@@ -28,7 +28,7 @@ class AppTheme {
         error: errorColor,
       ),
       scaffoldBackgroundColor: backgroundColor,
-      
+
       // AppBar Theme
       appBarTheme: const AppBarTheme(
         backgroundColor: backgroundColor,
@@ -40,7 +40,7 @@ class AppTheme {
           fontWeight: FontWeight.w600,
         ),
       ),
-      
+
       // Card Theme
       cardTheme: CardTheme(
         color: cardColor,
@@ -49,7 +49,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-      
+
       // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -66,7 +66,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -78,14 +78,14 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Floating Action Button Theme
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 4,
       ),
-      
+
       // Text Theme
       textTheme: const TextTheme(
         displayLarge: TextStyle(
@@ -131,7 +131,7 @@ class AppTheme {
           fontSize: 12,
         ),
       ),
-      
+
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -146,7 +146,7 @@ class AppTheme {
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
-      
+
       // Progress Indicator Theme
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: primaryColor,
