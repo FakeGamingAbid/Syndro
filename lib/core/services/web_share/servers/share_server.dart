@@ -374,7 +374,6 @@ class ShareServer {
       'm4v': 'video/x-m4v',
       '3gp': 'video/3gpp',
       '3g2': 'video/3gpp2',
-      'ts': 'video/mp2t',
       'mts': 'video/mp2t',
       'm2ts': 'video/mp2t',
 
