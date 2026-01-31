@@ -31,7 +31,7 @@ class PendingTransferRequest {
   final String requestId;
   final String senderId;
   final String senderName;
-  final String senderToken;  // NEW: Token for verification
+  final String senderToken;
   final List<TransferItem> items;
   final DateTime timestamp;
 
@@ -69,7 +69,7 @@ class TransferService {
   final Map<String, Transfer> _activeTransfers = {};
   final Map<String, StreamController<TransferProgress>> _progressControllers = {};
 
-  // IMPROVED: Track authorized senders with tokens (not just IDs)
+  // Track authorized senders with tokens (not just IDs)
   final Map<String, TrustedDevice> _trustedDevices = {};
   final Map<String, PendingTransferRequest> _pendingRequests = {};
 
@@ -82,7 +82,7 @@ class TransferService {
   String _deviceId = '';
   String _deviceName = '';
   String _devicePlatform = '';
-  String _deviceToken = '';  // NEW: Unique device token for auth
+  String _deviceToken = '';
 
   static const int maxRetries = 3;
   static const int initialRetryDelaySeconds = 2;
@@ -303,7 +303,7 @@ class TransferService {
     
     // Validate items
     final items = data['items'] as List;
-    if (items.isEmpty || items.length > 1000) return false;  // Reasonable limits
+    if (items.isEmpty || items.length > 1000) return false;
     
     return true;
   }
@@ -313,14 +313,14 @@ class TransferService {
     try {
       final body = await utf8.decoder.bind(request).join();
       
-      // FIXED: Validate and parse JSON safely
+      // Validate and parse JSON safely
       final data = _validateAndParseJson(body);
       if (data == null) {
         _sendBadRequest(request, 'Invalid JSON format');
         return;
       }
 
-      // FIXED: Validate required fields
+      // Validate required fields
       if (!_validateTransferData(data)) {
         _sendBadRequest(request, 'Missing or invalid required fields');
         return;
@@ -331,13 +331,13 @@ class TransferService {
       final senderToken = data['senderToken'] as String;
       final requestId = data['id'] as String;
       
-      // FIXED: Validate items with proper error handling
+      // Validate items with proper error handling
       List<TransferItem> items;
       try {
         items = (data['items'] as List)
             .map((item) {
               if (item is! Map<String, dynamic>) {
-                throw FormatException('Invalid item format');
+                throw const FormatException('Invalid item format');
               }
               return TransferItem.fromJson(item);
             })
@@ -352,7 +352,7 @@ class TransferService {
         return;
       }
 
-      // IMPROVED: Check if sender is trusted with matching token
+      // Check if sender is trusted with matching token
       final trustedDevice = _trustedDevices[senderId];
       if (trustedDevice != null && trustedDevice.token == senderToken) {
         // Auto-approve for verified trusted senders
@@ -402,7 +402,7 @@ class TransferService {
 
   /// Check approval status
   Future<void> _handleApprovalCheck(HttpRequest request, String requestId) async {
-    // FIXED: Validate requestId
+    // Validate requestId
     if (requestId.isEmpty || requestId.length > 100) {
       _sendBadRequest(request, 'Invalid request ID');
       return;
@@ -454,7 +454,7 @@ class TransferService {
     }
 
     if (trustSender) {
-      // IMPROVED: Store trusted device with token for verification
+      // Store trusted device with token for verification
       _trustedDevices[pending.senderId] = TrustedDevice(
         senderId: pending.senderId,
         senderName: pending.senderName,
@@ -529,7 +529,7 @@ class TransferService {
       final senderToken = request.headers.value('x-sender-token');
       final fileSize = fileSizeHeader != null ? int.tryParse(fileSizeHeader) ?? 0 : 0;
 
-      // FIXED: Validate required headers
+      // Validate required headers
       if (transferId == null || transferId.isEmpty) {
         _sendBadRequest(request, 'Missing transfer ID header');
         return;
@@ -554,14 +554,14 @@ class TransferService {
         return;
       }
 
-      // IMPROVED: Verify sender matches AND validate token
+      // Verify sender matches AND validate token
       if (transfer.senderId != senderId) {
         print('Security: Sender ID mismatch. Expected: ${transfer.senderId}, Got: $senderId');
         _sendUnauthorized(request, 'Sender ID mismatch');
         return;
       }
 
-      // FIXED: Sanitize filename to prevent path traversal
+      // Sanitize filename to prevent path traversal
       final sanitizedFileName = _fileService.sanitizeFilename(fileName);
       if (sanitizedFileName != fileName) {
         print('Security: Filename was sanitized. Original: $fileName, Sanitized: $sanitizedFileName');
@@ -578,7 +578,7 @@ class TransferService {
       final finalFilePath = '$downloadDir${Platform.pathSeparator}$sanitizedFileName';
       tempFilePath = '$finalFilePath.tmp';
 
-      // FIXED: Verify path is within allowed directory
+      // Verify path is within allowed directory
       if (!_fileService.isPathWithinDirectory(finalFilePath, downloadDir)) {
         print('Security: Path traversal attempt detected for file: $fileName');
         _sendBadRequest(request, 'Invalid filename');
@@ -672,7 +672,7 @@ class TransferService {
         'filePath': finalFilePath,
       });
     } catch (e, stackTrace) {
-      // FIXED: Proper error handling with logging
+      // Proper error handling with logging
       print('Error uploading file: $e');
       print('Stack trace: $stackTrace');
 
@@ -701,7 +701,7 @@ class TransferService {
   }
 
   Future<void> _handleTransferStatus(HttpRequest request, String transferId) async {
-    // FIXED: Validate transferId
+    // Validate transferId
     if (transferId.isEmpty || transferId.length > 100) {
       _sendBadRequest(request, 'Invalid transfer ID');
       return;
@@ -774,7 +774,7 @@ class TransferService {
             'id': transferId,
             'senderId': sender.id,
             'senderName': sender.name,
-            'senderToken': _deviceToken,  // IMPROVED: Include device token
+            'senderToken': _deviceToken,
             'receiverId': receiver.id,
             'items': items.map((item) => item.toJson()).toList(),
           }),
@@ -836,7 +836,7 @@ class TransferService {
           final request = http.StreamedRequest('POST', Uri.parse(uploadUrl));
           request.headers['x-transfer-id'] = transferId;
           request.headers['x-sender-id'] = sender.id;
-          request.headers['x-sender-token'] = _deviceToken;  // IMPROVED: Include token
+          request.headers['x-sender-token'] = _deviceToken;
           request.headers['x-file-name'] = item.name;
           request.headers['x-file-size'] = fileSize.toString();
           request.headers['x-relative-path'] = item.parentPath ?? '';
@@ -885,18 +885,22 @@ class TransferService {
 
           // Wait for response
           final response = await request.send();
-          final responseBody = await response.stream.bytesToString();
 
           if (response.statusCode == HttpStatus.unauthorized) {
-            throw TransferException('Transfer not authorized', code: 'UNAUTHORIZED');
+            final errorBody = await response.stream.bytesToString();
+            throw TransferException('Transfer not authorized: $errorBody', code: 'UNAUTHORIZED');
           }
 
           if (response.statusCode != 200) {
+            final errorBody = await response.stream.bytesToString();
             throw TransferException(
-              'Upload failed: ${response.statusCode}',
+              'Upload failed: ${response.statusCode} - $errorBody',
               code: 'UPLOAD_FAILED_${response.statusCode}',
             );
           }
+
+          // Drain the response stream for successful responses
+          await response.stream.drain();
 
           totalBytesTransferred += fileSize;
 
@@ -938,7 +942,7 @@ class TransferService {
       // Clear checkpoint on success
       await _checkpointManager.clearCheckpoint(transferId);
     } catch (e, stackTrace) {
-      // FIXED: Proper error handling with logging
+      // Proper error handling with logging
       print('Error sending files: $e');
       print('Stack trace: $stackTrace');
 
