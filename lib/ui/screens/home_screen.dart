@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
+
 import '../theme/app_theme.dart';
 import '../widgets/device_card.dart';
 import '../widgets/transfer_request_sheet.dart';
@@ -19,23 +22,56 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   bool _isRefreshing = false;
   bool _isShowingRequestSheet = false;
+  
+  // Store subscription for cleanup
+  ProviderSubscription<AsyncValue<List<PendingTransferRequest>>>? _pendingRequestsSubscription;
 
   @override
   void initState() {
     super.initState();
+    // Register lifecycle observer
+    WidgetsBinding.instance.addObserver(this);
     // Start listening for incoming transfer requests
     _listenForIncomingRequests();
+  }
+
+  @override
+  void dispose() {
+    // Unregister lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
+    
+    // Cancel subscription
+    _pendingRequestsSubscription?.close();
+    _pendingRequestsSubscription = null;
+    
+    debugPrint('🧹 HomeScreen disposed');
+    super.dispose();
+  }
+
+  /// Handle app lifecycle changes
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    if (state == AppLifecycleState.resumed) {
+      // Refresh devices when app resumes
+      _refreshDevices();
+    }
   }
 
   // Listen for incoming transfer requests and show approval dialog
   void _listenForIncomingRequests() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.listen<AsyncValue<List<PendingTransferRequest>>>(
+      if (!mounted) return;
+      
+      _pendingRequestsSubscription = ref.listenManual<AsyncValue<List<PendingTransferRequest>>>(
         pendingTransferRequestsProvider,
         (previous, next) {
+          if (!mounted) return;
+          
           next.whenData((requests) {
             if (requests.isNotEmpty && !_isShowingRequestSheet && mounted) {
               _showTransferRequestSheet(requests.first);
@@ -48,7 +84,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // Show the transfer request approval bottom sheet
   void _showTransferRequestSheet(PendingTransferRequest request) {
-    if (_isShowingRequestSheet) return;
+    if (_isShowingRequestSheet || !mounted) return;
 
     setState(() => _isShowingRequestSheet = true);
 
@@ -61,10 +97,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         request: request,
         onDismiss: () {
           Navigator.of(context).pop();
+          if (!mounted) return;
+          
           setState(() => _isShowingRequestSheet = false);
 
           // Check if there are more pending requests
-          final pendingRequests = ref.read(transferServiceProvider).pendingRequests;
+          final pendingRequests =
+              ref.read(transferServiceProvider).pendingRequests;
           if (pendingRequests.isNotEmpty) {
             // Show next request after a short delay
             Future.delayed(const Duration(milliseconds: 300), () {
@@ -79,7 +118,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Future<void> _refreshDevices() async {
-    if (_isRefreshing) return;
+    if (_isRefreshing || !mounted) return;
 
     setState(() => _isRefreshing = true);
 
@@ -132,8 +171,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text(
               'Share files without installing an app',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textTertiary,
-              ),
+                    color: AppTheme.textTertiary,
+                  ),
             ),
             const SizedBox(height: 24),
 
@@ -212,15 +251,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textTertiary,
-                      ),
+                            color: AppTheme.textTertiary,
+                          ),
                     ),
                   ],
                 ),
@@ -336,7 +375,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   currentDevice.name,
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
@@ -359,7 +399,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                 // Section Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     children: [
                       Text(
@@ -592,18 +633,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 16),
                       Text(
                         'No devices found',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppTheme.textTertiary,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: AppTheme.textTertiary,
+                                ),
                       ),
                       const SizedBox(height: 8),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
                         child: Text(
                           'Make sure other devices have Syndro open and are on the same WiFi network',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textTertiary,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppTheme.textTertiary,
+                                  ),
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -655,8 +698,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Text(
               'Scanning for devices...',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: AppTheme.textTertiary,
-              ),
+                    color: AppTheme.textTertiary,
+                  ),
             ),
             const SizedBox(height: 16),
             const CircularProgressIndicator(),
