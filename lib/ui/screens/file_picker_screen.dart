@@ -1,25 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../theme/app_theme.dart';
 import '../../core/models/device.dart';
 import '../../core/models/transfer.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/providers/transfer_provider.dart';
+import 'transfer_progress_screen.dart';
 
 class FilePickerScreen extends ConsumerStatefulWidget {
   final Device recipientDevice;
 
   const FilePickerScreen({
-    Key? key,
+    super.key,
     required this.recipientDevice,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<FilePickerScreen> createState() => _FilePickerScreenState();
 }
 
 class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
-  List<TransferItem> _selectedFiles = [];
+  final List<TransferItem> _selectedFiles = [];
   bool _isLoading = false;
 
   Future<void> _pickFiles() async {
@@ -30,7 +32,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
     try {
       final fileService = ref.read(fileServiceProvider);
       final files = await fileService.pickFiles();
-      
+
       setState(() {
         _selectedFiles.addAll(files);
         _isLoading = false;
@@ -39,7 +41,6 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
       setState(() {
         _isLoading = false;
       });
-      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -59,19 +60,16 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
     try {
       final fileService = ref.read(fileServiceProvider);
       final folderPath = await fileService.pickFolder();
-      
+
       if (folderPath != null) {
-        // Scan folder structure
         final folderStructure = await fileService.scanFolder(folderPath);
-        
-        // Get all files from folder
         final files = fileService.getAllFilesInFolder(folderStructure);
-        
+
         setState(() {
           _selectedFiles.addAll(files);
           _isLoading = false;
         });
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -89,7 +87,6 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
       setState(() {
         _isLoading = false;
       });
-      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -104,34 +101,36 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
   Future<void> _sendFiles() async {
     if (_selectedFiles.isEmpty) return;
 
+    final currentDevice = ref.read(currentDeviceProvider);
+    final transferService = ref.read(transferServiceProvider);
+
+    // Generate transfer ID
+    final transferId = const Uuid().v4();
+
+    // Store files before navigating
+    final filesToSend = List<TransferItem>.from(_selectedFiles);
+
+    // Navigate to progress screen FIRST
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => TransferProgressScreen(
+          transferId: transferId,
+          remoteDevice: widget.recipientDevice,
+          isSender: true,
+          items: filesToSend,
+        ),
+      ),
+    );
+
+    // Then start the transfer
     try {
-      final currentDevice = ref.read(currentDeviceProvider);
-      final transferService = ref.read(transferServiceProvider);
-      
       await transferService.sendFiles(
         sender: currentDevice,
         receiver: widget.recipientDevice,
-        items: _selectedFiles,
+        items: filesToSend,
       );
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Transfer started'),
-            backgroundColor: AppTheme.successColor,
-          ),
-        );
-        Navigator.of(context).pop();
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error starting transfer: $e'),
-            backgroundColor: AppTheme.errorColor,
-          ),
-        );
-      }
+      debugPrint('Transfer error: $e');
     }
   }
 
@@ -143,7 +142,8 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final totalSize = _selectedFiles.fold<int>(0, (sum, item) => sum + item.size);
+    final totalSize =
+        _selectedFiles.fold<int>(0, (sum, item) => sum + item.size);
 
     return Scaffold(
       appBar: AppBar(
@@ -188,7 +188,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                 ),
               ),
             ),
-            
+
             // Pick Files Button
             if (_selectedFiles.isEmpty && !_isLoading)
               Expanded(
@@ -234,7 +234,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                   ),
                 ),
               ),
-            
+
             // Loading
             if (_isLoading)
               const Expanded(
@@ -242,7 +242,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                   child: CircularProgressIndicator(),
                 ),
               ),
-            
+
             // Selected Files List
             if (_selectedFiles.isNotEmpty && !_isLoading)
               Expanded(
@@ -289,7 +289,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                         },
                       ),
                     ),
-                    
+
                     // Summary Footer
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -313,7 +313,8 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                                 ),
                                 Text(
                                   _formatSize(totalSize),
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
                                 ),
                               ],
                             ),
@@ -343,17 +344,17 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
 
   IconData _getFileIcon(String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
-    
+
     const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     const videoExts = ['mp4', 'mov', 'avi', 'mkv'];
     const docExts = ['pdf', 'doc', 'docx', 'txt'];
     const archiveExts = ['zip', 'rar', '7z'];
-    
+
     if (imageExts.contains(ext)) return Icons.image;
     if (videoExts.contains(ext)) return Icons.video_file;
     if (docExts.contains(ext)) return Icons.description;
     if (archiveExts.contains(ext)) return Icons.folder_zip;
-    
+
     return Icons.insert_drive_file;
   }
 
