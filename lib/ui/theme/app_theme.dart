@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Colors
-  static const Color primaryColor = Color(0xFF682CA8);    // Purple (NEW)
-  static const Color secondaryColor = Color(0xFF592297);  // Darker Purple (NEW)
-  static const Color accentColor = Color(0xFF06B6D4);     // Cyan
-  static const Color backgroundColor = Color(0xFF0F172A); // Dark navy
-  static const Color surfaceColor = Color(0xFF1E293B);    // Lighter navy
-  static const Color cardColor = Color(0xFF334155);       // Card background
+  // Primary Colors (Matching Logo Gradient)
+  static const Color primaryColor = Color(0xFF7B5EF2);     // Purple from logo
+  static const Color secondaryColor = Color(0xFF5B8DEF);   // Blue from logo
+  static const Color accentColor = Color(0xFF06B6D4);      // Cyan for highlights
 
-  static const Color successColor = Color(0xFF10B981);    // Green
-  static const Color errorColor = Color(0xFFEF4444);      // Red
-  static const Color warningColor = Color(0xFFF59E0B);    // Amber
+  // Background Colors
+  static const Color backgroundColor = Color(0xFF0A0A0F);  // Near black
+  static const Color surfaceColor = Color(0xFF141420);     // Dark purple-gray
+  static const Color cardColor = Color(0xFF1E1E2E);        // Card background
 
-  static const Color textPrimary = Color(0xFFF8FAFC);
-  static const Color textSecondary = Color(0xFFCBD5E1);
-  static const Color textTertiary = Color(0xFF94A3B8);
+  // Status Colors
+  static const Color successColor = Color(0xFF22C55E);     // Green
+  static const Color errorColor = Color(0xFFEF4444);       // Red
+  static const Color warningColor = Color(0xFFF59E0B);     // Amber
+
+  // Text Colors
+  static const Color textPrimary = Color(0xFFF8FAFC);      // White
+  static const Color textSecondary = Color(0xFFCBD5E1);    // Light gray
+  static const Color textTertiary = Color(0xFF94A3B8);     // Muted gray
 
   static ThemeData get darkTheme {
     return ThemeData(
@@ -67,6 +71,22 @@ class AppTheme {
         ),
       ),
 
+      // Outlined Button Theme
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: primaryColor,
+          side: const BorderSide(color: primaryColor, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+
       // Text Button Theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
@@ -84,6 +104,12 @@ class AppTheme {
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
         elevation: 4,
+      ),
+
+      // Icon Theme
+      iconTheme: const IconThemeData(
+        color: textSecondary,
+        size: 24,
       ),
 
       // Text Theme
@@ -152,6 +178,113 @@ class AppTheme {
         color: primaryColor,
         linearTrackColor: surfaceColor,
       ),
+
+      // Snackbar Theme
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: cardColor,
+        contentTextStyle: const TextStyle(color: textPrimary),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+
+      // Bottom Sheet Theme
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+
+      // Dialog Theme
+      dialogTheme: DialogTheme(
+        backgroundColor: surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+
+      // Divider Theme
+      dividerTheme: const DividerThemeData(
+        color: cardColor,
+        thickness: 1,
+      ),
+
+      // Chip Theme
+      chipTheme: ChipThemeData(
+        backgroundColor: cardColor,
+        selectedColor: primaryColor,
+        labelStyle: const TextStyle(color: textPrimary),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+
+      // Switch Theme
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return textTertiary;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor.withOpacity(0.5);
+          }
+          return cardColor;
+        }),
+      ),
+
+      // Checkbox Theme
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return Colors.transparent;
+        }),
+        checkColor: WidgetStateProperty.all(Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+
+      // Radio Theme
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return textTertiary;
+        }),
+      ),
+
+      // Slider Theme
+      sliderTheme: SliderThemeData(
+        activeTrackColor: primaryColor,
+        inactiveTrackColor: cardColor,
+        thumbColor: primaryColor,
+        overlayColor: primaryColor.withOpacity(0.2),
+      ),
+
+      // Navigation Bar Theme (Android)
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: surfaceColor,
+        indicatorColor: primaryColor.withOpacity(0.2),
+        labelTextStyle: WidgetStateProperty.all(
+          const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ),
+
+      // Navigation Rail Theme (Desktop)
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: surfaceColor,
+        selectedIconTheme: const IconThemeData(color: primaryColor),
+        unselectedIconTheme: const IconThemeData(color: textTertiary),
+        indicatorColor: primaryColor.withOpacity(0.2),
+      ),
     );
   }
 
@@ -178,16 +311,47 @@ class AppTheme {
     );
   }
 
-  // Gradient background
+  // Gradient background (matches logo)
   static LinearGradient get backgroundGradient {
     return const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
       colors: [
-        Color(0xFF0F172A),
-        Color(0xFF1E293B),
-        Color(0xFF334155),
+        Color(0xFF0A0A0F),
+        Color(0xFF141420),
+        Color(0xFF1E1E2E),
       ],
+    );
+  }
+
+  // Logo gradient (for accent elements)
+  static LinearGradient get logoGradient {
+    return const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Color(0xFF5B8DEF),  // Blue
+        Color(0xFF7B5EF2),  // Purple
+      ],
+    );
+  }
+
+  // Primary button gradient
+  static LinearGradient get primaryGradient {
+    return const LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [
+        Color(0xFF5B8DEF),  // Blue
+        Color(0xFF7B5EF2),  // Purple
+      ],
+    );
+  }
+
+  // Gradient text style helper
+  static ShaderCallback get gradientShader {
+    return (bounds) => logoGradient.createShader(
+      Rect.fromLTWH(0, 0, bounds.width, bounds.height),
     );
   }
 }
