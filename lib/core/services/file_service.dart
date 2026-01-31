@@ -524,62 +524,67 @@ class FileService {
     }
   }
 
-  /// Get download directory - FIXED FOR ANDROID
-  Future<String> getDownloadDirectory() async {
-    try {
-      if (Platform.isAndroid) {
-        // Use public Downloads folder that user can access
-        const downloadsPath = '/storage/emulated/0/Download';
-        final downloadsDir = Directory(downloadsPath);
+/// Get download directory - FIXED FOR ANDROID
+Future<String> getDownloadDirectory() async {
+  try {
+    if (Platform.isAndroid) {
+      // Use public Downloads folder that user can access
+      final syndroDir = Directory('/storage/emulated/0/Download/Syndro');
+      
+      try {
+        if (!await syndroDir.exists()) {
+          await syndroDir.create(recursive: true);
+          debugPrint('📁 Created Syndro folder in Downloads');
+        }
         
-        // Create Syndro subfolder in Downloads
-        final syndroDir = Directory('$downloadsPath/Syndro');
+        // Test if we can write to it
+        final testFile = File('${syndroDir.path}/.test');
+        await testFile.writeAsString('test');
+        await testFile.delete();
+        
+        debugPrint('📁 Using download directory: ${syndroDir.path}');
+        return syndroDir.path;
+      } catch (e) {
+        debugPrint('⚠️ Cannot write to Downloads/Syndro: $e');
+        
+        // Fallback to app-specific directory
+        final directory = await getExternalStorageDirectory();
+        if (directory != null) {
+          debugPrint('📁 Fallback to: ${directory.path}');
+          return directory.path;
+        }
+      }
+      
+      return '/storage/emulated/0/Download/Syndro';
+    } else if (Platform.isWindows) {
+      final userProfile = Platform.environment['USERPROFILE'];
+      if (userProfile != null && userProfile.isNotEmpty) {
+        final syndroDir = Directory('$userProfile\\Downloads\\Syndro');
         if (!await syndroDir.exists()) {
           await syndroDir.create(recursive: true);
         }
-        
-        // Check if we can write to it
-        if (await syndroDir.exists()) {
-          print('📁 Using download directory: ${syndroDir.path}');
-          return syndroDir.path;
-        }
-        
-        // Fallback to external storage directory if Downloads doesn't work
-        final directory = await getExternalStorageDirectory();
-        if (directory != null) {
-          print('📁 Fallback to: ${directory.path}');
-          return directory.path;
-        }
-        
-        return downloadsPath;
-      } else if (Platform.isWindows) {
-        final userProfile = Platform.environment['USERPROFILE'];
-        if (userProfile != null && userProfile.isNotEmpty) {
-          final syndroDir = Directory('$userProfile\\Downloads\\Syndro');
-          if (!await syndroDir.exists()) {
-            await syndroDir.create(recursive: true);
-          }
-          return syndroDir.path;
-        }
-        return 'C:\\Users\\Public\\Downloads';
-      } else if (Platform.isLinux) {
-        final home = Platform.environment['HOME'];
-        if (home != null && home.isNotEmpty) {
-          final syndroDir = Directory('$home/Downloads/Syndro');
-          if (!await syndroDir.exists()) {
-            await syndroDir.create(recursive: true);
-          }
-          return syndroDir.path;
-        }
-        return '/tmp';
+        return syndroDir.path;
       }
-    } catch (e) {
-      print('Error getting download directory: $e');
+      return 'C:\\Users\\Public\\Downloads';
+    } else if (Platform.isLinux) {
+      final home = Platform.environment['HOME'];
+      if (home != null && home.isNotEmpty) {
+        final syndroDir = Directory('$home/Downloads/Syndro');
+        if (!await syndroDir.exists()) {
+          await syndroDir.create(recursive: true);
+        }
+        return syndroDir.path;
+      }
+      return '/tmp';
     }
-
-    final directory = await getApplicationDocumentsDirectory();
-    return directory.path;
+  } catch (e) {
+    debugPrint('Error getting download directory: $e');
   }
+
+  final directory = await getApplicationDocumentsDirectory();
+  return directory.path;
+}
+
 
   Future<File> saveFile(String fileName, List<int> bytes) async {
     try {
