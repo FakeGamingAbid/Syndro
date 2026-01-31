@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
-
 import '../models/transfer.dart';
 import '../models/folder_structure.dart';
 
@@ -45,8 +44,8 @@ class FileService {
         .replaceAll(RegExp(r'^\.'), '_');
 
     sanitized = sanitized.replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_');
-
     sanitized = sanitized.trim();
+
     while (sanitized.endsWith('.')) {
       sanitized = sanitized.substring(0, sanitized.length - 1);
     }
@@ -102,12 +101,10 @@ class FileService {
       if (result == null) return [];
 
       final items = <TransferItem>[];
-
       for (final file in result.files) {
         if (file.path != null) {
           final fileInfo = File(file.path!);
           final stat = await fileInfo.stat();
-
           items.add(TransferItem(
             name: file.name,
             path: file.path!,
@@ -116,7 +113,6 @@ class FileService {
           ));
         }
       }
-
       return items;
     } catch (e) {
       print('Error picking files: $e');
@@ -189,7 +185,6 @@ class FileService {
           children.add(entityRelativePath);
         } else if (entity is Directory) {
           final fileCount = await _countFilesInDirectory(entity);
-
           items.add(TransferItem(
             name: entityName,
             path: entity.path,
@@ -239,6 +234,7 @@ class FileService {
     FolderStructure structure,
   ) async {
     final downloadDir = await getDownloadDirectory();
+
     if (!isPathWithinDirectory(basePath, downloadDir)) {
       throw FileServiceException('Invalid base path', code: 'PATH_TRAVERSAL');
     }
@@ -249,8 +245,8 @@ class FileService {
           .map((part) => sanitizeFilename(part))
           .join(Platform.pathSeparator);
 
-      final dirPath = path.join(basePath, sanitizeFilename(structure.rootName),
-          sanitizedRelPath);
+      final dirPath = path.join(
+          basePath, sanitizeFilename(structure.rootName), sanitizedRelPath);
 
       if (!isPathWithinDirectory(dirPath, downloadDir)) {
         throw FileServiceException(
@@ -325,8 +321,8 @@ class FileService {
     try {
       final tempFile = File(tempPath);
       sink = tempFile.openWrite();
-      int bytesWritten = 0;
 
+      int bytesWritten = 0;
       await for (final chunk in dataStream) {
         sink.add(chunk);
         bytesWritten += chunk.length;
@@ -341,8 +337,8 @@ class FileService {
       if (await finalFile.exists()) {
         await finalFile.delete();
       }
-      await File(tempPath).rename(finalPath);
 
+      await File(tempPath).rename(finalPath);
       return File(finalPath);
     } catch (e) {
       if (sink != null) {
@@ -356,6 +352,7 @@ class FileService {
           await tempFile.delete();
         }
       } catch (_) {}
+
       print('Error saving file from stream: $e');
       throw FileServiceException('Failed to save file', originalError: e);
     }
@@ -384,8 +381,8 @@ class FileService {
 
       final tempFile = File(tempPath);
       sink = tempFile.openWrite();
-      int bytesCopied = 0;
 
+      int bytesCopied = 0;
       final stream = sourceFile.openRead();
       await for (final chunk in stream) {
         sink.add(chunk);
@@ -401,8 +398,8 @@ class FileService {
       if (await destFile.exists()) {
         await destFile.delete();
       }
-      await File(tempPath).rename(destinationPath);
 
+      await File(tempPath).rename(destinationPath);
       return File(destinationPath);
     } catch (e) {
       if (sink != null) {
@@ -416,6 +413,7 @@ class FileService {
           await tempFile.delete();
         }
       } catch (_) {}
+
       print('Error copying file: $e');
       throw FileServiceException('Failed to copy file', originalError: e);
     }
@@ -430,8 +428,8 @@ class FileService {
           .join(Platform.pathSeparator);
 
       final filePath = path.join(basePath, sanitizedRelPath);
-
       final downloadDir = await getDownloadDirectory();
+
       if (!isPathWithinDirectory(filePath, downloadDir)) {
         throw FileServiceException(
           'Invalid file path: path traversal detected',
@@ -467,8 +465,8 @@ class FileService {
         .join(Platform.pathSeparator);
 
     final filePath = path.join(basePath, sanitizedRelPath);
-
     final downloadDir = await getDownloadDirectory();
+
     if (!isPathWithinDirectory(filePath, downloadDir)) {
       throw FileServiceException(
         'Invalid file path: path traversal detected',
@@ -487,8 +485,8 @@ class FileService {
 
       final tempFile = File(tempPath);
       sink = tempFile.openWrite();
-      int bytesWritten = 0;
 
+      int bytesWritten = 0;
       await for (final chunk in dataStream) {
         sink.add(chunk);
         bytesWritten += chunk.length;
@@ -503,8 +501,8 @@ class FileService {
       if (await finalFile.exists()) {
         await finalFile.delete();
       }
-      await File(tempPath).rename(filePath);
 
+      await File(tempPath).rename(filePath);
       return File(filePath);
     } catch (e) {
       if (sink != null) {
@@ -518,73 +516,73 @@ class FileService {
           await tempFile.delete();
         }
       } catch (_) {}
+
       if (e is FileServiceException) rethrow;
       print('Error saving file from stream: $e');
       throw FileServiceException('Failed to save file', originalError: e);
     }
   }
 
-/// Get download directory - FIXED FOR ANDROID
-Future<String> getDownloadDirectory() async {
-  try {
-    if (Platform.isAndroid) {
-      // Use public Downloads folder that user can access
-      final syndroDir = Directory('/storage/emulated/0/Download/Syndro');
-      
-      try {
-        if (!await syndroDir.exists()) {
-          await syndroDir.create(recursive: true);
-          debugPrint('📁 Created Syndro folder in Downloads');
+  /// Get download directory - FIXED FOR ANDROID
+  Future<String> getDownloadDirectory() async {
+    try {
+      if (Platform.isAndroid) {
+        // Use public Downloads folder that user can access
+        final syndroDir = Directory('/storage/emulated/0/Download/Syndro');
+
+        try {
+          if (!await syndroDir.exists()) {
+            await syndroDir.create(recursive: true);
+            debugPrint('📁 Created Syndro folder in Downloads');
+          }
+
+          // Test if we can write to it
+          final testFile = File('${syndroDir.path}/.test');
+          await testFile.writeAsString('test');
+          await testFile.delete();
+
+          debugPrint('📁 Using download directory: ${syndroDir.path}');
+          return syndroDir.path;
+        } catch (e) {
+          debugPrint('⚠️ Cannot write to Downloads/Syndro: $e');
+
+          // Fallback to app-specific directory
+          final directory = await getExternalStorageDirectory();
+          if (directory != null) {
+            debugPrint('📁 Fallback to: ${directory.path}');
+            return directory.path;
+          }
         }
-        
-        // Test if we can write to it
-        final testFile = File('${syndroDir.path}/.test');
-        await testFile.writeAsString('test');
-        await testFile.delete();
-        
-        debugPrint('📁 Using download directory: ${syndroDir.path}');
-        return syndroDir.path;
-      } catch (e) {
-        debugPrint('⚠️ Cannot write to Downloads/Syndro: $e');
-        
-        // Fallback to app-specific directory
-        final directory = await getExternalStorageDirectory();
-        if (directory != null) {
-          debugPrint('📁 Fallback to: ${directory.path}');
-          return directory.path;
+
+        return '/storage/emulated/0/Download/Syndro';
+      } else if (Platform.isWindows) {
+        final userProfile = Platform.environment['USERPROFILE'];
+        if (userProfile != null && userProfile.isNotEmpty) {
+          final syndroDir = Directory('$userProfile\\Downloads\\Syndro');
+          if (!await syndroDir.exists()) {
+            await syndroDir.create(recursive: true);
+          }
+          return syndroDir.path;
         }
+        return 'C:\\Users\\Public\\Downloads';
+      } else if (Platform.isLinux) {
+        final home = Platform.environment['HOME'];
+        if (home != null && home.isNotEmpty) {
+          final syndroDir = Directory('$home/Downloads/Syndro');
+          if (!await syndroDir.exists()) {
+            await syndroDir.create(recursive: true);
+          }
+          return syndroDir.path;
+        }
+        return '/tmp';
       }
-      
-      return '/storage/emulated/0/Download/Syndro';
-    } else if (Platform.isWindows) {
-      final userProfile = Platform.environment['USERPROFILE'];
-      if (userProfile != null && userProfile.isNotEmpty) {
-        final syndroDir = Directory('$userProfile\\Downloads\\Syndro');
-        if (!await syndroDir.exists()) {
-          await syndroDir.create(recursive: true);
-        }
-        return syndroDir.path;
-      }
-      return 'C:\\Users\\Public\\Downloads';
-    } else if (Platform.isLinux) {
-      final home = Platform.environment['HOME'];
-      if (home != null && home.isNotEmpty) {
-        final syndroDir = Directory('$home/Downloads/Syndro');
-        if (!await syndroDir.exists()) {
-          await syndroDir.create(recursive: true);
-        }
-        return syndroDir.path;
-      }
-      return '/tmp';
+    } catch (e) {
+      debugPrint('Error getting download directory: $e');
     }
-  } catch (e) {
-    debugPrint('Error getting download directory: $e');
+
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
   }
-
-  final directory = await getApplicationDocumentsDirectory();
-  return directory.path;
-}
-
 
   Future<File> saveFile(String fileName, List<int> bytes) async {
     try {
