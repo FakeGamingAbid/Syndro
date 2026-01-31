@@ -174,6 +174,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     color: AppTheme.textTertiary,
                   ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Connect to the same WiFi network or create a Hotspot',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                     color: AppTheme.warningColor,
+                   ),
+            ),
             const SizedBox(height: 24),
 
             // Send Files Option
