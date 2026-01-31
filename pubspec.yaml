@@ -66,12 +66,16 @@ flutter:
 
 # App Icon Configuration
 flutter_launcher_icons:
+  # Standard icon (for older Android, Windows, etc.)
   android: "ic_launcher"
   image_path: "assets/icon/app_icon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#1a0a2e"
-  adaptive_icon_foreground: "assets/icon/app_icon.png"
   
+  # Adaptive icon for Android 8.0+ (separate foreground with padding)
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  
+  # Windows
   windows:
     generate: true
     image_path: "assets/icon/app_icon.png"
