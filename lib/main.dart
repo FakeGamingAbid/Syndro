@@ -3,23 +3,23 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'ui/theme/app_theme.dart';
 import 'ui/screens/main_navigation_screen.dart';
+import 'ui/screens/onboarding_screen.dart';
 import 'core/providers/device_provider.dart';
 import 'core/providers/transfer_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Global error handling
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
     debugPrint('Flutter Error: ${details.exception}');
   };
 
-  // Initialize SQLite for desktop platforms
   if (Platform.isWindows || Platform.isLinux) {
     try {
       sqfliteFfiInit();
@@ -30,45 +30,47 @@ void main() async {
     }
   }
 
-  runApp(const ProviderScope(child: SyndroApp()));
+  final prefs = await SharedPreferences.getInstance();
+  final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+
+  runApp(ProviderScope(
+    child: SyndroApp(showOnboarding: !onboardingComplete),
+  ));
 }
 
 class SyndroApp extends ConsumerStatefulWidget {
-  const SyndroApp({super.key});
+  final bool showOnboarding;
+
+  const SyndroApp({super.key, required this.showOnboarding});
 
   @override
   ConsumerState<SyndroApp> createState() => _SyndroAppState();
 }
 
-class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserver {
+class _SyndroAppState extends ConsumerState<SyndroApp>
+    with WidgetsBindingObserver {
   bool _isInitialized = false;
   String? _initError;
 
   @override
   void initState() {
     super.initState();
-    // Register app lifecycle observer
     WidgetsBinding.instance.addObserver(this);
     _initializeServices();
   }
 
   @override
   void dispose() {
-    // Unregister app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
-    
-    // Cleanup services
     _cleanupServices();
-    
     debugPrint('🧹 SyndroApp disposed');
     super.dispose();
   }
 
-  /// Handle app lifecycle changes
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    
+
     switch (state) {
       case AppLifecycleState.resumed:
         debugPrint('📱 App resumed - refreshing services');
@@ -91,10 +93,8 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
     }
   }
 
-  /// Called when app comes back to foreground
   void _onAppResumed() {
     try {
-      // Refresh device discovery when app resumes
       final deviceDiscovery = ref.read(deviceDiscoveryServiceProvider);
       if (deviceDiscovery.isInitialized) {
         deviceDiscovery.refreshDevices();
@@ -104,23 +104,10 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
     }
   }
 
-  /// Called when app goes to background
-  void _onAppPaused() {
-    // Optional: Stop scanning when app is in background to save battery
-    // Uncomment if you want this behavior:
-    // try {
-    //   final deviceDiscovery = ref.read(deviceDiscoveryServiceProvider);
-    //   deviceDiscovery.stopScanning();
-    // } catch (e) {
-    //   debugPrint('Error on app pause: $e');
-    // }
-  }
+  void _onAppPaused() {}
 
-  /// Cleanup all services
   void _cleanupServices() {
     try {
-      // Services are disposed via Riverpod's onDispose
-      // This is called when the provider is no longer used
       debugPrint('🧹 Services cleanup initiated');
     } catch (e) {
       debugPrint('Error during cleanup: $e');
@@ -131,7 +118,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
     try {
       debugPrint('🚀 Starting initialization...');
 
-      // Add overall timeout to prevent infinite hang
       await Future.any([
         _doInitialization(),
         Future.delayed(const Duration(seconds: 10), () {
@@ -140,6 +126,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
       ]);
 
       debugPrint('✅ Initialization complete');
+
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -147,7 +134,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
       }
     } catch (e) {
       debugPrint('❌ Service initialization failed: $e');
-      // Don't show error, just continue with defaults
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -164,6 +150,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
   Future<void> _initDeviceDiscovery() async {
     try {
       debugPrint('📡 Initializing device discovery...');
+
       final deviceDiscovery = ref.read(deviceDiscoveryServiceProvider);
       await deviceDiscovery.initialize().timeout(
         const Duration(seconds: 8),
@@ -171,6 +158,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
           debugPrint('⚠️ Device discovery init timed out');
         },
       );
+
       debugPrint('✅ Device discovery initialized');
     } catch (e) {
       debugPrint('❌ Device discovery error: $e');
@@ -181,13 +169,11 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
     try {
       debugPrint('📤 Initializing transfer service...');
 
-      // Get device info from discovery service
       final deviceDiscovery = ref.read(deviceDiscoveryServiceProvider);
       final currentDevice = deviceDiscovery.currentDevice;
 
       final transferService = ref.read(transferServiceProvider);
 
-      // Set device info so syndro.json returns correct ID
       transferService.setDeviceInfo(
         id: currentDevice.id,
         name: currentDevice.name,
@@ -218,7 +204,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
   }
 
   Widget _buildHome() {
-    // Show error screen if initialization failed
     if (_initError != null) {
       return Scaffold(
         backgroundColor: const Color(0xFF0F172A),
@@ -266,7 +251,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
       );
     }
 
-    // Show loading screen while initializing
     if (!_isInitialized) {
       return Scaffold(
         backgroundColor: const Color(0xFF0F172A),
@@ -274,7 +258,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // App logo/icon
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -315,7 +298,10 @@ class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserv
       );
     }
 
-    // Show main app after initialization complete
+    if (widget.showOnboarding) {
+      return const OnboardingScreen();
+    }
+
     return const MainNavigationScreen();
   }
 }
