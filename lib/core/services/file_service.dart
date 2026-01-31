@@ -8,7 +8,86 @@ import 'package:path/path.dart' as path;
 import '../models/transfer.dart';
 import '../models/folder_structure.dart';
 
+/// Custom exception for file service errors
+class FileServiceException implements Exception {
+  final String message;
+  final String? code;
+  final dynamic originalError;
+
+  FileServiceException(this.message, {this.code, this.originalError});
+
+  @override
+  String toString() => 'FileServiceException: $message${code != null ? ' (code: $code)' : ''}';
+}
+
 class FileService {
+  /// Sanitize filename to prevent path traversal attacks
+  /// Removes dangerous characters and path components
+  String sanitizeFilename(String filename) {
+    if (filename.isEmpty) {
+      throw FileServiceException('Filename cannot be empty', code: 'EMPTY_FILENAME');
+    }
+
+    // Remove any path separators (both Unix and Windows style)
+    String sanitized = filename
+        .replaceAll('/', '_')
+        .replaceAll('\\', '_')
+        .replaceAll(RegExp(r'\.\.+'), '_')  // Remove .. sequences
+        .replaceAll(RegExp(r'^\.'), '_');    // Remove leading dots
+
+    // Remove other dangerous characters for cross-platform compatibility
+    sanitized = sanitized.replaceAll(RegExp(r'[<>:"|?*\x00-\x1F]'), '_');
+
+    // Trim whitespace and dots from ends
+    sanitized = sanitized.trim();
+    while (sanitized.endsWith('.')) {
+      sanitized = sanitized.substring(0, sanitized.length - 1);
+    }
+
+    // Ensure filename is not empty after sanitization
+    if (sanitized.isEmpty) {
+      sanitized = 'unnamed_file';
+    }
+
+    // Limit filename length (255 is common filesystem limit)
+    if (sanitized.length > 200) {
+      final ext = path.extension(sanitized);
+      final nameWithoutExt = path.basenameWithoutExtension(sanitized);
+      sanitized = '${nameWithoutExt.substring(0, 200 - ext.length)}$ext';
+    }
+
+    return sanitized;
+  }
+
+  /// Validate that a path is within an allowed directory (prevent path traversal)
+  bool isPathWithinDirectory(String filePath, String allowedDirectory) {
+    try {
+      final normalizedFile = path.normalize(path.absolute(filePath));
+      final normalizedDir = path.normalize(path.absolute(allowedDirectory));
+      return normalizedFile.startsWith(normalizedDir);
+    } catch (e) {
+      print('Error validating path: $e');
+      return false;
+    }
+  }
+
+  /// Get a safe file path within the download directory
+  Future<String> getSafeFilePath(String filename) async {
+    final sanitizedName = sanitizeFilename(filename);
+    final downloadDir = await getDownloadDirectory();
+    final filePath = path.join(downloadDir, sanitizedName);
+    
+    // Double-check the path is within allowed directory
+    if (!isPathWithinDirectory(filePath, downloadDir)) {
+      throw FileServiceException(
+        'Invalid filename: path traversal detected',
+        code: 'PATH_TRAVERSAL',
+      );
+    }
+    
+    return filePath;
+  }
+
   Future<List<TransferItem>> pickFiles() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -19,10 +98,12 @@ class FileService {
       if (result == null) return [];
 
       final items = <TransferItem>[];
+
       for (final file in result.files) {
         if (file.path != null) {
           final fileInfo = File(file.path!);
           final stat = await fileInfo.stat();
+
           items.add(TransferItem(
             name: file.name,
             path: file.path!,
@@ -31,10 +112,11 @@ class FileService {
           ));
         }
       }
+
       return items;
     } catch (e) {
       print('Error picking files: $e');
-      return [];
+      throw FileServiceException('Failed to pick files', originalError: e);
     }
   }
 
@@ -45,13 +127,18 @@ class FileService {
       return result;
     } catch (e) {
       print('Error picking folder: $e');
-      return null;
+      throw FileServiceException('Failed to pick folder', originalError: e);
     }
   }
 
   // Scan folder and create structure
   Future<FolderStructure> scanFolder(String folderPath) async {
     final directory = Directory(folderPath);
+    
+    if (!await directory.exists()) {
+      throw FileServiceException('Directory does not exist: $folderPath', code: 'DIR_NOT_FOUND');
+    }
+    
     final rootName = path.basename(folderPath);
 
     final items = <TransferItem>[];
@@ -80,56 +167,65 @@ class FileService {
     List<TransferItem> items,
     Map<String, List<String>> hierarchy,
   ) async {
-    final entities = directory.listSync();
-    final children = <String>[];
+    try {
+      final entities = directory.listSync();
+      final children = <String>[];
 
-    for (final entity in entities) {
-      final entityName = path.basename(entity.path);
-      final entityRelativePath =
-          relativePath.isEmpty ? entityName : '$relativePath/$entityName';
+      for (final entity in entities) {
+        final entityName = path.basename(entity.path);
+        final entityRelativePath =
+            relativePath.isEmpty ? entityName : '$relativePath/$entityName';
 
-      if (entity is File) {
-        final stat = await entity.stat();
-        items.add(TransferItem(
-          name: entityName,
-          path: entity.path,
-          size: stat.size,
-          isDirectory: false,
-          parentPath: relativePath,
-        ));
-        children.add(entityRelativePath);
-      } else if (entity is Directory) {
-        // Count files in this directory
-        final fileCount = await _countFilesInDirectory(entity);
+        if (entity is File) {
+          final stat = await entity.stat();
+          items.add(TransferItem(
+            name: entityName,
+            path: entity.path,
+            size: stat.size,
+            isDirectory: false,
+            parentPath: relativePath,
+          ));
+          children.add(entityRelativePath);
+        } else if (entity is Directory) {
+          // Count files in this directory
+          final fileCount = await _countFilesInDirectory(entity);
+          items.add(TransferItem(
+            name: entityName,
+            path: entity.path,
+            size: 0,
+            isDirectory: true,
+            parentPath: relativePath,
+            itemCount: fileCount,
+          ));
+          children.add(entityRelativePath);
 
-        items.add(TransferItem(
-          name: entityName,
-          path: entity.path,
-          size: 0,
-          isDirectory: true,
-          parentPath: relativePath,
-          itemCount: fileCount,
-        ));
-        children.add(entityRelativePath);
-
-        // Recursively scan subdirectory
-        await _scanDirectoryRecursive(
-          entity,
-          rootPath,
-          entityRelativePath,
-          items,
-          hierarchy,
-        );
+          // Recursively scan subdirectory
+          await _scanDirectoryRecursive(
+            entity,
+            rootPath,
+            entityRelativePath,
+            items,
+            hierarchy,
+          );
+        }
       }
-    }
 
-    hierarchy[relativePath] = children;
+      hierarchy[relativePath] = children;
+    } catch (e) {
+      print('Error scanning directory: $e');
+      throw FileServiceException('Failed to scan directory: $relativePath', originalError: e);
+    }
   }
 
   Future<int> _countFilesInDirectory(Directory directory) async {
     int count = 0;
-    await for (final entity in directory.list(recursive: true)) {
-      if (entity is File) count++;
+    try {
+      await for (final entity in directory.list(recursive: true)) {
+        if (entity is File) count++;
+      }
+    } catch (e) {
+      print('Error counting files in directory: $e');
+      // Return 0 instead of throwing - this is a non-critical operation
     }
     return count;
   }
@@ -144,10 +240,30 @@ class FileService {
     String basePath,
     FolderStructure structure,
   ) async {
+    // Validate base path
+    final downloadDir = await getDownloadDirectory();
+    if (!isPathWithinDirectory(basePath, downloadDir)) {
+      throw FileServiceException('Invalid base path', code: 'PATH_TRAVERSAL');
+    }
+
     // Create all directories first
     for (final item in structure.directories) {
-      final dirPath =
-          path.join(basePath, structure.rootName, item.relativePath);
+      // Sanitize the relative path components
+      final sanitizedRelPath = item.relativePath
+          .split('/')
+          .map((part) => sanitizeFilename(part))
+          .join(Platform.pathSeparator);
+      
+      final dirPath = path.join(basePath, sanitizeFilename(structure.rootName), sanitizedRelPath);
+      
+      // Verify path is still within allowed directory
+      if (!isPathWithinDirectory(dirPath, downloadDir)) {
+        throw FileServiceException(
+          'Path traversal detected in folder structure',
+          code: 'PATH_TRAVERSAL',
+        );
+      }
+      
       final dir = Directory(dirPath);
       if (!await dir.exists()) {
         await dir.create(recursive: true);
@@ -159,7 +275,22 @@ class FileService {
   Future<File> saveFileWithPath(
       String basePath, String relativePath, List<int> bytes) async {
     try {
-      final filePath = path.join(basePath, relativePath);
+      // Sanitize path components
+      final sanitizedRelPath = relativePath
+          .split('/')
+          .map((part) => sanitizeFilename(part))
+          .join(Platform.pathSeparator);
+      
+      final filePath = path.join(basePath, sanitizedRelPath);
+      
+      // Verify path is within allowed directory
+      final downloadDir = await getDownloadDirectory();
+      if (!isPathWithinDirectory(filePath, downloadDir)) {
+        throw FileServiceException(
+          'Invalid file path: path traversal detected',
+          code: 'PATH_TRAVERSAL',
+        );
+      }
 
       // Ensure parent directory exists
       final parentDir = Directory(path.dirname(filePath));
@@ -171,8 +302,9 @@ class FileService {
       await file.writeAsBytes(bytes);
       return file;
     } catch (e) {
+      if (e is FileServiceException) rethrow;
       print('Error saving file with path: $e');
-      rethrow;
+      throw FileServiceException('Failed to save file', originalError: e);
     }
   }
 
@@ -199,20 +331,33 @@ class FileService {
     } catch (e) {
       print('Error getting download directory: $e');
     }
+
     final directory = await getApplicationDocumentsDirectory();
     return directory.path;
   }
 
   Future<File> saveFile(String fileName, List<int> bytes) async {
     try {
+      // Sanitize filename to prevent path traversal
+      final sanitizedName = sanitizeFilename(fileName);
       final downloadDir = await getDownloadDirectory();
-      final filePath = '$downloadDir${Platform.pathSeparator}$fileName';
+      final filePath = '$downloadDir${Platform.pathSeparator}$sanitizedName';
+      
+      // Double-check path is within download directory
+      if (!isPathWithinDirectory(filePath, downloadDir)) {
+        throw FileServiceException(
+          'Invalid filename: path traversal detected',
+          code: 'PATH_TRAVERSAL',
+        );
+      }
+      
       final file = File(filePath);
       await file.writeAsBytes(bytes);
       return file;
     } catch (e) {
+      if (e is FileServiceException) rethrow;
       print('Error saving file: $e');
-      rethrow;
+      throw FileServiceException('Failed to save file', originalError: e);
     }
   }
 
@@ -223,17 +368,21 @@ class FileService {
       return stat.size;
     } catch (e) {
       print('Error getting file size: $e');
-      return 0;
+      throw FileServiceException('Failed to get file size', originalError: e);
     }
   }
 
   Future<List<int>> readFile(String filePath) async {
     try {
       final file = File(filePath);
+      if (!await file.exists()) {
+        throw FileServiceException('File does not exist: $filePath', code: 'FILE_NOT_FOUND');
+      }
       return await file.readAsBytes();
     } catch (e) {
+      if (e is FileServiceException) rethrow;
       print('Error reading file: $e');
-      rethrow;
+      throw FileServiceException('Failed to read file', originalError: e);
     }
   }
 
