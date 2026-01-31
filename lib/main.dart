@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -56,7 +57,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initializeServices();
+    _initializeApp();
   }
 
   @override
@@ -114,9 +115,15 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     }
   }
 
-  Future<void> _initializeServices() async {
+  /// Main initialization function
+  Future<void> _initializeApp() async {
     try {
       debugPrint('🚀 Starting initialization...');
+
+      // Request permissions first on Android
+      if (Platform.isAndroid) {
+        await _requestPermissions();
+      }
 
       await Future.any([
         _doInitialization(),
@@ -139,6 +146,41 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
           _isInitialized = true;
         });
       }
+    }
+  }
+
+  /// Request all necessary permissions for Android
+  Future<void> _requestPermissions() async {
+    debugPrint('📋 Requesting permissions...');
+
+    try {
+      // Check if storage permission is already granted
+      if (await Permission.manageExternalStorage.isGranted) {
+        debugPrint('✅ Storage permission already granted');
+        return;
+      }
+
+      // For Android 10 and below, request basic storage permission
+      if (await Permission.storage.isDenied) {
+        final storageStatus = await Permission.storage.request();
+        debugPrint('📁 Storage permission: $storageStatus');
+      }
+
+      // For Android 11+ (API 30+), request manage external storage
+      if (await Permission.manageExternalStorage.isDenied) {
+        final manageStatus = await Permission.manageExternalStorage.request();
+        debugPrint('📁 Manage external storage: $manageStatus');
+      }
+
+      // Request notification permission for Android 13+
+      if (await Permission.notification.isDenied) {
+        final notificationStatus = await Permission.notification.request();
+        debugPrint('🔔 Notification permission: $notificationStatus');
+      }
+
+      debugPrint('✅ Permission request complete');
+    } catch (e) {
+      debugPrint('⚠️ Permission request error: $e');
     }
   }
 
@@ -240,7 +282,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
                       _initError = null;
                       _isInitialized = false;
                     });
-                    _initializeServices();
+                    _initializeApp();
                   },
                   child: const Text('Retry'),
                 ),
