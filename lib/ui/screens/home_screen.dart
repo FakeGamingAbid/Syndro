@@ -312,7 +312,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final selectedDevice = ref.watch(selectedDeviceProvider);
     final isInitialized = ref.watch(isDeviceServiceInitializedProvider);
 
-    final bottomPadding = _isMobile() ? 100.0 : 0.0;
+    // Increased bottom padding for bigger nav bar
+    final bottomPadding = _isMobile() ? 120.0 : 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -449,45 +450,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               ],
             ),
 
-            // QR Button matching nav bar style
+            // QR Button - BIGGER SIZE
             if (_isMobile())
               Positioned(
                 right: 20,
-                bottom: 90,
+                bottom: 110,  // Adjusted position for bigger nav bar
                 child: GestureDetector(
                   onTap: _showShareModeDialog,
                   child: Container(
-                    height: 52,
-                    width: 52,
+                    height: 64,   // Increased from 52
+                    width: 64,    // Increased from 52
                     decoration: BoxDecoration(
                       color: AppTheme.surfaceColor,
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(32),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.25),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                       border: Border.all(
                         color: AppTheme.cardColor,
-                        width: 1,
+                        width: 1.5,
                       ),
                     ),
                     child: Icon(
                       Icons.qr_code,
                       color: AppTheme.primaryColor,
-                      size: 24,
+                      size: 30,  // Increased from 24
                     ),
                   ),
                 ),
               ),
 
-            // Send Files button (when device selected)
+            // Send Files button (when device selected) - BIGGER SIZE
             if (selectedDevice != null)
               Positioned(
                 right: 20,
-                bottom: _isMobile() ? 160 : 20,
+                bottom: _isMobile() ? 190 : 20,  // Adjusted position
                 child: GestureDetector(
                   onTap: () {
                     Navigator.of(context).push(
@@ -499,21 +500,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     );
                   },
                   child: Container(
-                    height: 52,
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    height: 56,  // Increased from 52
+                    padding: const EdgeInsets.symmetric(horizontal: 24),  // Increased padding
                     decoration: BoxDecoration(
                       color: AppTheme.surfaceColor,
-                      borderRadius: BorderRadius.circular(26),
+                      borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.25),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
                         ),
                       ],
                       border: Border.all(
                         color: AppTheme.cardColor,
-                        width: 1,
+                        width: 1.5,
                       ),
                     ),
                     child: Row(
@@ -522,15 +523,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         Icon(
                           Icons.send,
                           color: AppTheme.primaryColor,
-                          size: 20,
+                          size: 24,  // Increased from 20
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 10),
                         Text(
                           'Send Files',
                           style: TextStyle(
                             color: AppTheme.primaryColor,
                             fontWeight: FontWeight.w600,
-                            fontSize: 14,
+                            fontSize: 16,  // Increased from 14
                           ),
                         ),
                       ],
@@ -547,46 +548,46 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   Widget _buildDeviceCountBadge(AsyncValue<List<dynamic>> devicesAsync) {
     return devicesAsync.when(
       data: (devices) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: AppTheme.primaryColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: Text(
           '${devices.length}',
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
       loading: () => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: AppTheme.textTertiary,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: const Text(
           '...',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
       ),
       error: (_, __) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
           color: AppTheme.errorColor,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
         child: const Text(
           '!',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
           ),
         ),
