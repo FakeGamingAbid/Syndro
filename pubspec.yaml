@@ -72,7 +72,7 @@ flutter_launcher_icons:
   min_sdk_android: 21
   
   # Adaptive icon for Android 8.0+ (separate foreground with padding)
-  adaptive_icon_background: "#000000"
+  adaptive_icon_background: "#0A0A0F"
   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
   
   # Windows
