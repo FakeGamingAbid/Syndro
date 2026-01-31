@@ -6,64 +6,67 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
           channel: 'stable'
           cache: true
-      
+
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
-      
+
       - name: Get dependencies
         run: flutter pub get
-      
+
+      - name: Generate App Icons
+        run: dart run flutter_launcher_icons
+
       - name: Clean and recreate Windows platform
         run: |
-          if (Test-Path "windows") {
-            Remove-Item -Recurse -Force "windows"
-          }
-          if (Test-Path "build") {
-            Remove-Item -Recurse -Force "build"
-          }
+          if (Test-Path "windows") { Remove-Item -Recurse -Force "windows" }
+          if (Test-Path "build") { Remove-Item -Recurse -Force "build" }
           flutter create --platforms=windows --project-name syndro .
-      
+
+      - name: Create Windows resources directory
+        run: |
+          New-Item -ItemType Directory -Force -Path "windows\runner\resources"
+
+      - name: Generate App Icons for Windows
+        run: dart run flutter_launcher_icons
+
       - name: Generate plugin registrations
         run: flutter pub get
-      
+
       - name: Verify Windows setup
         run: |
           $files = @(
             "windows/CMakeLists.txt",
-            "windows/flutter/CMakeLists.txt", 
+            "windows/flutter/CMakeLists.txt",
             "windows/flutter/generated_plugins.cmake"
           )
           foreach ($f in $files) {
-            if (!(Test-Path $f)) { 
-              Write-Host "MISSING: $f"; exit 1 
-            }
+            if (!(Test-Path $f)) { Write-Host "MISSING: $f"; exit 1 }
             Write-Host "OK: $f"
           }
-      
+
       - name: Build Windows Release
         run: flutter build windows --release --verbose
-      
+
       - name: Download SQLite DLL
         run: |
           Invoke-WebRequest -Uri "https://www.sqlite.org/2024/sqlite-dll-win-x64-3450000.zip" -OutFile sqlite.zip
           Expand-Archive sqlite.zip -DestinationPath sqlite
           Copy-Item sqlite\sqlite3.dll build\windows\x64\runner\Release\
-      
+
       - name: Upload Windows Build
         uses: actions/upload-artifact@v4
         with:
           name: syndro-windows-release
           path: build/windows/x64/runner/Release/
           retention-days: 90
-          
