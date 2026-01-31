@@ -1,4 +1,4 @@
- import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -112,14 +112,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             ),
             destinations: _railDestinations,
           ),
-
           // Vertical divider
           const VerticalDivider(
             thickness: 1,
             width: 1,
             color: AppTheme.cardColor,
           ),
-
           // Main content
           Expanded(
             child: _screens[_selectedIndex],
@@ -129,7 +127,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     );
   }
 
-  /// Mobile layout with Floating Bottom Navigation Bar
+  /// Mobile layout with Floating Bottom Navigation Bar (BIGGER SIZE)
   Widget _buildMobileLayout() {
     return Scaffold(
       body: Stack(
@@ -137,32 +135,32 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           // Main content
           _screens[_selectedIndex],
 
-          // Floating Navigation Bar - CENTERED & COMPACT
+          // Floating Navigation Bar - BIGGER SIZE
           Positioned(
             left: 0,
             right: 0,
-            bottom: 20,
+            bottom: 24,
             child: Center(
               child: Container(
-                height: 52,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                height: 64,  // Increased from 52
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: AppTheme.surfaceColor,
-                  borderRadius: BorderRadius.circular(26),
+                  borderRadius: BorderRadius.circular(32),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                   border: Border.all(
                     color: AppTheme.cardColor,
-                    width: 1,
+                    width: 1.5,
                   ),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min, // ✅ Only as wide as needed
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildNavItem(
                       index: 0,
@@ -170,7 +168,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                       selectedIcon: Icons.devices,
                       label: 'Devices',
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 8),
                     _buildNavItem(
                       index: 1,
                       icon: Icons.history_outlined,
@@ -187,7 +185,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     );
   }
 
-  /// Build individual navigation item for floating bar
+  /// Build individual navigation item for floating bar (BIGGER SIZE)
   Widget _buildNavItem({
     required int index,
     required IconData icon,
@@ -201,12 +199,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),  // Increased padding
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.primaryColor.withOpacity(0.15)
               : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(22),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -214,16 +212,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             Icon(
               isSelected ? selectedIcon : icon,
               color: isSelected ? AppTheme.primaryColor : AppTheme.textTertiary,
-              size: 20,
+              size: 26,  // Increased from 20
             ),
             if (isSelected) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 10),
               Text(
                 label,
                 style: const TextStyle(
                   color: AppTheme.primaryColor,
                   fontWeight: FontWeight.w600,
-                  fontSize: 13,
+                  fontSize: 15,  // Increased from 13
                 ),
               ),
             ],
@@ -232,4 +230,4 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       ),
     );
   }
-} 
+}
