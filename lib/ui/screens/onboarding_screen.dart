@@ -20,27 +20,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       icon: Icons.wifi_rounded,
       title: 'CONNECT',
       description: 'Connect to the same WiFi network or create a Hotspot to start sharing',
-      gradient: AppTheme.logoGradient,
+      iconColor: AppTheme.primaryColor,
     ),
     OnboardingPage(
       icon: Icons.swap_horiz_rounded,
       title: 'APP TO APP',
       description: 'Send and receive files with other Syndro devices instantly',
-      gradient: const LinearGradient(
-        colors: [Color(0xFF7B5EF2), Color(0xFFB84EE8)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
+      iconColor: AppTheme.secondaryColor,
     ),
     OnboardingPage(
       icon: Icons.language_rounded,
       title: 'BROWSER SHARE',
       description: 'Share with any device - no app needed on the other side',
-      gradient: LinearGradient(
-        colors: [AppTheme.accentColor, AppTheme.secondaryColor],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
+      iconColor: AppTheme.accentColor,
     ),
   ];
 
@@ -83,116 +75,95 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final maxContentWidth = _isDesktop ? 500.0 : screenWidth;
+    final maxContentWidth = _isDesktop ? 450.0 : screenWidth;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
-        ),
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxContentWidth),
-              child: Column(
-                children: [
-                  // Skip button
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: TextButton(
-                        onPressed: _skip,
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppTheme.textTertiary,
-                        ),
-                        child: const Text(
-                          'Skip',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
+      backgroundColor: AppTheme.backgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxContentWidth),
+            child: Column(
+              children: [
+                // Skip button
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: TextButton(
+                      onPressed: _skip,
+                      child: Text(
+                        'Skip',
+                        style: TextStyle(
+                          color: AppTheme.textTertiary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                   ),
+                ),
 
-                  // Page content
-                  Expanded(
-                    child: PageView.builder(
-                      controller: _pageController,
-                      itemCount: _pages.length,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentPage = index;
-                        });
-                      },
-                      itemBuilder: (context, index) {
-                        return _buildPage(_pages[index]);
-                      },
+                // Page content
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _pages.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentPage = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return _buildPage(_pages[index]);
+                    },
+                  ),
+                ),
+
+                // Page indicators
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      _pages.length,
+                      (index) => _buildIndicator(index),
                     ),
                   ),
+                ),
 
-                  // Page indicators
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 24.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        _pages.length,
-                        (index) => _buildIndicator(index),
-                      ),
-                    ),
+                // Next/Start button
+                Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    24,
+                    0,
+                    24,
+                    _isDesktop ? 48 : 32,
                   ),
-
-                  // Next/Start button
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      24,
-                      0,
-                      24,
-                      _isDesktop ? 48 : 32,
-                    ),
-                    child: SizedBox(
-                      width: _isDesktop ? 200 : double.infinity,
-                      height: 56,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: AppTheme.primaryGradient,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primaryColor.withOpacity(0.4),
-                              blurRadius: 20,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
+                  child: SizedBox(
+                    width: _isDesktop ? 180 : double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _nextPage,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: ElevatedButton(
-                          onPressed: _nextPage,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            _currentPage == _pages.length - 1 ? 'GET STARTED' : 'NEXT',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
+                      ),
+                      child: Text(
+                        _currentPage == _pages.length - 1 ? 'GET STARTED' : 'NEXT',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -206,65 +177,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon with gradient background and glassmorphism
+          // Icon - Material style (like your "This Device" card icon)
           Container(
-            width: _isDesktop ? 160 : 150,
-            height: _isDesktop ? 160 : 150,
+            width: 120,
+            height: 120,
             decoration: BoxDecoration(
-              gradient: page.gradient,
-              borderRadius: BorderRadius.circular(40),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: page.gradient.colors.first.withOpacity(0.5),
-                  blurRadius: 40,
-                  offset: const Offset(0, 20),
-                ),
-                BoxShadow(
-                  color: page.gradient.colors.last.withOpacity(0.3),
-                  blurRadius: 60,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+              color: page.iconColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(24),
             ),
             child: Icon(
               page.icon,
-              size: _isDesktop ? 85 : 80,
-              color: Colors.white,
+              size: 56,
+              color: page.iconColor,
             ),
           ),
 
-          SizedBox(height: _isDesktop ? 56 : 48),
+          const SizedBox(height: 40),
 
-          // Title with gradient text
-          ShaderMask(
-            shaderCallback: (bounds) => page.gradient.createShader(
-              Rect.fromLTWH(0, 0, bounds.width, bounds.height),
-            ),
-            child: Text(
-              page.title,
-              style: TextStyle(
-                fontSize: _isDesktop ? 36 : 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 3,
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
-          // Description
+          // Title - Plain white
           Text(
-            page.description,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: _isDesktop ? 18 : 16,
-              color: AppTheme.textSecondary,
-              height: 1.6,
+            page.title,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+              letterSpacing: 1,
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Description - Gray
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              page.description,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppTheme.textSecondary,
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -276,19 +229,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     bool isActive = index == _currentPage;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(horizontal: 5),
-      width: isActive ? 32 : 10,
-      height: 10,
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: isActive ? 24 : 8,
+      height: 8,
       decoration: BoxDecoration(
-        gradient: isActive ? AppTheme.logoGradient : null,
-        color: isActive ? null : AppTheme.cardColor,
-        borderRadius: BorderRadius.circular(5),
-        border: isActive
-            ? null
-            : Border.all(
-                color: AppTheme.textTertiary.withOpacity(0.3),
-                width: 1,
-              ),
+        color: isActive ? AppTheme.primaryColor : AppTheme.cardColor,
+        borderRadius: BorderRadius.circular(4),
       ),
     );
   }
@@ -298,12 +244,12 @@ class OnboardingPage {
   final IconData icon;
   final String title;
   final String description;
-  final LinearGradient gradient;
+  final Color iconColor;
 
   OnboardingPage({
     required this.icon,
     required this.title,
     required this.description,
-    required this.gradient,
+    required this.iconColor,
   });
 }
