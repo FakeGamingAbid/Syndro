@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:uuid/uuid.dart';
 import '../theme/app_theme.dart';
 import '../../core/models/device.dart';
 import '../../core/models/transfer.dart';
@@ -23,6 +22,7 @@ class FilePickerScreen extends ConsumerStatefulWidget {
 class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
   final List<TransferItem> _selectedFiles = [];
   bool _isLoading = false;
+  bool _isSending = false;
 
   Future<void> _pickFiles() async {
     setState(() {
@@ -99,38 +99,77 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
   }
 
   Future<void> _sendFiles() async {
-    if (_selectedFiles.isEmpty) return;
+    if (_selectedFiles.isEmpty || _isSending) return;
+
+    setState(() {
+      _isSending = true;
+    });
 
     final currentDevice = ref.read(currentDeviceProvider);
     final transferService = ref.read(transferServiceProvider);
 
-    // Generate transfer ID
-    final transferId = const Uuid().v4();
-
-    // Store files before navigating
+    // Store files before sending
     final filesToSend = List<TransferItem>.from(_selectedFiles);
 
-    // Navigate to progress screen FIRST
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => TransferProgressScreen(
-          transferId: transferId,
-          remoteDevice: widget.recipientDevice,
-          isSender: true,
-          items: filesToSend,
-        ),
-      ),
-    );
-
-    // Then start the transfer
+    // Start the transfer and listen for the transfer ID
     try {
-      await transferService.sendFiles(
+      // Listen for the transfer to be created
+      Transfer? createdTransfer;
+      
+      final subscription = transferService.transferStream.listen((transfer) {
+        if (transfer.receiverId == widget.recipientDevice.id &&
+            transfer.items.length == filesToSend.length &&
+            createdTransfer == null) {
+          createdTransfer = transfer;
+        }
+      });
+
+      // Start sending (this creates the transfer with its own ID)
+      final sendFuture = transferService.sendFiles(
         sender: currentDevice,
         receiver: widget.recipientDevice,
         items: filesToSend,
       );
+
+      // Wait a moment for the transfer to be created
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      // Get the transfer from active transfers
+      final activeTransfers = transferService.activeTransfers;
+      final transfer = activeTransfers.isNotEmpty ? activeTransfers.last : null;
+
+      if (transfer != null && mounted) {
+        // Navigate to progress screen with the correct transfer ID
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => TransferProgressScreen(
+              transferId: transfer.id,
+              remoteDevice: widget.recipientDevice,
+              isSender: true,
+              items: filesToSend,
+            ),
+          ),
+        );
+      }
+
+      // Cancel subscription
+      await subscription.cancel();
+
+      // Wait for send to complete (in background)
+      await sendFuture;
     } catch (e) {
       debugPrint('Transfer error: $e');
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error starting transfer: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
     }
   }
 
@@ -258,7 +297,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                           TextButton.icon(
-                            onPressed: _pickFiles,
+                            onPressed: _isSending ? null : _pickFiles,
                             icon: const Icon(Icons.add),
                             label: const Text('Add More'),
                           ),
@@ -282,7 +321,9 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                               subtitle: Text(file.sizeFormatted),
                               trailing: IconButton(
                                 icon: const Icon(Icons.close),
-                                onPressed: () => _removeFile(index),
+                                onPressed: _isSending
+                                    ? null
+                                    : () => _removeFile(index),
                               ),
                             ),
                           );
@@ -319,9 +360,18 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
                               ],
                             ),
                             ElevatedButton.icon(
-                              onPressed: _sendFiles,
-                              icon: const Icon(Icons.send),
-                              label: const Text('Send'),
+                              onPressed: _isSending ? null : _sendFiles,
+                              icon: _isSending
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.send),
+                              label: Text(_isSending ? 'Starting...' : 'Send'),
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 32,
