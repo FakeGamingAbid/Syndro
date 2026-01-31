@@ -40,14 +40,91 @@ class SyndroApp extends ConsumerStatefulWidget {
   ConsumerState<SyndroApp> createState() => _SyndroAppState();
 }
 
-class _SyndroAppState extends ConsumerState<SyndroApp> {
+class _SyndroAppState extends ConsumerState<SyndroApp> with WidgetsBindingObserver {
   bool _isInitialized = false;
   String? _initError;
 
   @override
   void initState() {
     super.initState();
+    // Register app lifecycle observer
+    WidgetsBinding.instance.addObserver(this);
     _initializeServices();
+  }
+
+  @override
+  void dispose() {
+    // Unregister app lifecycle observer
+    WidgetsBinding.instance.removeObserver(this);
+    
+    // Cleanup services
+    _cleanupServices();
+    
+    debugPrint('🧹 SyndroApp disposed');
+    super.dispose();
+  }
+
+  /// Handle app lifecycle changes
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    switch (state) {
+      case AppLifecycleState.resumed:
+        debugPrint('📱 App resumed - refreshing services');
+        _onAppResumed();
+        break;
+      case AppLifecycleState.paused:
+        debugPrint('📱 App paused');
+        _onAppPaused();
+        break;
+      case AppLifecycleState.detached:
+        debugPrint('📱 App detached - cleaning up');
+        _cleanupServices();
+        break;
+      case AppLifecycleState.inactive:
+        debugPrint('📱 App inactive');
+        break;
+      case AppLifecycleState.hidden:
+        debugPrint('📱 App hidden');
+        break;
+    }
+  }
+
+  /// Called when app comes back to foreground
+  void _onAppResumed() {
+    try {
+      // Refresh device discovery when app resumes
+      final deviceDiscovery = ref.read(deviceDiscoveryServiceProvider);
+      if (deviceDiscovery.isInitialized) {
+        deviceDiscovery.refreshDevices();
+      }
+    } catch (e) {
+      debugPrint('Error on app resume: $e');
+    }
+  }
+
+  /// Called when app goes to background
+  void _onAppPaused() {
+    // Optional: Stop scanning when app is in background to save battery
+    // Uncomment if you want this behavior:
+    // try {
+    //   final deviceDiscovery = ref.read(deviceDiscoveryServiceProvider);
+    //   deviceDiscovery.stopScanning();
+    // } catch (e) {
+    //   debugPrint('Error on app pause: $e');
+    // }
+  }
+
+  /// Cleanup all services
+  void _cleanupServices() {
+    try {
+      // Services are disposed via Riverpod's onDispose
+      // This is called when the provider is no longer used
+      debugPrint('🧹 Services cleanup initiated');
+    } catch (e) {
+      debugPrint('Error during cleanup: $e');
+    }
   }
 
   Future<void> _initializeServices() async {
@@ -63,7 +140,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp> {
       ]);
 
       debugPrint('✅ Initialization complete');
-
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -104,6 +180,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp> {
   Future<void> _initTransferService() async {
     try {
       debugPrint('📤 Initializing transfer service...');
+
       // Get device info from discovery service
       final deviceDiscovery = ref.read(deviceDiscoveryServiceProvider);
       final currentDevice = deviceDiscovery.currentDevice;
@@ -123,6 +200,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp> {
           debugPrint('⚠️ Transfer service init timed out');
         },
       );
+
       debugPrint('✅ Transfer service initialized');
     } catch (e) {
       debugPrint('❌ Transfer service error: $e');
@@ -200,18 +278,18 @@ class _SyndroAppState extends ConsumerState<SyndroApp> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.2),
+                  color: const Color(0xFF682CA8).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(
                   Icons.share,
-                  color: Color(0xFF6366F1),
+                  color: Color(0xFF682CA8),
                   size: 48,
                 ),
               ),
               const SizedBox(height: 32),
               const CircularProgressIndicator(
-                color: Color(0xFF6366F1),
+                color: Color(0xFF682CA8),
                 strokeWidth: 3,
               ),
               const SizedBox(height: 24),
