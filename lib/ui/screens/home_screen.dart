@@ -451,10 +451,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             ),
 
             // QR Button - BIGGER SIZE
-            if (_isMobile())
               Positioned(
                 right: 20,
-                bottom: 110,  // Adjusted position for bigger nav bar
+                bottom: _isMobile() ? 110 : 20,  // Adjusted position for bigger nav bar
                 child: GestureDetector(
                   onTap: _showShareModeDialog,
                   child: Container(
