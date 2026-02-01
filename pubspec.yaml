@@ -1,6 +1,8 @@
 name: syndro
 description: A lightning-fast, privacy-first cross-platform file sharing platform
+
 publish_to: 'none'
+
 version: 0.1.0+1
 
 environment:
@@ -45,9 +47,6 @@ dependencies:
   sqflite: ^2.3.0
   sqflite_common_ffi: ^2.3.0+4
 
-  # Secure Storage for Trusted Devices
-  flutter_secure_storage: ^9.0.0
-
   # File Previews
   cached_network_image: ^3.3.0
 
@@ -65,18 +64,25 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  assets:
-    - assets/icons/
-    - assets/images/
 
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/icon/
+
+# App Icon Configuration
 flutter_launcher_icons:
-  android: "launcher_icon"
-  ios: false
-  image_path: "assets/icons/app_icon.png"
+  # Standard icon (for older Android, Windows, etc.)
+  android: "ic_launcher"
+  image_path: "assets/icon/app_icon.png"
   min_sdk_android: 21
-  adaptive_icon_background: "#1A1A2E"
-  adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+
+  # Adaptive icon for Android 8.0+ (separate foreground with padding)
+  adaptive_icon_background: "#0A0A0F"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+
+  # Windows
   windows:
     generate: true
-    image_path: "assets/icons/app_icon.png"
-    icon_size: 48
+    image_path: "assets/icon/app_icon.png"
+    icon_size: 256
