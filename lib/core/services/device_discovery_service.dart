@@ -7,16 +7,28 @@ import 'package:http/http.dart' as http;
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:uuid/uuid.dart';
 
+import '../database/database_helper.dart';
 import '../models/device.dart';
+import 'trusted_device_storage.dart';
 
+/// Enhanced Device Discovery Service with Trusted Device Persistence
+/// 
+/// This service now:
+/// - Loads trusted devices from secure storage on initialization
+/// - Persists trusted devices to both SQLite and secure storage
+/// - Merges discovered devices with trusted devices (preserving trust status)
+/// - Provides methods to trust/untrust devices
 class DeviceDiscoveryService {
   static const int _defaultPort = 8765;
   static const List<int> _scanPorts = [8765, 50500, 50050];
 
   final _uuid = const Uuid();
   final _networkInfo = NetworkInfo();
+  final _db = DatabaseHelper.instance;
+  final _secureStorage = TrustedDeviceStorage();
 
   final _deviceController = StreamController<List<Device>>.broadcast();
+  final _trustedDevicesController = StreamController<List<Device>>.broadcast();
   bool _hasEmitted = false;
 
   Device _currentDevice = Device(
@@ -32,7 +44,11 @@ class DeviceDiscoveryService {
   bool _isScanning = false;
   bool _isDisposed = false;
 
+  // Discovered devices (from network scan)
   final Map<String, Device> _discoveredDevices = {};
+  
+  // Trusted devices (loaded from persistent storage)
+  final Map<String, Device> _trustedDevices = {};
 
   Timer? _cleanupTimer;
   Timer? _scanTimer;
@@ -40,11 +56,14 @@ class DeviceDiscoveryService {
   String? _localIp;
   String? _subnet;
 
+  // ==================== Public API ====================
+
+  /// Stream of all discovered devices (online + offline trusted)
   Stream<List<Device>> get devicesStream {
     if (!_hasEmitted) {
       Future.microtask(() {
         if (!_isDisposed) {
-          _deviceController.add(_discoveredDevices.values.toList());
+          _emitDeviceList();
           _hasEmitted = true;
         }
       });
@@ -52,15 +71,35 @@ class DeviceDiscoveryService {
     return _deviceController.stream;
   }
 
+  /// Stream of only trusted devices
+  Stream<List<Device>> get trustedDevicesStream => _trustedDevicesController.stream;
+
   Device get currentDevice => _currentDevice;
-  List<Device> get discoveredDevices => _discoveredDevices.values.toList();
+  
+  /// All discovered devices (combines online discovered + offline trusted)
+  List<Device> get discoveredDevices => _getMergedDeviceList();
+  
+  /// Only trusted devices
+  List<Device> get trustedDevices => _trustedDevices.values.toList();
+  
+  /// Only online devices
+  List<Device> get onlineDevices => _discoveredDevices.values.where((d) => d.isOnline).toList();
+
   bool get isInitialized => _isInitialized;
   bool get isScanning => _isScanning;
+  
+  /// Number of trusted devices
+  int get trustedDeviceCount => _trustedDevices.length;
+
+  // ==================== Initialization ====================
 
   Future<void> initialize() async {
     if (_isInitialized) return;
 
     try {
+      // First, load trusted devices from persistent storage
+      await _loadTrustedDevices();
+
       final deviceId = _uuid.v4();
       final deviceName = await _getDeviceName();
       final platform = _getCurrentPlatform();
@@ -87,7 +126,7 @@ class DeviceDiscoveryService {
       );
 
       _isInitialized = true;
-      _deviceController.add([]);
+      _emitDeviceList();
       _hasEmitted = true;
 
       // Start background scanning
@@ -96,10 +135,138 @@ class DeviceDiscoveryService {
     } catch (e) {
       print('Error initializing device discovery: $e');
       _isInitialized = true;
-      _deviceController.add([]);
+      _emitDeviceList();
       _hasEmitted = true;
     }
   }
+
+  /// Load trusted devices from persistent storage
+  Future<void> _loadTrustedDevices() async {
+    try {
+      // Load from SQLite database
+      final dbDevices = await _db.getTrustedDevices();
+      
+      // Also load from secure storage (for credentials)
+      final secureDevices = await _secureStorage.getAllTrustedDevices();
+
+      // Merge devices (prefer secure storage data for trusted flag)
+      final deviceMap = <String, Device>{};
+      
+      for (final device in dbDevices) {
+        deviceMap[device.id] = device;
+      }
+      
+      for (final device in secureDevices) {
+        // If device exists in both, keep the one with more recent trust timestamp
+        final existing = deviceMap[device.id];
+        if (existing == null || 
+            (device.trustedAt != null && 
+             existing.trustedAt != null && 
+             device.trustedAt!.isAfter(existing.trustedAt!))) {
+          deviceMap[device.id] = device;
+        }
+      }
+
+      _trustedDevices.addAll(deviceMap);
+      
+      // Mark all as offline initially (will be updated by scan)
+      for (final entry in _trustedDevices.entries) {
+        _trustedDevices[entry.key] = entry.value.copyWith(isOnline: false);
+      }
+
+      print('Loaded ${_trustedDevices.length} trusted devices from storage');
+      _emitTrustedDeviceList();
+    } catch (e) {
+      print('Error loading trusted devices: $e');
+    }
+  }
+
+  // ==================== Trust Management ====================
+
+  /// Mark a device as trusted
+  Future<void> trustDevice(String deviceId) async {
+    // Find device in discovered or trusted list
+    Device? device = _discoveredDevices[deviceId] ?? _trustedDevices[deviceId];
+    
+    if (device == null) {
+      throw ArgumentError('Device not found: $deviceId');
+    }
+
+    // Mark as trusted
+    final trustedDevice = device.markTrusted();
+
+    // Update in-memory caches
+    if (_discoveredDevices.containsKey(deviceId)) {
+      _discoveredDevices[deviceId] = trustedDevice;
+    }
+    _trustedDevices[deviceId] = trustedDevice;
+
+    // Persist to storage
+    await _db.saveTrustedDevice(trustedDevice);
+    await _secureStorage.storeTrustedDevice(trustedDevice);
+
+    // Emit updates
+    _emitDeviceList();
+    _emitTrustedDeviceList();
+
+    print('Device trusted: ${trustedDevice.name} (${trustedDevice.id})');
+  }
+
+  /// Remove trust from a device
+  Future<void> untrustDevice(String deviceId) async {
+    final device = _trustedDevices[deviceId];
+    if (device == null) return;
+
+    // Mark as untrusted
+    final untrustedDevice = device.markUntrusted();
+
+    // Update in-memory caches
+    if (_discoveredDevices.containsKey(deviceId)) {
+      _discoveredDevices[deviceId] = untrustedDevice;
+    }
+    _trustedDevices.remove(deviceId);
+
+    // Remove from persistent storage
+    await _db.deleteTrustedDevice(deviceId);
+    await _secureStorage.removeTrustedDevice(deviceId);
+
+    // Emit updates
+    _emitDeviceList();
+    _emitTrustedDeviceList();
+
+    print('Device untrusted: ${device.name} (${device.id})');
+  }
+
+  /// Check if a device is trusted
+  bool isDeviceTrusted(String deviceId) {
+    return _trustedDevices.containsKey(deviceId) && 
+           _trustedDevices[deviceId]!.trusted;
+  }
+
+  /// Toggle trust status for a device
+  Future<void> toggleTrust(String deviceId) async {
+    if (isDeviceTrusted(deviceId)) {
+      await untrustDevice(deviceId);
+    } else {
+      await trustDevice(deviceId);
+    }
+  }
+
+  /// Set auto-accept transfers for a trusted device
+  Future<void> setAutoAcceptTransfers(String deviceId, bool autoAccept) async {
+    if (!isDeviceTrusted(deviceId)) {
+      throw ArgumentError('Cannot set auto-accept for untrusted device');
+    }
+
+    await _db.setAutoAcceptTransfers(deviceId, autoAccept);
+  }
+
+  /// Get auto-accept status for a device
+  Future<bool> getAutoAcceptTransfers(String deviceId) async {
+    return await _db.getAutoAcceptTransfers(deviceId);
+  }
+
+  // ==================== Device Discovery ====================
 
   DevicePlatform _getCurrentPlatform() {
     if (Platform.isAndroid) return DevicePlatform.android;
@@ -127,7 +294,6 @@ class DeviceDiscoveryService {
   /// Get Android device model name using MethodChannel
   Future<String> _getAndroidDeviceName() async {
     try {
-      // Try to get device info using platform channel
       const platform = MethodChannel('com.syndro.app/device_info');
       
       try {
@@ -136,24 +302,19 @@ class DeviceDiscoveryService {
           return deviceName;
         }
       } catch (e) {
-        // Platform channel not available, try alternative method
         print('Platform channel not available: $e');
       }
 
-      // Fallback: Try to read from system properties using shell
       try {
         final result = await Process.run('getprop', ['ro.product.model']);
         if (result.exitCode == 0) {
           final model = result.stdout.toString().trim();
-          if (model.isNotEmpty) {
-            return model;
-          }
+          if (model.isNotEmpty) return model;
         }
       } catch (e) {
         print('Could not get model from getprop: $e');
       }
 
-      // Fallback: Try to get manufacturer and model from build.prop
       try {
         final result = await Process.run('getprop', ['ro.product.manufacturer']);
         final result2 = await Process.run('getprop', ['ro.product.model']);
@@ -163,7 +324,6 @@ class DeviceDiscoveryService {
           final model = result2.stdout.toString().trim();
           
           if (manufacturer.isNotEmpty && model.isNotEmpty) {
-            // Capitalize first letter of manufacturer
             final capitalizedManufacturer = manufacturer[0].toUpperCase() + 
                 manufacturer.substring(1).toLowerCase();
             return '$capitalizedManufacturer $model';
@@ -175,7 +335,6 @@ class DeviceDiscoveryService {
         print('Could not get manufacturer/model: $e');
       }
 
-      // Final fallback
       return 'Android Device';
     } catch (e) {
       print('Error getting Android device name: $e');
@@ -185,19 +344,16 @@ class DeviceDiscoveryService {
 
   /// Get Windows computer name
   String _getWindowsDeviceName() {
-    // Try COMPUTERNAME first (most common)
     final computerName = Platform.environment['COMPUTERNAME'];
     if (computerName != null && computerName.isNotEmpty) {
       return computerName;
     }
 
-    // Try USERDOMAIN as fallback
     final userDomain = Platform.environment['USERDOMAIN'];
     if (userDomain != null && userDomain.isNotEmpty) {
       return userDomain;
     }
 
-    // Try USERNAME as last resort
     final userName = Platform.environment['USERNAME'];
     if (userName != null && userName.isNotEmpty) {
       return "$userName's PC";
@@ -208,26 +364,21 @@ class DeviceDiscoveryService {
 
   /// Get Linux hostname
   String _getLinuxDeviceName() {
-    // Try HOSTNAME first
     final hostname = Platform.environment['HOSTNAME'];
     if (hostname != null && hostname.isNotEmpty) {
       return hostname;
     }
 
-    // Try reading /etc/hostname
     try {
       final file = File('/etc/hostname');
       if (file.existsSync()) {
         final name = file.readAsStringSync().trim();
-        if (name.isNotEmpty) {
-          return name;
-        }
+        if (name.isNotEmpty) return name;
       }
     } catch (e) {
       print('Could not read /etc/hostname: $e');
     }
 
-    // Try USER environment variable
     final user = Platform.environment['USER'];
     if (user != null && user.isNotEmpty) {
       return "$user's Linux";
@@ -246,7 +397,6 @@ class DeviceDiscoveryService {
       print('Error getting WiFi IP: $e');
     }
 
-    // Fallback: try to get from network interfaces
     try {
       final interfaces = await NetworkInterface.list(
         type: InternetAddressType.IPv4,
@@ -267,7 +417,6 @@ class DeviceDiscoveryService {
   }
 
   /// Check if IP is a private network IP
-  /// Supports: 192.168.x.x, 10.x.x.x, 172.16.x.x - 172.31.x.x
   bool _isPrivateIP(String ip) {
     if (ip.isEmpty) return false;
 
@@ -278,16 +427,9 @@ class DeviceDiscoveryService {
       final a = int.parse(parts[0]);
       final b = int.parse(parts[1]);
 
-      // 10.0.0.0 - 10.255.255.255 (Class A private)
       if (a == 10) return true;
-
-      // 172.16.0.0 - 172.31.255.255 (Class B private)
       if (a == 172 && b >= 16 && b <= 31) return true;
-
-      // 192.168.0.0 - 192.168.255.255 (Class C private)
       if (a == 192 && b == 168) return true;
-
-      // 169.254.0.0 - 169.254.255.255 (Link-local)
       if (a == 169 && b == 254) return true;
 
       return false;
@@ -309,14 +451,12 @@ class DeviceDiscoveryService {
   void _startPeriodicScanning() {
     if (_isDisposed) return;
 
-    // Initial scan after short delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (!_isDisposed) {
         _performScan();
       }
     });
 
-    // Then scan every 5 seconds
     _scanTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!_isDisposed) {
         _performScan();
@@ -328,7 +468,6 @@ class DeviceDiscoveryService {
     if (_isScanning || _isDisposed) return;
 
     if (_localIp == null || _localIp == '0.0.0.0') {
-      // Try to get IP again
       _localIp = await _getLocalIpAddress();
       _subnet = _getSubnetFromIp(_localIp!);
 
@@ -349,13 +488,12 @@ class DeviceDiscoveryService {
     }
   }
 
-  /// Scan network for Syndro devices (supports all private networks)
+  /// Scan network for Syndro devices
   Future<void> _scanNetwork() async {
     if (_subnet == null || _isDisposed) return;
 
     final thisDevice = int.tryParse(_localIp!.split('.').last) ?? 0;
 
-    // Generate list of IPs to scan (1-254, excluding this device)
     final ipsToScan = <String>[];
     for (int i = 1; i <= 254; i++) {
       if (i != thisDevice) {
@@ -363,7 +501,6 @@ class DeviceDiscoveryService {
       }
     }
 
-    // Scan in parallel batches (to avoid too many concurrent connections)
     const batchSize = 50;
     for (int i = 0; i < ipsToScan.length; i += batchSize) {
       if (_isDisposed) return;
@@ -375,9 +512,8 @@ class DeviceDiscoveryService {
       );
     }
 
-    // Emit updated device list
     if (!_isDisposed) {
-      _deviceController.add(_discoveredDevices.values.toList());
+      _emitDeviceList();
     }
   }
 
@@ -387,7 +523,6 @@ class DeviceDiscoveryService {
 
     for (final port in _scanPorts) {
       try {
-        // First, quick TCP ping to check if port is open
         final socket = await Socket.connect(
           ip,
           port,
@@ -395,17 +530,36 @@ class DeviceDiscoveryService {
         );
         socket.destroy();
 
-        // Port is open, try to get device info
         final device = await _fetchDeviceInfo(ip, port);
         if (device != null && device.id != _currentDevice.id && !_isDisposed) {
-          _discoveredDevices[device.id] = device;
+          // Check if this device is trusted
+          final isTrusted = _trustedDevices.containsKey(device.id);
+          
+          // Merge with trusted device data if available
+          final mergedDevice = isTrusted
+              ? device.copyWith(
+                  trusted: true,
+                  trustedAt: _trustedDevices[device.id]!.trustedAt,
+                )
+              : device;
 
-          // Emit immediately when device found
-          _deviceController.add(_discoveredDevices.values.toList());
+          _discoveredDevices[device.id] = mergedDevice;
+
+          // If trusted, also update the trusted devices list with new IP
+          if (isTrusted) {
+            _trustedDevices[device.id] = mergedDevice;
+            // Update database with new IP/status
+            await _db.updateDeviceStatus(
+              device.id,
+              isOnline: true,
+              ipAddress: ip,
+              port: port,
+            );
+          }
         }
-        return; // Found on this port, no need to check other ports
+        return;
       } catch (e) {
-        // Port not open or device not responding, try next port
+        // Port not open, try next
       }
     }
   }
@@ -427,10 +581,11 @@ class DeviceDiscoveryService {
           ipAddress: ip,
           port: port,
           lastSeen: DateTime.now(),
+          trusted: false, // Will be set by _checkDevice if trusted
         );
       }
     } catch (e) {
-      // Device doesn't have syndro.json, might be a different app
+      // Device doesn't have syndro.json
     }
 
     return null;
@@ -448,12 +603,61 @@ class DeviceDiscoveryService {
     return DevicePlatform.unknown;
   }
 
+  // ==================== Device List Management ====================
+
+  /// Get merged list of all devices (online discovered + offline trusted)
+  List<Device> _getMergedDeviceList() {
+    final merged = <String, Device>{};
+
+    // Add all discovered devices (online)
+    for (final entry in _discoveredDevices.entries) {
+      merged[entry.key] = entry.value;
+    }
+
+    // Add trusted devices that aren't currently discovered (offline)
+    for (final entry in _trustedDevices.entries) {
+      if (!merged.containsKey(entry.key)) {
+        // Show as offline
+        merged[entry.key] = entry.value.copyWith(isOnline: false);
+      }
+    }
+
+    return merged.values.toList()
+      ..sort((a, b) {
+        // Sort by: online first, then trusted, then by name
+        if (a.isOnline != b.isOnline) {
+          return a.isOnline ? -1 : 1;
+        }
+        if (a.trusted != b.trusted) {
+          return a.trusted ? -1 : 1;
+        }
+        return a.name.compareTo(b.name);
+      });
+  }
+
+  void _emitDeviceList() {
+    if (!_isDisposed) {
+      _deviceController.add(_getMergedDeviceList());
+    }
+  }
+
+  void _emitTrustedDeviceList() {
+    if (!_isDisposed) {
+      _trustedDevicesController.add(_trustedDevices.values.toList());
+    }
+  }
+
+  // ==================== Cleanup & Refresh ====================
+
   Future<void> refreshDevices() async {
-    // Clear old devices and rescan
     _discoveredDevices.clear();
+    
+    // Reload trusted devices to get any updates
+    _trustedDevices.clear();
+    await _loadTrustedDevices();
 
     if (!_isDisposed) {
-      _deviceController.add([]);
+      _emitDeviceList();
     }
 
     await _performScan();
@@ -470,11 +674,18 @@ class DeviceDiscoveryService {
           .toList();
 
       for (final id in stale) {
-        _discoveredDevices.remove(id);
+        final device = _discoveredDevices.remove(id);
+        // If device was trusted, mark as offline in trusted list
+        if (device != null && device.trusted && _trustedDevices.containsKey(id)) {
+          _trustedDevices[id] = device.copyWith(isOnline: false);
+          // Update database
+          _db.updateDeviceStatus(id, isOnline: false);
+        }
       }
 
       if (stale.isNotEmpty && !_isDisposed) {
-        _deviceController.add(_discoveredDevices.values.toList());
+        _emitDeviceList();
+        _emitTrustedDeviceList();
       }
     });
   }
@@ -488,7 +699,7 @@ class DeviceDiscoveryService {
         isOnline: isOnline,
         lastSeen: DateTime.now(),
       );
-      _deviceController.add(_discoveredDevices.values.toList());
+      _emitDeviceList();
     }
   }
 
@@ -499,6 +710,9 @@ class DeviceDiscoveryService {
 
     if (!_deviceController.isClosed) {
       await _deviceController.close();
+    }
+    if (!_trustedDevicesController.isClosed) {
+      await _trustedDevicesController.close();
     }
   }
 }
