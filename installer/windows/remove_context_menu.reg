@@ -1,0 +1,9 @@
+Windows Registry Editor Version 5.00
+
+; =====================================================
+; Syndro - Remove Right-Click Context Menu
+; =====================================================
+
+[-HKEY_CURRENT_USER\Software\Classes\*\shell\SyndroSend]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\shell\SyndroSend]
+[-HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\SyndroSend]
