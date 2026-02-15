@@ -497,6 +497,7 @@ class DeviceDiscoveryService {
       eagerError: false,
     ).catchError((_) {
       // Normal - some/all ports may fail if device not found
+      return <bool>[]; // FIX: Must return a value
     });
   }
 
