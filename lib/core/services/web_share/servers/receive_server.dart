@@ -166,12 +166,22 @@ class ReceiveServer {
 
   /// Stop receiving and close server
   Future<void> stop() async {
-    _expirationTimer?.cancel();
-    _expirationTimer = null;
+    // FIX: Add try-catch for timer cancellation
+    try {
+      _expirationTimer?.cancel();
+      _expirationTimer = null;
+    } catch (e) {
+      print('Error cancelling expiration timer: $e');
+    }
 
-    if (_server != null) {
-      await _server!.close(force: true);
-      _server = null;
+    // FIX: Add try-catch for server closure
+    try {
+      if (_server != null) {
+        await _server!.close(force: true);
+        _server = null;
+      }
+    } catch (e) {
+      print('Error closing server: $e');
     }
 
     _shareUrl = null;
@@ -180,8 +190,22 @@ class ReceiveServer {
   /// Dispose resources
   Future<void> dispose() async {
     await stop();
-    await _pendingFilesManager.dispose();
-    await _receivedFilesController.close();
+    
+    // FIX: Add try-catch for pending files manager disposal
+    try {
+      await _pendingFilesManager.dispose();
+    } catch (e) {
+      print('Error disposing pending files manager: $e');
+    }
+    
+    // FIX: Check if controller is closed before closing
+    try {
+      if (!_receivedFilesController.isClosed) {
+        await _receivedFilesController.close();
+      }
+    } catch (e) {
+      print('Error closing received files controller: $e');
+    }
 
     // Clean up temp directory
     if (_tempDirectory != null) {
