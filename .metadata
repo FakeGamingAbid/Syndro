@@ -1,0 +1,30 @@
+# This file tracks properties of this Flutter project.
+# Used by Flutter tool to assess capabilities and perform upgrades etc.
+#
+# This file should be version controlled.
+
+version:
+  revision: "f6344b75dcf861e3dbcc34fe6b7e7bcb840ef6f1"
+  channel: "stable"
+
+project_type: app
+
+# Tracks metadata for the flutter migrate command
+migration:
+  platforms:
+    - platform: root
+      create_revision: f6344b75dcf861e3dbcc34fe6b7e7bcb840ef6f1
+      base_revision: f6344b75dcf861e3dbcc34fe6b7e7bcb840ef6f1
+    - platform: android
+      create_revision: f6344b75dcf861e3dbcc34fe6b7e7bcb840ef6f1
+      base_revision: f6344b75dcf861e3dbcc34fe6b7e7bcb840ef6f1
+    - platform: windows
+      create_revision: f6344b75dcf861e3dbcc34fe6b7e7bcb840ef6f1
+      base_revision: f6344b75dcf861e3dbcc34fe6b7e7bcb840ef6f1
+    - platform: linux
+      create_revision: f6344b75dcf861e3dbcc34fe6b7e7bcb840ef6f1
+      base_revision: f6344b75dcf861e3dbcc34fe6b7e7bcb840ef6f1
+
+  # User provided section
+
+  # List of Local Coverage Exclusions
