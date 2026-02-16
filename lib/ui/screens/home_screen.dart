@@ -63,23 +63,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _listenForIncomingRequests() {
+    // FIXED (Bug #1): Add try-catch to prevent subscription leak
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      _pendingRequestsSubscription =
-          ref.listenManual<AsyncValue<List<PendingTransferRequest>>>(
-        pendingTransferRequestsProvider,
-        (previous, next) {
-          if (!mounted || _isShowingRequestSheet) return;
-          
-          next.whenData((requests) {
-            // Check again after async operation
-            if (requests.isNotEmpty && mounted && !_isShowingRequestSheet) {
-              _showTransferRequestSheet(requests.first);
-            }
-          });
-        },
-      );
+      try {
+        _pendingRequestsSubscription =
+            ref.listenManual<AsyncValue<List<PendingTransferRequest>>>(
+          pendingTransferRequestsProvider,
+          (previous, next) {
+            if (!mounted || _isShowingRequestSheet) return;
+            
+            next.whenData((requests) {
+              // Check again after async operation
+              if (requests.isNotEmpty && mounted && !_isShowingRequestSheet) {
+                _showTransferRequestSheet(requests.first);
+              }
+            });
+          },
+        );
+      } catch (e) {
+        debugPrint('⚠️ Error creating pending requests subscription: $e');
+      }
     });
   }
 
@@ -89,82 +94,94 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
-    showModalBottomSheet(
-      context: context,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: Colors.transparent,
-      builder: (bottomSheetContext) {
-        return _TransferRequestSheetContent(
-          request: request,
-          onAccept: () async {
-            Navigator.of(bottomSheetContext).pop();
-            await Future.delayed(const Duration(milliseconds: 100));
-            if (!mounted) return;
-
-            try {
-              final transferService = ref.read(transferServiceProvider);
-              await transferService.approveTransfer(request.requestId);
-
+    try {
+      showModalBottomSheet(
+        context: context,
+        isDismissible: false,
+        enableDrag: false,
+        backgroundColor: Colors.transparent,
+        builder: (bottomSheetContext) {
+          return _TransferRequestSheetContent(
+            request: request,
+            onAccept: () async {
               if (!mounted) return;
-              scaffoldMessenger.showSnackBar(
-                const SnackBar(
-                  content: Text(HomeScreenStrings.transferAccepted),
-                  backgroundColor: AppTheme.successColor,
-                ),
-              );
-            } catch (e) {
-              debugPrint('Error accepting transfer: $e');
+              Navigator.of(bottomSheetContext).pop();
               if (!mounted) return;
-              scaffoldMessenger.showSnackBar(
-                SnackBar(
-                  content: Text(HomeScreenStrings.failedToAccept(e.toString())),
-                  backgroundColor: AppTheme.errorColor,
-                ),
-              );
-            }
-          },
-          onReject: () async {
-            Navigator.of(bottomSheetContext).pop();
-            await Future.delayed(const Duration(milliseconds: 100));
-            if (!mounted) return;
-
-            try {
-              final transferService = ref.read(transferServiceProvider);
-              transferService.rejectTransfer(request.requestId);
-
+              await Future.delayed(const Duration(milliseconds: 100));
               if (!mounted) return;
-              scaffoldMessenger.showSnackBar(
-                const SnackBar(
-                  content: Text(HomeScreenStrings.transferRejected),
-                  backgroundColor: AppTheme.warningColor,
-                ),
-              );
-            } catch (e) {
-              debugPrint('Error rejecting transfer: $e');
-            }
-          },
-        );
-      },
-    ).whenComplete(() {
-      if (!mounted) return;
-      setState(() => _isShowingRequestSheet = false);
 
-      try {
+              try {
+                final transferService = ref.read(transferServiceProvider);
+                await transferService.approveTransfer(request.requestId);
+
+                if (!mounted) return;
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(HomeScreenStrings.transferAccepted),
+                    backgroundColor: AppTheme.successColor,
+                  ),
+                );
+              } catch (e) {
+                debugPrint('Error accepting transfer: $e');
+                if (!mounted) return;
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text(HomeScreenStrings.failedToAccept(e.toString())),
+                    backgroundColor: AppTheme.errorColor,
+                  ),
+                );
+              }
+            },
+            onReject: () async {
+              if (!mounted) return;
+              Navigator.of(bottomSheetContext).pop();
+              if (!mounted) return;
+              await Future.delayed(const Duration(milliseconds: 100));
+              if (!mounted) return;
+
+              try {
+                final transferService = ref.read(transferServiceProvider);
+                transferService.rejectTransfer(request.requestId);
+
+                if (!mounted) return;
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(HomeScreenStrings.transferRejected),
+                    backgroundColor: AppTheme.warningColor,
+                  ),
+                );
+              } catch (e) {
+                debugPrint('Error rejecting transfer: $e');
+              }
+            },
+          );
+        },
+      ).whenComplete(() {
         if (!mounted) return;
-        final pendingRequests =
-            ref.read(transferServiceProvider).pendingRequests;
-        if (pendingRequests.isNotEmpty) {
-          Future.delayed(const Duration(milliseconds: 300), () {
-            if (mounted && !_isShowingRequestSheet) {
-              _showTransferRequestSheet(pendingRequests.first);
-            }
-          });
+        setState(() => _isShowingRequestSheet = false);
+
+        try {
+          if (!mounted) return;
+          final pendingRequests =
+              ref.read(transferServiceProvider).pendingRequests;
+          if (pendingRequests.isNotEmpty) {
+            Future.delayed(const Duration(milliseconds: 300), () {
+              if (mounted && !_isShowingRequestSheet) {
+                _showTransferRequestSheet(pendingRequests.first);
+              }
+            });
+          }
+        } catch (e) {
+          debugPrint('Error checking pending requests: $e');
         }
-      } catch (e) {
-        debugPrint('Error checking pending requests: $e');
+      });
+    } catch (e) {
+      debugPrint('⚠️ Error showing transfer request sheet: $e');
+      // FIXED (Bug #4): Reset flag if sheet fails to show
+      if (mounted) {
+        setState(() => _isShowingRequestSheet = false);
       }
-    });
+    }
   }
 
   Future<void> _refreshDevices() async {

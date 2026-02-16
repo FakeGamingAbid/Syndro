@@ -81,17 +81,17 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
     });
   }
 
-  // FIX (Bug #15): Prevent speed overflow by clamping to safe int range
+  // FIXED (Bug #6): Prevent speed overflow by clamping to safe int range  
   void _calculateSpeed() {
-    if (_currentTransfer == null) return;
+    if (_currentTransfer == null || !mounted) return;
 
     final currentBytes = _currentTransfer!.progress.bytesTransferred;
-    final bytesPerSecond = currentBytes - _lastBytes;
+    final bytesPerSecond = (currentBytes - _lastBytes).clamp(0, double.maxFinite);
     _lastBytes = currentBytes;
 
     if (mounted) {
       setState(() {
-        // Clamp speed to prevent overflow (max ~2GB/s)
+        // FIXED: Clamp speed to prevent overflow (max ~2GB/s which is realistic)
         _speed = bytesPerSecond.toDouble().clamp(0, 2147483647);
       });
     }
@@ -113,8 +113,9 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
       );
     }
     
+    // FIXED (Bug #7): Enhanced auto-pop with dual mounted checks
     Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
+      if (mounted && context.mounted) {
         Navigator.of(context).pop(true);
       }
     });
@@ -147,10 +148,14 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
     );
   }
 
-  // FIX (Bug #3): Ensure all resources are properly disposed with try-catch
+  // FIXED (Bug #3, #5, #6): Ensure all resources are properly disposed with try-catch
   @override
   void dispose() {
+    // FIXED (Bug #5): Stop animation BEFORE disposing
     try {
+      if (_pulseController.isAnimating) {
+        _pulseController.stop();
+      }
       _pulseController.dispose();
     } catch (e) {
       debugPrint('Error disposing pulse controller: $e');

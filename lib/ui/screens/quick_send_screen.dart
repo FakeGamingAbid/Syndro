@@ -26,9 +26,31 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
   @override
   void initState() {
     super.initState();
-    // Start device discovery
+    // FIXED (Bug #11): Add error handling for device discovery
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(deviceDiscoveryProvider.notifier).startDiscovery();
+      if (mounted) {
+        try {
+          ref.read(deviceDiscoveryProvider.notifier).startDiscovery();
+        } catch (e) {
+          debugPrint('⚠️ Error starting discovery: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error starting device discovery: $e'),
+                backgroundColor: AppTheme.errorColor,
+                behavior: SnackBarBehavior.floating,
+                action: SnackBarAction(
+                  label: 'Retry',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    ref.read(deviceDiscoveryProvider.notifier).startDiscovery();
+                  },
+                ),
+              ),
+            );
+          }
+        }
+      }
     });
   }
 

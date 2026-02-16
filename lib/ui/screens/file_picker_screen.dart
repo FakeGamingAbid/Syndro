@@ -61,13 +61,24 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
 
   @override
   void dispose() {
-    // FIX (Bug #16): Stop animation before disposing controller
-    if (_animationController.isAnimating) {
-      _animationController.stop();
+    // FIXED (Bug #9 & #10): Wrap ALL cleanup in try-catch blocks
+    try {
+      // FIXED (Bug #10): Stop animation before disposing controller
+      if (_animationController.isAnimating) {
+        _animationController.stop();
+      }
+      _animationController.dispose();
+    } catch (e) {
+      debugPrint('Error disposing animation controller: $e');
     }
-    _animationController.dispose();
-    _transferSubscription?.cancel();
-    _transferSubscription = null;
+    
+    try {
+      _transferSubscription?.cancel();
+      _transferSubscription = null;
+    } catch (e) {
+      debugPrint('Error cancelling transfer subscription: $e');
+    }
+    
     super.dispose();
   }
 

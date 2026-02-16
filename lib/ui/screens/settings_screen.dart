@@ -1,4 +1,6 @@
- import 'package:flutter/material.dart';
+ import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -98,8 +100,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 16),
             TextField(
               controller: controller,
-              autofocus: true,
+              autofocus: !Platform.isAndroid, // FIXED (Bug #14): Disable on Android to prevent keyboard trap
               maxLength: 30,
+              textInputAction: TextInputAction.done, // FIXED (Bug #13): Add text input action
               inputFormatters: [
                 FilteringTextInputFormatter.deny(RegExp(r'[<>:"/\\|?*]')),
               ],
@@ -115,7 +118,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onSubmitted: (_) => _saveNickname(dialogContext, controller.text),
+              onSubmitted: (_) {
+                // FIXED (Bug #13): Dismiss keyboard on submit
+                FocusScope.of(dialogContext).unfocus();
+                _saveNickname(dialogContext, controller.text);
+              },
             ),
             const SizedBox(height: 8),
             Text(
@@ -157,7 +164,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         ],
       ),
-    );
+    ).whenComplete(() {
+      // FIXED (Bug #12): Dispose controller when dialog closes
+      controller.dispose();
+    });
   }
 
   Future<void> _saveNickname(
