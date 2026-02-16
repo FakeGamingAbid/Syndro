@@ -155,28 +155,8 @@ class EncryptionService {
 
     // FIX (Bug #2): Generate nonce with bounded circular buffer to prevent memory leak
     List<int> nonce;
-    String nonceHex;
-    int attempts = 0;
-    const maxAttempts = 10;
-
-    do {
-      nonce = _aesGcm.newNonce();
-      nonceHex = _bytesToHex(Uint8List.fromList(nonce));
-      attempts++;
-
-      if (attempts > maxAttempts) {
-        throw EncryptionException(
-            'Failed to generate unique nonce after $maxAttempts attempts');
-      }
-    } while (_usedNonces.contains(nonceHex));
-
-    // Use circular buffer to prevent unbounded growth
-    // Use a Set for O(1) lookup to track active nonces
-    final activeNonces = <String>{};
     
-    // Keep track of which slots are filled
-    final isSlotFilled = List<bool>.filled(_maxNonceCache, false);
-
+    // Use a Set for O(1) lookup to track active nonces in current session
     String nonceHex;
     int attempts = 0;
     const maxAttempts = 10;
@@ -190,13 +170,19 @@ class EncryptionService {
         throw EncryptionException(
             'Failed to generate unique nonce after $maxAttempts attempts');
       }
-    } while (activeNonces.contains(nonceHex));
+    } while (_activeNonces.contains(nonceHex));
 
-    // Add to active set and mark slot as filled
-    activeNonces.add(nonceHex);
-    isSlotFilled[_nonceInsertIndex] = true;
-    _usedNonces[_nonceInsertIndex] = nonceHex;
-    _nonceInsertIndex = (_nonceInsertIndex + 1) % _maxNonceCache;
+    // Add to active set for collision detection
+    _activeNonces.add(nonceHex);
+
+    // Use circular buffer to prevent unbounded memory growth
+    if (_usedNonces.length < _maxNonceCache) {
+      _usedNonces.add(nonceHex);
+    } else {
+      // Overwrite oldest nonce in circular fashion
+      _usedNonces[_nonceInsertIndex] = nonceHex;
+      _nonceInsertIndex = (_nonceInsertIndex + 1) % _maxNonceCache;
+    }
 
     _nonceCount++;
 

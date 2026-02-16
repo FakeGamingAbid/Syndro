@@ -28,6 +28,7 @@ class DeviceDiscoveryService {
 
   RawDatagramSocket? _udpSocket;
   Timer? _udpBroadcastTimer;
+  HttpServer? _server;
 
   bool _hasEmitted = false;
 

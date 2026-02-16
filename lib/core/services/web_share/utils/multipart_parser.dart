@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
+
 /// Represents a single part from multipart form data
 class MultipartPart {
   final String? filename;
