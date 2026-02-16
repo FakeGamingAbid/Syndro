@@ -48,6 +48,10 @@ class _DropZoneWidgetState extends State<DropZoneWidget>
 
   @override
   void dispose() {
+    // FIXED (Bug #21): Stop animation before disposing
+    if (_animationController.isAnimating) {
+      _animationController.stop();
+    }
     _animationController.dispose();
     super.dispose();
   }
@@ -96,17 +100,21 @@ class _DropZoneWidgetState extends State<DropZoneWidget>
       widget.onFilesDropped(items);
     }
 
-    setState(() => _isDragging = false);
-    _animationController.reverse();
+    // FIXED (Bug #23): Add mounted check before setState
+    if (mounted) {
+      setState(() => _isDragging = false);
+      _animationController.reverse();
+    }
   }
 
   void _handleDragEntered(DropEventDetails details) {
-    if (!widget.enabled) return;
+    if (!widget.enabled || !mounted) return;
     setState(() => _isDragging = true);
     _animationController.forward();
   }
 
   void _handleDragExited(DropEventDetails details) {
+    if (!mounted) return;
     setState(() => _isDragging = false);
     _animationController.reverse();
   }
@@ -234,6 +242,10 @@ class _EmptyDropZoneState extends State<EmptyDropZone>
 
   @override
   void dispose() {
+    // FIXED (Bug #21): Stop repeating animation before disposing
+    if (_pulseController.isAnimating) {
+      _pulseController.stop();
+    }
     _pulseController.dispose();
     super.dispose();
   }
@@ -279,7 +291,10 @@ class _EmptyDropZoneState extends State<EmptyDropZone>
       widget.onFilesDropped(items);
     }
 
-    setState(() => _isDragging = false);
+    // FIXED (Bug #23): Add mounted check before setState
+    if (mounted) {
+      setState(() => _isDragging = false);
+    }
   }
 
   @override
@@ -374,8 +389,12 @@ class _EmptyDropZoneState extends State<EmptyDropZone>
     if (isDesktop) {
       return DropTarget(
         onDragDone: _handleDrop,
-        onDragEntered: (_) => setState(() => _isDragging = true),
-        onDragExited: (_) => setState(() => _isDragging = false),
+        onDragEntered: (_) {
+          if (mounted) setState(() => _isDragging = true);
+        },
+        onDragExited: (_) {
+          if (mounted) setState(() => _isDragging = false);
+        },
         child: content,
       );
     }
