@@ -1,4 +1,4 @@
-import 'dart:async' show Completer, FutureOr, StreamController;
+import 'dart:async' show Completer, FutureOr, StreamController, TimeoutException;
 import 'dart:convert';
 import 'dart:io';
 
@@ -12,6 +12,8 @@ import 'chunk_writer_service.dart';
 import '../../models/device.dart';
 
 /// Parallel transfer service for high-speed file transfers
+/// 
+/// FIXED: Proper resource cleanup, error handling, and timeout management
 class ParallelTransferService {
   final ParallelConfig config;
   final ChunkWriterManager _writerManager = ChunkWriterManager();
@@ -136,8 +138,15 @@ class ParallelTransferService {
       );
 
       debugPrint('✅ Parallel transfer complete: $fileName');
-    } catch (e) {
+    } on SocketException catch (e) {
+      debugPrint('❌ Network error during parallel transfer: $e');
+      rethrow;
+    } on TimeoutException catch (e) {
+      debugPrint('❌ Timeout during parallel transfer: $e');
+      rethrow;
+    } catch (e, stackTrace) {
       debugPrint('❌ Parallel transfer failed: $e');
+      debugPrint('Stack trace: $stackTrace');
       rethrow;
     } finally {
       await _transfersLock.synchronized(() async {
@@ -173,9 +182,10 @@ class ParallelTransferService {
     debugPrint(
         '🔗 Connection $connectionId: Uploading ${chunks.length} chunks');
 
-    final raf = await file.open(mode: FileMode.read);
-
+    RandomAccessFile? raf;
     try {
+      raf = await file.open(mode: FileMode.read);
+
       for (final chunk in chunks) {
         if (state.isCancelled || _isDisposed) {
           debugPrint('🚫 Connection $connectionId: Transfer cancelled');
@@ -211,8 +221,16 @@ class ParallelTransferService {
       }
 
       debugPrint('✅ Connection $connectionId: Complete');
+    } on FileSystemException catch (e) {
+      debugPrint('⚠️ File system error in connection $connectionId: $e');
+      rethrow;
     } finally {
-      await raf.close();
+      // FIXED: Ensure file is always closed
+      try {
+        await raf?.close();
+      } catch (e) {
+        debugPrint('⚠️ Error closing file in connection $connectionId: $e');
+      }
     }
   }
 
@@ -244,6 +262,20 @@ class ParallelTransferService {
           connectionId: connectionId,
         );
         return;
+      } on SocketException catch (e) {
+        lastError = e;
+        debugPrint(
+            '⚠️ Network error uploading chunk $chunkIndex (attempt ${attempt + 1}): $e');
+        if (attempt < maxRetries - 1) {
+          await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+        }
+      } on TimeoutException catch (e) {
+        lastError = e;
+        debugPrint(
+            '⚠️ Timeout uploading chunk $chunkIndex (attempt ${attempt + 1}): $e');
+        if (attempt < maxRetries - 1) {
+          await Future.delayed(Duration(milliseconds: 1000 * (attempt + 1)));
+        }
       } catch (e) {
         lastError = e is Exception ? e : Exception(e.toString());
         debugPrint(
@@ -289,10 +321,15 @@ class ParallelTransferService {
           },
           body: chunkData,
         )
-        .timeout(const Duration(seconds: 60));
+        .timeout(
+          const Duration(seconds: 60),
+          onTimeout: () {
+            throw TimeoutException('Chunk upload timed out after 60 seconds');
+          },
+        );
 
     if (response.statusCode != 200) {
-      throw Exception(
+      throw HttpException(
           'Chunk upload failed: ${response.statusCode} ${response.body}');
     }
   }
@@ -330,13 +367,24 @@ class ParallelTransferService {
               'encrypted': encrypted,
             }),
           )
-          .timeout(const Duration(seconds: 10));
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw TimeoutException('Initiation timed out after 10 seconds');
+            },
+          );
 
       if (response.statusCode == 200) {
         return {'success': true, ...jsonDecode(response.body)};
       } else {
         return {'success': false, 'error': response.body};
       }
+    } on SocketException catch (e) {
+      return {'success': false, 'error': 'Network error: $e'};
+    } on TimeoutException catch (e) {
+      return {'success': false, 'error': 'Request timeout: $e'};
+    } on FormatException catch (e) {
+      return {'success': false, 'error': 'Invalid response format: $e'};
     } catch (e) {
       return {'success': false, 'error': e.toString()};
     }
@@ -350,16 +398,26 @@ class ParallelTransferService {
     final url = Uri.parse(
         'http://${receiver.ipAddress}:${receiver.port}/transfer/parallel/complete');
 
-    await http
-        .post(
-          url,
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'transferId': transferId,
-            'fileHash': fileHash,
-          }),
-        )
-        .timeout(const Duration(seconds: 10));
+    try {
+      await http
+          .post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'transferId': transferId,
+              'fileHash': fileHash,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw TimeoutException('Completion notification timed out');
+            },
+          );
+    } catch (e) {
+      debugPrint('⚠️ Failed to notify transfer completion: $e');
+      // Don't rethrow - transfer is already complete, notification is optional
+    }
   }
 
   Future<Uint8List> _encryptChunk(
@@ -390,7 +448,7 @@ class ParallelTransferService {
   Future<Uint8List> decryptChunk(
       Uint8List encryptedData, SecretKey secretKey) async {
     if (encryptedData.length < 28) {
-      throw Exception('Data too small to decrypt');
+      throw ArgumentError('Data too small to decrypt: ${encryptedData.length} bytes (minimum 28)');
     }
 
     final nonce = encryptedData.sublist(0, 12);
@@ -403,25 +461,33 @@ class ParallelTransferService {
       mac: Mac(mac),
     );
 
-    final plaintext = await _aesGcm.decrypt(
-      secretBox,
-      secretKey: secretKey,
-    );
+    try {
+      final plaintext = await _aesGcm.decrypt(
+        secretBox,
+        secretKey: secretKey,
+      );
 
-    return Uint8List.fromList(plaintext);
+      return Uint8List.fromList(plaintext);
+    } catch (e) {
+      throw Exception('Decryption failed: Authentication error - $e');
+    }
   }
 
   void _emitProgress(ParallelTransferState state) {
     if (!_progressController.isClosed && !_isDisposed) {
-      _progressController.add(ParallelProgress(
-        transferId: state.transferId,
-        fileName: state.fileName,
-        bytesSent: state.bytesSent,
-        totalBytes: state.fileSize,
-        chunksSent: state.chunksSent,
-        totalChunks: state.totalChunks,
-        percentage: state.percentage,
-      ));
+      try {
+        _progressController.add(ParallelProgress(
+          transferId: state.transferId,
+          fileName: state.fileName,
+          bytesSent: state.bytesSent,
+          totalBytes: state.fileSize,
+          chunksSent: state.chunksSent,
+          totalChunks: state.totalChunks,
+          percentage: state.percentage,
+        ));
+      } catch (e) {
+        debugPrint('⚠️ Error emitting progress: $e');
+      }
     }
   }
 
@@ -435,28 +501,57 @@ class ParallelTransferService {
 
   ChunkWriterManager get writerManager => _writerManager;
 
+  // FIXED: Comprehensive disposal with proper error handling
   Future<void> dispose() async {
+    if (_isDisposed) return;
     _isDisposed = true;
 
+    debugPrint('🧹 Disposing ParallelTransferService...');
+
     // Cancel all active transfers first to unblock any pending lock waiters
-    for (final state in _activeTransfers.values) {
-      state.cancel();
+    try {
+      for (final state in _activeTransfers.values) {
+        state.cancel();
+      }
+      _activeTransfers.clear();
+    } catch (e) {
+      debugPrint('⚠️ Error cancelling active transfers: $e');
     }
-    _activeTransfers.clear();
 
-    // FIX (Bug #21): Dispose the transfer lock so any pending waiters are released
-    _transfersLock.dispose();
+    // Dispose the transfer lock so any pending waiters are released
+    try {
+      _transfersLock.dispose();
+    } catch (e) {
+      debugPrint('⚠️ Error disposing transfer lock: $e');
+    }
 
+    // FIXED: Close HTTP clients with error handling
     for (final client in _clientPool) {
-      client.close();
+      try {
+        client.close();
+      } catch (e) {
+        debugPrint('⚠️ Error closing HTTP client: $e');
+      }
     }
     _clientPool.clear();
 
-    await _writerManager.closeAll();
-
-    if (!_progressController.isClosed) {
-      await _progressController.close();
+    // FIXED: Close writer manager with error handling
+    try {
+      await _writerManager.closeAll();
+    } catch (e) {
+      debugPrint('⚠️ Error closing writer manager: $e');
     }
+
+    // FIXED: Close progress controller with error handling
+    try {
+      if (!_progressController.isClosed) {
+        await _progressController.close();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error closing progress controller: $e');
+    }
+
+    debugPrint('✅ ParallelTransferService disposed');
   }
 
   String _formatBytes(int bytes) {
