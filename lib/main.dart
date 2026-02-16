@@ -52,7 +52,6 @@ void main(List<String> args) async {
 
   // Initialize window manager for desktop
   if (Platform.isWindows || Platform.isLinux) {
-    // FIX: Wrap in try-catch to handle initialization failures gracefully
     try {
       await windowManager.ensureInitialized();
 
@@ -120,8 +119,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     with WidgetsBindingObserver, WindowListener {
   bool _initialized = false;
   String? _initError;
-
-  // FIX: Track if we've added window listener
   bool _windowListenerAdded = false;
 
   @override
@@ -131,7 +128,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
 
     // Add window listener for desktop
     if (Platform.isWindows || Platform.isLinux) {
-      // FIX: Wrap in try-catch in case window manager isn't available
       try {
         windowManager.addListener(this);
         _windowListenerAdded = true;
@@ -147,7 +143,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
 
-    // FIX: Only remove listener if we added it
+    // Only remove listener if we added it
     if (_windowListenerAdded) {
       try {
         windowManager.removeListener(this);
@@ -219,19 +215,29 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
 
   @override
   void onWindowClose() async {
-    // FIX: Wrap in try-catch
     try {
       final isPreventClose = await windowManager.isPreventClose();
 
       if (isPreventClose && SystemTrayService.isInitialized) {
         await SystemTrayService.minimizeToTray();
       } else {
+        // FIXED: Properly dispose resources before exiting
+        debugPrint('🧹 Cleaning up resources before exit...');
+        
+        // Dispose system tray
+        await SystemTrayService.dispose();
+        
+        // Give services time to cleanup
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        // Now destroy window
         await windowManager.destroy();
       }
     } catch (e) {
       debugPrint('⚠️ Error handling window close: $e');
-      // FIX: Use proper Flutter shutdown instead of exit(0)
-      SystemNavigator.pop();
+      // FIXED: Use proper exit instead of SystemNavigator.pop()
+      // SystemNavigator.pop() doesn't cleanup resources properly on desktop
+      exit(0);
     }
   }
 
@@ -315,7 +321,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     }
 
     // Show error if initialization failed critically
-    // FIX: Changed condition - show error screen if there's an error
     if (_initError != null) {
       return Scaffold(
         body: Container(
