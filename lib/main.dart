@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -14,6 +15,7 @@ import 'core/services/share_intent_service.dart';
 import 'ui/screens/main_navigation_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/quick_send_screen.dart';
+import 'ui/screens/browser_share_screen.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/widgets/share_intent_dialog.dart';
 
@@ -467,31 +469,119 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     );
   }
 
-  void _handleAppToAppShare() {
-    // Convert SharedFile to file paths and show QuickSendScreen
-    // For now, we'll navigate to the file picker with pre-selected files
-    // TODO: Implement actual file handling from URIs
+  void _handleAppToAppShare() async {
     debugPrint('App to App share selected with ${_sharedFilesFromIntent?.length ?? 0} files');
     
+    if (_sharedFilesFromIntent == null || _sharedFilesFromIntent!.isEmpty) {
+      setState(() {
+        _hasShareIntent = false;
+      });
+      return;
+    }
+
+    // Copy files from content URIs to app storage
+    final copiedPaths = await _copySharedFilesToAppStorage(_sharedFilesFromIntent!);
+    
+    if (copiedPaths.isEmpty) {
+      debugPrint('Failed to copy shared files');
+      setState(() {
+        _hasShareIntent = false;
+      });
+      ShareIntentService().clearSharedFiles();
+      return;
+    }
+
+    // Set the files for QuickSendScreen
+    try {
+      await ref.read(incomingFilesProvider.notifier).setFilesFromPaths(copiedPaths);
+    } catch (e) {
+      debugPrint('Error setting incoming files: $e');
+    }
+
     setState(() {
       _hasShareIntent = false;
     });
 
-    // Navigate to main screen which will show the file picker
-    // The files from share intent need to be copied to app storage first
-    // For now, clear the share intent
+    // Clear the share intent
     ShareIntentService().clearSharedFiles();
+    
+    // Navigate to main screen - the incomingFilesProvider will trigger QuickSendScreen
   }
 
-  void _handleBrowserShare() {
+  void _handleBrowserShare() async {
     debugPrint('Browser share selected with ${_sharedFilesFromIntent?.length ?? 0} files');
     
+    if (_sharedFilesFromIntent == null || _sharedFilesFromIntent!.isEmpty) {
+      setState(() {
+        _hasShareIntent = false;
+      });
+      return;
+    }
+
+    // Copy files from content URIs to app storage
+    final copiedPaths = await _copySharedFilesToAppStorage(_sharedFilesFromIntent!);
+    
+    if (copiedPaths.isEmpty) {
+      debugPrint('Failed to copy shared files for browser share');
+      setState(() {
+        _hasShareIntent = false;
+      });
+      ShareIntentService().clearSharedFiles();
+      return;
+    }
+
     setState(() {
       _hasShareIntent = false;
     });
 
-    // Navigate to browser share screen
-    // TODO: Implement browser share with shared files
+    // Clear the share intent
     ShareIntentService().clearSharedFiles();
+    
+    // Navigate to BrowserShareScreen with the copied files
+    // TODO: Implement passing files to browser share screen
+  }
+
+  Future<List<String>> _copySharedFilesToAppStorage(List<SharedFile> sharedFiles) async {
+    final List<String> copiedPaths = [];
+    
+    // Create a temporary directory for shared files
+    final tempDir = Directory.systemTemp.createTempSync('syndro_share_');
+    
+    for (final sharedFile in sharedFiles) {
+      try {
+        // For Android content URIs, we need to use platform channel to copy
+        if (Platform.isAndroid && sharedFile.uri.startsWith('content://')) {
+          final copiedPath = await _copyContentUriToFile(sharedFile.uri, tempDir.path, sharedFile.name);
+          if (copiedPath != null) {
+            copiedPaths.add(copiedPath);
+          }
+        } else if (sharedFile.uri.startsWith('file://')) {
+          // Direct file path
+          final filePath = sharedFile.uri.replaceFirst('file://', '');
+          if (File(filePath).existsSync()) {
+            copiedPaths.add(filePath);
+          }
+        }
+      } catch (e) {
+        debugPrint('Error copying file ${sharedFile.name}: $e');
+      }
+    }
+    
+    return copiedPaths;
+  }
+
+  Future<String?> _copyContentUriToFile(String contentUri, String tempDir, String? fileName) async {
+    try {
+      const channel = MethodChannel('com.syndro.app/share_intent');
+      final result = await channel.invokeMethod<String>('copyContentUri', {
+        'uri': contentUri,
+        'tempDir': tempDir,
+        'fileName': fileName,
+      });
+      return result;
+    } catch (e) {
+      debugPrint('Error copying content URI: $e');
+      return null;
+    }
   }
 }

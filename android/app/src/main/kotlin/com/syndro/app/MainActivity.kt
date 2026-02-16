@@ -163,6 +163,17 @@ class MainActivity : FlutterActivity() {
                         pendingShareIntent = null
                         result.success(null)
                     }
+                    "copyContentUri" -> {
+                        val uri = call.argument<String>("uri")
+                        val tempDir = call.argument<String>("tempDir")
+                        val fileName = call.argument<String>("fileName")
+                        if (uri != null && tempDir != null) {
+                            val copiedPath = copyContentUriToFile(uri, tempDir, fileName)
+                            result.success(copiedPath)
+                        } else {
+                            result.error("INVALID_ARGUMENTS", "uri and tempDir are required", null)
+                        }
+                    }
                     else -> {
                         result.notImplemented()
                     }
@@ -313,6 +324,27 @@ class MainActivity : FlutterActivity() {
             }
         } catch (e: Exception) {
             uri.lastPathSegment
+        }
+    }
+
+    private fun copyContentUriToFile(contentUri: String, tempDir: String, fileName: String?): String? {
+        return try {
+            val uri = android.net.Uri.parse(contentUri)
+            val inputStream = contentResolver.openInputStream(uri) ?: return null
+            
+            val name = fileName ?: getFileName(uri) ?: "shared_file"
+            val outputFile = java.io.File(tempDir, name)
+            
+            inputStream.use { input ->
+                outputFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            
+            outputFile.absolutePath
+        } catch (e: Exception) {
+            debugPrint("Error copying content URI: $e")
+            null
         }
     }
 }
