@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
@@ -106,7 +107,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
 
       if (await filePickerDir.exists()) {
         await filePickerDir.delete(recursive: true);
-        print('✅ FilePicker cache cleared: ${filePickerDir.path}');
+        debugPrint('✅ FilePicker cache cleared: ${filePickerDir.path}');
       }
 
       // Method 3: Also clear any file_picker related folders
@@ -114,11 +115,11 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       for (final entity in cacheContents) {
         if (entity is Directory && entity.path.contains('file_picker')) {
           await entity.delete(recursive: true);
-          print('✅ Cleared: ${entity.path}');
+          debugPrint('✅ Cleared: ${entity.path}');
         }
       }
     } catch (e) {
-      print('Error clearing FilePicker cache: $e');
+      debugPrint('Error clearing FilePicker cache: $e');
     }
   }
 

@@ -190,18 +190,19 @@ lib/
 
 ### 🔮 Future Plans
 - [ ] WebRTC for internet transfers (beyond local network)
-- [ ] End-to-end encryption (AES-256-GCM already implemented)
 - [ ] Multi-file batch progress tracking
 - [ ] Transfer scheduling
 - [ ] Custom save locations per transfer
-- [ ] Parallel chunk transfers for faster speeds
 
-### 🐛 Recent Fixes (Feb 2025)
+### 🐛 Recent Fixes (Feb 2026)
 - [x] Fixed duplicate transfer request issue
 - [x] Improved connection speed (4x faster approval polling)
 - [x] Fixed retry logic (4.7x faster reconnection)
 - [x] Fixed Android device name detection
 - [x] Optimized transfer performance
+- [x] Fixed encryption nonce tracking
+- [x] Improved path validation security
+- [x] Added proper async disposal patterns
 
 ---
 

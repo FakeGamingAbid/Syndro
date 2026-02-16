@@ -128,7 +128,7 @@ class ShareServer {
         } catch (e) {
           port++;
           if (attempt == 9) {
-            print('Failed to bind to any port');
+            debugPrint('Failed to bind to any port');
             return null;
           }
         }
@@ -139,7 +139,7 @@ class ShareServer {
       final localIp = await NetworkUtils.getLocalIp();
       _shareUrl = 'http://$localIp:${_server!.port}';
 
-      print('Web share server running at $_shareUrl');
+      debugPrint('Web share server running at $_shareUrl');
 
       _serve();
 
@@ -148,13 +148,13 @@ class ShareServer {
 
       // Auto-expire after duration
       _expirationTimer = Timer(_shareExpiration, () {
-        print('Share expired, stopping server');
+        debugPrint('Share expired, stopping server');
         stop();
       });
 
       return _shareUrl;
     } catch (e) {
-      print('Error starting web share: $e');
+      debugPrint('Error starting web share: $e');
       return null;
     }
   }
@@ -262,7 +262,7 @@ class ShareServer {
         ipAddress: ipAddress,
         userAgent: userAgent,
       ));
-      print(
+      debugPrint(
           'Client connected: $ipAddress (Total: ${_activeConnections.length})');
     }
   }
@@ -274,7 +274,7 @@ class ShareServer {
       fileName: fileName,
       fileSize: fileSize,
     ));
-    print('Download started: $fileName by $ipAddress');
+    debugPrint('Download started: $fileName by $ipAddress');
   }
 
   void _onDownloadCompleted(String ipAddress, String fileName, int fileSize) {
@@ -284,7 +284,7 @@ class ShareServer {
       fileName: fileName,
       fileSize: fileSize,
     ));
-    print('Download completed: $fileName by $ipAddress');
+    debugPrint('Download completed: $fileName by $ipAddress');
   }
 
   /// Serve HTTP requests
@@ -295,7 +295,7 @@ class ShareServer {
       try {
         await _handleRequest(request);
       } catch (e) {
-        print('Error handling request: $e');
+        debugPrint('Error handling request: $e');
         try {
           request.response.statusCode = HttpStatus.internalServerError;
           await request.response.close();
@@ -470,7 +470,7 @@ class ShareServer {
       await request.response.addStream(file.openRead());
       await request.response.close();
     } catch (e) {
-      print('Error serving thumbnail: $e');
+      debugPrint('Error serving thumbnail: $e');
     }
   }
 
@@ -560,10 +560,10 @@ class ShareServer {
       // Notify download completed
       _onDownloadCompleted(clientIp, fileName, fileSize);
 
-      print(
+      debugPrint(
           'Successfully served file: $fileName ($fileSize bytes) to $clientIp');
     } catch (e) {
-      print('Error streaming file $fileName: $e');
+      debugPrint('Error streaming file $fileName: $e');
       // Don't try to send error response if headers already sent
       try {
         await request.response.close();

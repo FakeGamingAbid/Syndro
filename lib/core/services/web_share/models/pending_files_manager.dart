@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'received_file.dart';
 
@@ -63,9 +65,9 @@ class PendingFilesManager {
       await finalDir.create(recursive: true);
     }
 
-    print('📁 PendingFilesManager initialized');
-    print('   Temp: $tempDirectory');
-    print('   Final: $finalDirectory');
+    debugPrint('📁 PendingFilesManager initialized');
+    debugPrint('   Temp: $tempDirectory');
+    debugPrint('   Final: $finalDirectory');
   }
 
   /// Get temp directory path
@@ -79,18 +81,18 @@ class PendingFilesManager {
     _pendingFiles.add(file);
     _notifyListeners();
     _fileEventController.add(file);
-    print('📥 Added pending file: ${file.name}');
+    debugPrint('📥 Added pending file: ${file.name}');
   }
 
   /// Save a single file to final destination
   Future<bool> saveFile(ReceivedFile file) async {
     if (!file.canSave) {
-      print('⚠️ Cannot save file: ${file.name} (status: ${file.status})');
+      debugPrint('⚠️ Cannot save file: ${file.name} (status: ${file.status})');
       return false;
     }
 
     if (_finalDirectory == null) {
-      print('❌ Final directory not set');
+      debugPrint('❌ Final directory not set');
       return false;
     }
 
@@ -117,10 +119,10 @@ class PendingFilesManager {
       _notifyListeners();
       _fileEventController.add(file);
 
-      print('✅ Saved file: ${file.name} → ${file.finalPath}');
+      debugPrint('✅ Saved file: ${file.name} → ${file.finalPath}');
       return true;
     } catch (e) {
-      print('❌ Error saving file ${file.name}: $e');
+      debugPrint('❌ Error saving file ${file.name}: $e');
       file.status = FileReceiveStatus.error;
       file.errorMessage = e.toString();
       _notifyListeners();
@@ -153,7 +155,7 @@ class PendingFilesManager {
   /// Discard a single file (delete from temp)
   Future<bool> discardFile(ReceivedFile file) async {
     if (!file.canDiscard) {
-      print('⚠️ Cannot discard file: ${file.name} (status: ${file.status})');
+      debugPrint('⚠️ Cannot discard file: ${file.name} (status: ${file.status})');
       return false;
     }
 
@@ -167,10 +169,10 @@ class PendingFilesManager {
       _notifyListeners();
       _fileEventController.add(file);
 
-      print('🗑️ Discarded file: ${file.name}');
+      debugPrint('🗑️ Discarded file: ${file.name}');
       return true;
     } catch (e) {
-      print('❌ Error discarding file ${file.name}: $e');
+      debugPrint('❌ Error discarding file ${file.name}: $e');
       return false;
     }
   }
@@ -199,7 +201,7 @@ class PendingFilesManager {
           await tempFile.delete();
         }
       } catch (e) {
-        print('Error deleting temp file: $e');
+        debugPrint('Error deleting temp file: $e');
       }
     }
 

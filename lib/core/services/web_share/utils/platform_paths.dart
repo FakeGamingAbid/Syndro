@@ -1,4 +1,6 @@
 import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -23,7 +25,7 @@ class PlatformPaths {
             print('✅ Using public Downloads folder: $publicDownload');
             return publicDownload;
           } catch (e) {
-            print('⚠️ Cannot write to public Downloads: $e');
+            debugPrint('⚠️ Cannot write to public Downloads: $e');
           }
         }
 
@@ -37,7 +39,7 @@ class PlatformPaths {
           print('✅ Using Syndro Downloads folder: $syndroDownload');
           return syndroDownload;
         } catch (e) {
-          print('⚠️ Cannot create Syndro folder: $e');
+          debugPrint('⚠️ Cannot create Syndro folder: $e');
         }
 
         // Fallback: Try external storage directory
@@ -67,7 +69,7 @@ class PlatformPaths {
         return '/tmp';
       }
     } catch (e) {
-      print('Error getting download directory: $e');
+      debugPrint('Error getting download directory: $e');
     }
 
     // Final fallback - use app documents directory
