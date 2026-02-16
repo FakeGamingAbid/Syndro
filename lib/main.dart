@@ -15,7 +15,6 @@ import 'core/services/share_intent_service.dart';
 import 'ui/screens/main_navigation_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/quick_send_screen.dart';
-import 'ui/screens/browser_share_screen.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/widgets/share_intent_dialog.dart';
 
