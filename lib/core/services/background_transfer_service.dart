@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'sound_service.dart';
 
 class BackgroundTransferService {
   static const MethodChannel _channel =
@@ -182,6 +183,9 @@ class BackgroundTransferService {
     required int totalSize,
     String requestId = '',
   }) async {
+    // Play notification sound for incoming transfer request
+    SoundService().playRequestSound();
+    
     final sizeStr = _formatBytes(totalSize);
     const String title = '📥 Incoming Transfer Request';
     final String body =
@@ -241,6 +245,9 @@ class BackgroundTransferService {
     int fileCount = 1,
     int totalSize = 0,
   }) async {
+    // Play notification sound for completed transfer (received)
+    SoundService().playCompleteSound();
+    
     const String title = '✅ Transfer Complete';
     final String body = fileCount == 1 && fileName.isNotEmpty
         ? 'Received: $fileName'

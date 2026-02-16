@@ -99,6 +99,11 @@ dependencies:
   cryptography: ^2.7.0           # AES-256-GCM + X25519 key exchange
   crypto: ^3.0.3                 # SHA-256 for file integrity
 
+  # ============================================
+  # 🔊 SOUNDS
+  # ============================================
+  audioplayers: ^5.2.1           # Play notification sounds
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

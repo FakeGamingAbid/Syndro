@@ -1,9 +1,10 @@
-Majpackage com.syndro.app
+package com.syndro.app
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.media.RingtoneManager
 import android.os.Build
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
@@ -16,6 +17,7 @@ class MainActivity : FlutterActivity() {
     private val TRANSFER_CHANNEL = "com.syndro.app/transfer"
     private val TRANSFER_EVENTS_CHANNEL = "com.syndro.app/transfer_events"
     private val SHARE_INTENT_CHANNEL = "com.syndro.app/share_intent"
+    private val SOUND_CHANNEL = "com.syndro.app/sound"
 
     private var eventSink: EventChannel.EventSink? = null
     private var transferEventReceiver: BroadcastReceiver? = null
@@ -173,6 +175,20 @@ class MainActivity : FlutterActivity() {
                         } else {
                             result.error("INVALID_ARGUMENTS", "uri and tempDir are required", null)
                         }
+                    }
+                    else -> {
+                        result.notImplemented()
+                    }
+                }
+            }
+
+        // Sound Channel - Play notification sounds
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SOUND_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "playNotificationSound" -> {
+                        playNotificationSound()
+                        result.success(null)
                     }
                     else -> {
                         result.notImplemented()
@@ -345,6 +361,16 @@ class MainActivity : FlutterActivity() {
         } catch (e: Exception) {
             debugPrint("Error copying content URI: $e")
             null
+        }
+    }
+
+    private fun playNotificationSound() {
+        try {
+            val notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            val ringtone = RingtoneManager.getRingtone(applicationContext, notification)
+            ringtone?.play()
+        } catch (e: Exception) {
+            debugPrint("Error playing notification sound: $e")
         }
     }
 }
