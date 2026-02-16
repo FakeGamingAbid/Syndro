@@ -251,15 +251,19 @@ class MainActivity : FlutterActivity() {
                 if (intent.type != null) {
                     pendingShareIntent = intent
                     // Notify Flutter about the share intent
-                    MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger, SHARE_INTENT_CHANNEL)
-                        .invokeMethod("onShareIntentReceived", null)
+                    flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+                        MethodChannel(messenger, SHARE_INTENT_CHANNEL)
+                            .invokeMethod("onShareIntentReceived", null)
+                    }
                 }
             }
             Intent.ACTION_SEND_MULTIPLE -> {
                 if (intent.type != null) {
                     pendingShareIntent = intent
-                    MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger, SHARE_INTENT_CHANNEL)
-                        .invokeMethod("onShareIntentReceived", null)
+                    flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+                        MethodChannel(messenger, SHARE_INTENT_CHANNEL)
+                            .invokeMethod("onShareIntentReceived", null)
+                    }
                 }
             }
         }
