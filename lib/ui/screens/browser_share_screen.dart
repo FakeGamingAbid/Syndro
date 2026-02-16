@@ -643,7 +643,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       try {
         final stat = await file.stat();
         total += stat.size;
-      } catch (_) {}
+      } catch (e) { debugPrint("Error: $e"); }
     }
     return total;
   }

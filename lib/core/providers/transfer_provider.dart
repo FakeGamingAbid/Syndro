@@ -11,6 +11,11 @@ import '../services/file_service.dart';
 // FILE SERVICE PROVIDER
 // ============================================
 
+/// Provider for [FileService] instance
+///
+/// Provides a singleton [FileService] for file operations
+/// such as picking files, scanning directories, and
+/// reading/writing file streams.
 final fileServiceProvider = Provider<FileService>((ref) {
   return FileService();
 });
@@ -19,36 +24,24 @@ final fileServiceProvider = Provider<FileService>((ref) {
 // TRANSFER SERVICE PROVIDER
 // ============================================
 
-// FIX (Bug #5): Use AsyncNotifier for proper async disposal
+/// Provider for [TransferService] instance
+///
+/// Provides the core transfer service that handles:
+/// - File transfers between devices
+/// - Transfer state management
+/// - Encryption for secure transfers
+/// - Checkpoint/resume functionality
+///
+/// The service is automatically disposed when the provider
+/// is no longer needed.
 final transferServiceProvider = Provider<TransferService>((ref) {
   final fileService = ref.watch(fileServiceProvider);
   final service = TransferService(fileService);
 
-  // Track disposal completion
-  final disposalCompleter = Completer<void>();
-  
-  ref.onDispose(() async {
-    // Start async disposal immediately
-    service.dispose().then((_) {
-      debugPrint('✅ TransferService disposed successfully');
-      disposalCompleter.complete();
-    }).catchError((e, stackTrace) {
-      debugPrint('⚠️ ERROR disposing TransferService: $e');
-      debugPrint('Stack trace: $stackTrace');
-      disposalCompleter.completeError(e, stackTrace);
-    });
-
-    // Wait up to 5 seconds for disposal to complete
-    try {
-      await disposalCompleter.future.timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          debugPrint('⚠️ TransferService disposal timed out');
-        },
-      );
-    } catch (e) {
-      debugPrint('⚠️ Error waiting for disposal: $e');
-    }
+  ref.onDispose(() {
+    // Fire and forget - service cleanup happens in background
+    // The service's own dispose method handles async cleanup properly
+    service.dispose();
   });
 
   return service;
@@ -58,6 +51,19 @@ final transferServiceProvider = Provider<TransferService>((ref) {
 // ACTIVE TRANSFERS PROVIDER
 // ============================================
 
+/// Stream provider that emits [Transfer] updates
+///
+/// Listen to this provider to receive real-time updates
+/// about all active and completed transfers.
+///
+/// Example:
+/// ```dart
+/// ref.listen(activeTransfersProvider, (previous, next) {
+///   next.whenData((transfers) {
+///     // Update UI with transfers
+///   });
+/// });
+/// ```
 final activeTransfersProvider = StreamProvider<Transfer>((ref) {
   final service = ref.watch(transferServiceProvider);
   return service.transferStream;
@@ -67,6 +73,11 @@ final activeTransfersProvider = StreamProvider<Transfer>((ref) {
 // SELECTED FILES PROVIDER
 // ============================================
 
+/// State provider for selected files to transfer
+///
+/// Holds a list of [TransferItem] that the user has
+/// selected for transfer. Can be modified directly
+/// or through helper methods.
 final selectedFilesProvider = StateProvider<List<TransferItem>>((ref) => []);
 
 // ============================================
@@ -196,6 +207,13 @@ class TransferStateNotifier extends StateNotifier<TransferState> {
 }
 
 /// Transfer state model
+///
+/// Immutable state class that holds:
+/// - [transfers]: List of all transfers
+/// - [currentTransfer]: Currently active transfer
+/// - [pendingRequests]: Incoming transfer requests awaiting approval
+/// - [error]: Current error state (if any)
+/// - [isLoading]: Loading state indicator
 class TransferState {
   final List<Transfer> transfers;
   final Transfer? currentTransfer;

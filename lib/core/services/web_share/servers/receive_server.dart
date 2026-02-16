@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 
 import '../models/received_file.dart';
@@ -58,7 +59,7 @@ class ReceiveServer {
     // Create temp directory for pending files
     _tempDirectory = await _createTempDirectory();
     if (_tempDirectory == null) {
-      print('❌ Failed to create temp directory');
+      debugPrint('❌ Failed to create temp directory');
       return null;
     }
 
@@ -68,8 +69,8 @@ class ReceiveServer {
       finalDirectory: _finalDirectory!,
     );
 
-    print('📁 Temp directory: $_tempDirectory');
-    print('📁 Final directory: $_finalDirectory');
+    debugPrint('📁 Temp directory: $_tempDirectory');
+    debugPrint('📁 Final directory: $_finalDirectory');
 
     try {
       int port = _receivePort;
@@ -86,7 +87,7 @@ class ReceiveServer {
         } catch (e) {
           port++;
           if (attempt == 9) {
-            print('Failed to bind to any port');
+            debugPrint('Failed to bind to any port');
             return null;
           }
         }
@@ -97,19 +98,19 @@ class ReceiveServer {
       final localIp = await NetworkUtils.getLocalIp();
       _shareUrl = 'http://$localIp:${_server!.port}';
 
-      print('Web receive server running at $_shareUrl');
+      debugPrint('Web receive server running at $_shareUrl');
 
       _serve();
 
       // Auto-expire after duration
       _expirationTimer = Timer(_shareExpiration, () {
-        print('Receive session expired');
+        debugPrint('Receive session expired');
         stop();
       });
 
       return _shareUrl;
     } catch (e) {
-      print('Error starting receive server: $e');
+      debugPrint('Error starting receive server: $e');
       return null;
     }
   }
@@ -146,7 +147,7 @@ class ReceiveServer {
 
       return tempPath;
     } catch (e) {
-      print('Error creating temp directory: $e');
+      debugPrint('Error creating temp directory: $e');
 
       // Fallback to system temp
       try {
@@ -157,7 +158,7 @@ class ReceiveServer {
         await dir.create(recursive: true);
         return fallbackPath;
       } catch (e2) {
-        print('Error creating fallback temp directory: $e2');
+        debugPrint('Error creating fallback temp directory: $e2');
         return null;
       }
     }
@@ -170,7 +171,7 @@ class ReceiveServer {
       _expirationTimer?.cancel();
       _expirationTimer = null;
     } catch (e) {
-      print('Error cancelling expiration timer: $e');
+      debugPrint('Error cancelling expiration timer: $e');
     }
 
     // FIX: Add try-catch for server closure
@@ -180,7 +181,7 @@ class ReceiveServer {
         _server = null;
       }
     } catch (e) {
-      print('Error closing server: $e');
+      debugPrint('Error closing server: $e');
     }
 
     _shareUrl = null;
@@ -194,7 +195,7 @@ class ReceiveServer {
     try {
       await _pendingFilesManager.dispose();
     } catch (e) {
-      print('Error disposing pending files manager: $e');
+      debugPrint('Error disposing pending files manager: $e');
     }
     
     // FIX: Check if controller is closed before closing
@@ -203,7 +204,7 @@ class ReceiveServer {
         await _receivedFilesController.close();
       }
     } catch (e) {
-      print('Error closing received files controller: $e');
+      debugPrint('Error closing received files controller: $e');
     }
 
     // Clean up temp directory
@@ -214,7 +215,7 @@ class ReceiveServer {
           await dir.delete(recursive: true);
         }
       } catch (e) {
-        print('Error cleaning up temp directory: $e');
+        debugPrint('Error cleaning up temp directory: $e');
       }
     }
   }
@@ -227,11 +228,11 @@ class ReceiveServer {
       try {
         await _handleRequest(request);
       } catch (e) {
-        print('Error handling receive request: $e');
+        debugPrint('Error handling receive request: $e');
         try {
           request.response.statusCode = HttpStatus.internalServerError;
           await request.response.close();
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
     }
   }
@@ -282,7 +283,7 @@ class ReceiveServer {
       return;
     }
 
-    print('📥 Receiving files to temp: $_tempDirectory');
+    debugPrint('📥 Receiving files to temp: $_tempDirectory');
 
     try {
       // Track uploaded files for response payload
@@ -339,7 +340,7 @@ class ReceiveServer {
             final tempFilename = '${timestamp}_$cleanFilename';
             final tempFilePath = path.join(_tempDirectory!, tempFilename);
 
-            print('💾 Saving to temp: $cleanFilename → $tempFilePath');
+            debugPrint('💾 Saving to temp: $cleanFilename → $tempFilePath');
 
             try {
               final file = File(tempFilePath);
@@ -350,7 +351,7 @@ class ReceiveServer {
               // Verify file was written
               if (await file.exists()) {
                 final stat = await file.stat();
-                print(
+                debugPrint(
                     '✅ File saved to temp: $cleanFilename (${stat.size} bytes)');
 
                 uploadedFiles.add({
@@ -374,10 +375,10 @@ class ReceiveServer {
                 // Also notify via stream (for backward compatibility)
                 _receivedFilesController.add(receivedFile);
               } else {
-                print('❌ File was not created: $tempFilePath');
+                debugPrint('❌ File was not created: $tempFilePath');
               }
             } catch (e) {
-              print('❌ Error saving file $cleanFilename: $e');
+              debugPrint('❌ Error saving file $cleanFilename: $e');
             }
           }
         }
@@ -387,10 +388,10 @@ class ReceiveServer {
           if (await tempBodyFile.exists()) {
             await tempBodyFile.delete();
           }
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
 
-      print('📊 Total files received: ${uploadedFiles.length}');
+      debugPrint('📊 Total files received: ${uploadedFiles.length}');
 
       // Send response
       request.response.headers.contentType = ContentType.json;
@@ -402,7 +403,7 @@ class ReceiveServer {
       }));
       await request.response.close();
     } catch (e) {
-      print('❌ Error handling upload: $e');
+      debugPrint('❌ Error handling upload: $e');
       request.response.statusCode = HttpStatus.internalServerError;
       request.response.write('Upload failed: $e');
       await request.response.close();

@@ -299,7 +299,7 @@ class ShareServer {
         try {
           request.response.statusCode = HttpStatus.internalServerError;
           await request.response.close();
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
     }
   }
@@ -567,7 +567,7 @@ class ShareServer {
       // Don't try to send error response if headers already sent
       try {
         await request.response.close();
-      } catch (_) {}
+      } catch (e) { debugPrint("Error: $e"); }
     }
   }
 

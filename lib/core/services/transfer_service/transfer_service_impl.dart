@@ -640,7 +640,7 @@ class TransferService {
           request.response.statusCode = HttpStatus.internalServerError;
           request.response.write('Internal server error');
           await request.response.close();
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
     }
   }
@@ -1349,7 +1349,7 @@ class TransferService {
       if (fileSink != null) {
         try {
           await fileSink.close();
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
 
       if (tempFilePath != null) {
@@ -1358,7 +1358,7 @@ class TransferService {
           if (await tempFile.exists()) {
             await tempFile.delete();
           }
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
 
       await BackgroundTransferService.stopBackgroundTransfer();
@@ -1529,7 +1529,7 @@ class TransferService {
       if (fileSink != null) {
         try {
           await fileSink.close();
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
 
       if (tempFilePath != null) {
@@ -1538,7 +1538,7 @@ class TransferService {
           if (await tempFile.exists()) {
             await tempFile.delete();
           }
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
 
       await BackgroundTransferService.stopBackgroundTransfer();

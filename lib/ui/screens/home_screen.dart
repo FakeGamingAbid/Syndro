@@ -72,11 +72,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ref.listenManual<AsyncValue<List<PendingTransferRequest>>>(
           pendingTransferRequestsProvider,
           (previous, next) {
+            // Check mounted state synchronously before any async operations
             if (!mounted || _isShowingRequestSheet) return;
             
             next.whenData((requests) {
+              // Capture mounted state in closure
+              final isMounted = mounted;
               // Check again after async operation
-              if (requests.isNotEmpty && mounted && !_isShowingRequestSheet) {
+              if (requests.isNotEmpty && isMounted && !_isShowingRequestSheet) {
                 _showTransferRequestSheet(requests.first);
               }
             });

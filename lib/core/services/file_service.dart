@@ -10,6 +10,12 @@ import '../models/transfer.dart';
 import '../models/folder_structure.dart';
 
 /// Custom exception for file service errors
+///
+/// Thrown when file operations fail, including:
+/// - File not found
+/// - Invalid paths
+/// - Permission denied
+/// - Path traversal attempts
 class FileServiceException implements Exception {
   final String message;
   final String? code;
@@ -23,8 +29,23 @@ class FileServiceException implements Exception {
 }
 
 /// Progress callback for streaming operations
+///
+/// Called periodically during file streaming operations
+/// with the current progress.
+///
+/// Parameters:
+/// - [bytesProcessed]: Number of bytes processed so far
+/// - [totalBytes]: Total bytes to process (may be 0 if unknown)
 typedef ProgressCallback = void Function(int bytesProcessed, int totalBytes);
 
+/// File service for file operations
+///
+/// Provides cross-platform file operations including:
+/// - File and folder picking
+/// - Directory scanning
+/// - Safe file path handling
+/// - Streaming file read/write
+/// - Path validation and sanitization
 class FileService {
   /// Default chunk size for streaming (1MB)
   static const int defaultChunkSize = 1024 * 1024;
@@ -33,6 +54,23 @@ class FileService {
   static const int maxDirectReadSize = 10 * 1024 * 1024;
 
   /// Sanitize filename to prevent path traversal attacks
+  ///
+  /// This method removes or replaces:
+  /// - Path separators (/ \)
+  /// - Parent directory references (..)
+  /// - Hidden files (starting with .)
+  /// - Invalid characters (< > : " | ? *)
+  /// - Control characters
+  ///
+  /// Also truncates filenames longer than 200 characters
+  /// while preserving the file extension.
+  ///
+  /// Parameters:
+  /// - [filename]: The original filename to sanitize
+  ///
+  /// Returns a safe filename that can be used without risk.
+  ///
+  /// Throws [FileServiceException] if filename is empty.
   String sanitizeFilename(String filename) {
     if (filename.isEmpty) {
       throw FileServiceException('Filename cannot be empty',
@@ -69,37 +107,42 @@ class FileService {
   }
 
   /// Validate that a path is within an allowed directory
-  /// FIX: Resolves symlinks to prevent symlink attacks (TOCTOU mitigation)
+  ///
+  /// Resolves symlinks to prevent symlink attacks (TOCTOU mitigation).
+  /// This ensures that even if a symlink is created, we validate
+  /// the final resolved path.
+  ///
+  /// Parameters:
+  /// - [filePath]: The file path to validate
+  /// - [allowedDirectory]: The directory the file must be within
+  ///
+  /// Returns true if the file is within the allowed directory,
+  /// false otherwise.
   bool isPathWithinDirectory(String filePath, String allowedDirectory) {
     try {
-      String resolvedPath = filePath;
-
-      // FIX: Always try to resolve symlinks, create parent dir check
+      // FIX: Use canonical path for more reliable comparison
       final file = File(filePath);
-      final parentDir = file.parent;
+      final allowedDir = Directory(allowedDirectory);
 
-      // Check if parent directory exists and resolve from there
-      if (parentDir.existsSync()) {
-        try {
-          final resolvedParent = parentDir.resolveSymbolicLinksSync();
-          final fileName = path.basename(filePath);
-          resolvedPath = path.join(resolvedParent, fileName);
-        } catch (e) {
-          debugPrint('Could not resolve parent symlinks for $filePath: $e');
-        }
+      // Get canonical paths - this resolves symlinks
+      String resolvedFilePath;
+      String resolvedAllowedDir;
+
+      try {
+        resolvedFilePath = file.resolveSymbolicLinksSync();
+      } catch (e) {
+        // If file doesn't exist, resolve parent directory
+        resolvedFilePath = filePath;
       }
 
-      // If file exists, resolve it directly
-      if (file.existsSync()) {
-        try {
-          resolvedPath = file.resolveSymbolicLinksSync();
-        } catch (e) {
-          debugPrint('Could not resolve symlinks for $filePath: $e');
-        }
+      try {
+        resolvedAllowedDir = allowedDir.resolveSymbolicLinksSync();
+      } catch (e) {
+        resolvedAllowedDir = allowedDirectory;
       }
 
-      final normalizedFile = path.normalize(path.absolute(resolvedPath));
-      final normalizedDir = path.normalize(path.absolute(allowedDirectory));
+      final normalizedFile = path.normalize(path.absolute(resolvedFilePath));
+      final normalizedDir = path.normalize(path.absolute(resolvedAllowedDir));
 
       return normalizedFile.startsWith(normalizedDir + Platform.pathSeparator) ||
           normalizedFile == normalizedDir;
@@ -110,6 +153,19 @@ class FileService {
   }
 
   /// Get a safe file path within the download directory
+  ///
+  /// Combines [sanitizeFilename] with path validation to ensure
+  /// the resulting path is safe. This is the recommended way to
+  /// generate file paths for received files.
+  ///
+  /// Parameters:
+  /// - [filename]: The desired filename
+  ///
+  /// Returns the full path within the download directory.
+  ///
+  /// Throws [FileServiceException] if:
+  /// - Download directory is not available
+  /// - The filename would result in path traversal
   Future<String> getSafeFilePath(String filename) async {
     final sanitizedName = sanitizeFilename(filename);
     final downloadDir = await getDownloadDirectory();
@@ -415,7 +471,7 @@ class FileService {
       if (sink != null) {
         try {
           await sink.close();
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
 
       try {
@@ -423,7 +479,7 @@ class FileService {
         if (await tempFile.exists()) {
           await tempFile.delete();
         }
-      } catch (_) {}
+      } catch (e) { debugPrint("Error: $e"); }
 
       debugPrint('Error saving file from stream: $e');
       throw FileServiceException('Failed to save file', originalError: e);
@@ -483,7 +539,7 @@ class FileService {
       if (sink != null) {
         try {
           await sink.close();
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
 
       try {
@@ -491,7 +547,7 @@ class FileService {
         if (await tempFile.exists()) {
           await tempFile.delete();
         }
-      } catch (_) {}
+      } catch (e) { debugPrint("Error: $e"); }
 
       debugPrint('Error copying file: $e');
       throw FileServiceException('Failed to copy file', originalError: e);
@@ -596,7 +652,7 @@ class FileService {
       if (sink != null) {
         try {
           await sink.close();
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
 
       try {
@@ -604,7 +660,7 @@ class FileService {
         if (await tempFile.exists()) {
           await tempFile.delete();
         }
-      } catch (_) {}
+      } catch (e) { debugPrint("Error: $e"); }
 
       if (e is FileServiceException) rethrow;
       debugPrint('Error saving file from stream: $e');

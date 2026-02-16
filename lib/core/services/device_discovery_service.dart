@@ -486,7 +486,7 @@ class DeviceDiscoveryService {
       } finally {
         try {
           socket?.destroy();
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
     });
 
@@ -641,7 +641,7 @@ class DeviceDiscoveryService {
           try {
             tempSocket?.close();
             tempSocket = null;
-          } catch (_) {}
+          } catch (e) { debugPrint("Error: $e"); }
           
           if (i == maxRetries) {
             debugPrint('⚠️ UDP discovery: could not bind any port ($baseUdpPort–${baseUdpPort + maxRetries})');
@@ -711,7 +711,7 @@ class DeviceDiscoveryService {
       for (final subnet in _subnets) {
         try {
           _udpSocket?.send(data, InternetAddress('$subnet.255'), _udpPort);
-        } catch (_) {}
+        } catch (e) { debugPrint("Error: $e"); }
       }
     } catch (e) {
       debugPrint('UDP Broadcast error: $e');
@@ -756,7 +756,7 @@ class DeviceDiscoveryService {
           _deviceController.add(_discoveredDevices.values.toList());
         }
       }
-    } catch (_) {}
+    } catch (e) { debugPrint("Error: $e"); }
   }
 
   // FIX (Bug #4, #9, #28): Proper disposal with try-finally to ensure all resources are cleaned
@@ -794,6 +794,17 @@ class DeviceDiscoveryService {
       }
     } catch (e) {
       debugPrint('Error closing UDP socket: $e');
+    }
+
+    // Close HTTP server if exists
+    try {
+      if (_server != null) {
+        await _server!.close(force: true);
+        _server = null;
+        debugPrint('✅ HTTP server closed');
+      }
+    } catch (e) {
+      debugPrint('Error closing HTTP server: $e');
     }
 
     // Close stream controller

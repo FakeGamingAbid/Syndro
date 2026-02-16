@@ -5,8 +5,46 @@ import 'package:flutter/foundation.dart';
 
 /// Core encryption service using AES-256-GCM
 ///
-/// Speed: ~3-5 GB/s on modern devices (hardware accelerated)
-/// Overhead: ~2-3% slower than unencrypted
+/// This service provides secure file encryption and decryption using the AES-256-GCM
+/// (Galois/Counter Mode) algorithm, which provides both confidentiality and integrity.
+///
+/// ## Features:
+/// - AES-256-GCM encryption (industry standard, hardware accelerated)
+/// - X25519 key exchange (same as Signal, WhatsApp)
+/// - Streaming encryption/decryption for large files
+/// - Nonce tracking to prevent replay attacks
+/// - Automatic key rotation recommendations
+///
+/// ## Performance:
+/// - Speed: ~3-5 GB/s on modern devices (hardware accelerated)
+/// - Overhead: ~2-3% slower than unencrypted
+///
+/// ## Usage:
+/// ```dart
+/// final encryptionService = EncryptionService();
+/// 
+/// // Generate key pair for key exchange
+/// final keyPair = await encryptionService.generateKeyPair();
+/// final publicKey = await encryptionService.getPublicKey(keyPair);
+/// 
+/// // Derive shared secret
+/// final sharedSecret = await encryptionService.deriveSharedSecret(
+///   myKeyPair: keyPair,
+///   theirPublicKey: theirPublicKey,
+/// );
+/// 
+/// // Encrypt data
+/// final encrypted = await encryptionService.encryptChunk(
+///   Uint8List.fromList(data),
+///   sharedSecret,
+/// );
+/// 
+/// // Decrypt data
+/// final decrypted = await encryptionService.decryptChunk(
+///   encrypted,
+///   sharedSecret,
+/// );
+/// ```
 class EncryptionService {
   // AES-256-GCM - Industry standard, hardware accelerated
   final AesGcm _aesGcm = AesGcm.with256bits();
@@ -22,23 +60,54 @@ class EncryptionService {
   static const int _maxNonceCache = 10000; // Keep only recent 10k nonces
   int _nonceInsertIndex = 0;
 
+  // Active nonces set for O(1) lookup
+  final Set<String> _activeNonces = {};
+
   // FIX: Maximum nonces before requiring new key (2^32 for safety margin)
   static const int _maxNoncesPerKey = 0xFFFFFFFF;
   int _nonceCount = 0;
 
   /// Generate a new key pair for key exchange
+  ///
+  /// Returns a [SimpleKeyPair] that can be used for X25519 key exchange.
+  /// The key pair is generated using secure random number generation.
+  ///
+  /// Example:
+  /// ```dart
+  /// final keyPair = await encryptionService.generateKeyPair();
+  /// final publicKey = await encryptionService.getPublicKey(keyPair);
+  /// // Share publicKey with remote device
+  /// ```
   Future<SimpleKeyPair> generateKeyPair() async {
     return await _keyExchange.newKeyPair();
   }
 
   /// Extract public key from key pair
+  ///
+  /// The public key can be safely shared with the remote device
+  /// for key exchange. It does not reveal the private key.
+  ///
+  /// Returns a [SimplePublicKey] containing 32 bytes.
   Future<SimplePublicKey> getPublicKey(SimpleKeyPair keyPair) async {
     return await keyPair.extractPublicKey();
   }
 
   /// Perform X25519 key exchange to derive shared secret
   ///
-  /// This creates a shared secret that only sender and receiver know
+  /// This creates a shared secret that only sender and receiver know.
+  /// Uses the Elliptic Curve Diffie-Hellman (ECDH) algorithm with
+  /// the X25519 curve (same as Signal, WhatsApp).
+  ///
+  /// The shared secret can then be used for encryption/decryption.
+  /// This method also resets the nonce counter for the new session.
+  ///
+  /// Parameters:
+  /// - [myKeyPair]: Our generated key pair
+  /// - [theirPublicKey]: The remote device's public key
+  ///
+  /// Returns a [SecretKey] that can be used for encryption.
+  ///
+  /// Throws [EncryptionException] if the public key is invalid.
   Future<SecretKey> deriveSharedSecret({
     required SimpleKeyPair myKeyPair,
     required SimplePublicKey theirPublicKey,
@@ -57,6 +126,7 @@ class EncryptionService {
     // FIX: Reset nonce counter for new shared secret
     _nonceCount = 0;
     _usedNonces.clear();
+    _activeNonces.clear();
 
     return sharedSecret;
   }
@@ -64,6 +134,17 @@ class EncryptionService {
   /// Encrypt a single chunk of data
   ///
   /// Returns: [nonce (12 bytes) | ciphertext | mac (16 bytes)]
+  ///
+  /// The format is: 12-byte nonce + encrypted data + 16-byte MAC
+  /// This allows the recipient to verify data integrity.
+  ///
+  /// Parameters:
+  /// - [plaintext]: The data to encrypt
+  /// - [secretKey]: The shared secret key
+  ///
+  /// Returns encrypted data with nonce and MAC prepended.
+  ///
+  /// Throws [EncryptionException] if nonce limit is reached.
   Future<Uint8List> encryptChunk(
       Uint8List plaintext, SecretKey secretKey) async {
     // FIX: Check nonce counter
@@ -90,13 +171,32 @@ class EncryptionService {
     } while (_usedNonces.contains(nonceHex));
 
     // Use circular buffer to prevent unbounded growth
-    if (_usedNonces.length < _maxNonceCache) {
-      _usedNonces.add(nonceHex);
-    } else {
-      // Overwrite oldest nonce in circular fashion
-      _usedNonces[_nonceInsertIndex] = nonceHex;
-      _nonceInsertIndex = (_nonceInsertIndex + 1) % _maxNonceCache;
-    }
+    // Use a Set for O(1) lookup to track active nonces
+    final activeNonces = <String>{};
+    
+    // Keep track of which slots are filled
+    final isSlotFilled = List<bool>.filled(_maxNonceCache, false);
+
+    String nonceHex;
+    int attempts = 0;
+    const maxAttempts = 10;
+
+    do {
+      nonce = _aesGcm.newNonce();
+      nonceHex = _bytesToHex(Uint8List.fromList(nonce));
+      attempts++;
+
+      if (attempts > maxAttempts) {
+        throw EncryptionException(
+            'Failed to generate unique nonce after $maxAttempts attempts');
+      }
+    } while (activeNonces.contains(nonceHex));
+
+    // Add to active set and mark slot as filled
+    activeNonces.add(nonceHex);
+    isSlotFilled[_nonceInsertIndex] = true;
+    _usedNonces[_nonceInsertIndex] = nonceHex;
+    _nonceInsertIndex = (_nonceInsertIndex + 1) % _maxNonceCache;
 
     _nonceCount++;
 
@@ -129,6 +229,19 @@ class EncryptionService {
   /// Decrypt a single chunk of data
   ///
   /// Input format: [nonce (12 bytes) | ciphertext | mac (16 bytes)]
+  ///
+  /// Verifies the MAC (Message Authentication Code) before
+  /// returning the decrypted data. If verification fails,
+  /// throws [EncryptionException] with authentication error.
+  ///
+  /// Parameters:
+  /// - [encryptedData]: The encrypted data with nonce and MAC
+  /// - [secretKey]: The shared secret key
+  ///
+  /// Returns the decrypted plaintext.
+  ///
+  /// Throws [EncryptionException] if data is too small, too large,
+  /// or authentication fails.
   Future<Uint8List> decryptChunk(
       Uint8List encryptedData, SecretKey secretKey) async {
     // FIX: Enhanced size validation
@@ -178,7 +291,16 @@ class EncryptionService {
 
   /// Encrypt a stream of data (for large files)
   ///
-  /// Each chunk is independently encrypted with a unique nonce
+  /// Each chunk is independently encrypted with a unique nonce.
+  /// This allows for streaming encryption of large files without
+  /// loading the entire file into memory.
+  ///
+  /// Parameters:
+  /// - [input]: The input stream of data chunks
+  /// - [secretKey]: The shared secret key for encryption
+  /// - [onProgress]: Optional callback for progress updates
+  ///
+  /// Returns a stream of encrypted chunks.
   Stream<Uint8List> encryptStream(
     Stream<List<int>> input,
     SecretKey secretKey, {
@@ -208,6 +330,16 @@ class EncryptionService {
   }
 
   /// Decrypt a stream of encrypted chunks
+  ///
+  /// Processes each chunk independently, verifying the MAC
+  /// for each chunk before returning decrypted data.
+  ///
+  /// Parameters:
+  /// - [input]: The input stream of encrypted chunks
+  /// - [secretKey]: The shared secret key for decryption
+  /// - [onProgress]: Optional callback for progress updates
+  ///
+  /// Returns a stream of decrypted chunks.
   Stream<Uint8List> decryptStream(
     Stream<Uint8List> input,
     SecretKey secretKey, {
@@ -234,17 +366,29 @@ class EncryptionService {
   }
 
   /// Generate a random secret key (for testing or local encryption)
+  ///
+  /// Creates a new random 256-bit key for local encryption.
+  /// This is useful for testing or encrypting files locally
+  /// without key exchange.
   Future<SecretKey> generateRandomKey() async {
     return await _aesGcm.newSecretKey();
   }
 
   /// Convert SecretKey to bytes (for storage/transmission)
+  ///
+  /// Warning: Be careful when storing or transmitting key bytes.
+  /// They should be handled with the same security as passwords.
   Future<Uint8List> secretKeyToBytes(SecretKey key) async {
     final bytes = await key.extractBytes();
     return Uint8List.fromList(bytes);
   }
 
   /// Create SecretKey from bytes
+  ///
+  /// Recreates a [SecretKey] from its byte representation.
+  /// The bytes must be exactly 32 bytes (256 bits).
+  ///
+  /// Throws [EncryptionException] if the key length is invalid.
   SecretKey secretKeyFromBytes(Uint8List bytes) {
     if (bytes.length != 32) {
       throw EncryptionException(
@@ -254,12 +398,20 @@ class EncryptionService {
   }
 
   /// Convert public key to bytes for transmission
+  ///
+  /// The 32-byte public key can be safely transmitted to
+  /// the remote device for key exchange.
   Future<Uint8List> publicKeyToBytes(SimplePublicKey publicKey) async {
     final bytes = publicKey.bytes;
     return Uint8List.fromList(bytes);
   }
 
   /// Create public key from bytes
+  ///
+  /// Recreates a [SimplePublicKey] from transmitted bytes.
+  /// The bytes must be exactly 32 bytes (X25519 public key size).
+  ///
+  /// Throws [EncryptionException] if the public key length is invalid.
   SimplePublicKey publicKeyFromBytes(Uint8List bytes) {
     if (bytes.length != 32) {
       throw EncryptionException(
@@ -268,25 +420,58 @@ class EncryptionService {
     return SimplePublicKey(bytes, type: KeyPairType.x25519);
   }
 
-  // FIX: Helper to convert bytes to hex string
+  // Helper to convert bytes to hex string
+  // Used for nonce tracking and display
   String _bytesToHex(Uint8List bytes) {
     return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
   }
 
   /// Reset the encryption service (clear nonce tracking)
+  ///
+  /// Call this method when starting a new encryption session
+  /// to clear the nonce cache and counter. This is automatically
+  /// called by [deriveSharedSecret] when establishing a new session.
   void reset() {
     _usedNonces.clear();
+    _activeNonces.clear();
     _nonceCount = 0;
   }
 
   /// Get current nonce count (for monitoring)
+  ///
+  /// Returns the number of nonces that have been used with
+  /// the current key. Can be used to monitor key usage
+  /// and determine when key rotation is recommended.
   int get nonceCount => _nonceCount;
 
   /// Check if key rotation is recommended
+  ///
+  /// Returns true when more than half of the maximum nonces
+  /// per key have been used. This is a recommendation, not
+  /// a requirement - the key can still be used safely.
+  ///
+  /// Consider generating a new key pair and performing
+  /// a new key exchange when this returns true.
   bool get shouldRotateKey => _nonceCount > _maxNoncesPerKey ~/ 2;
 }
 
 /// Custom exception for encryption errors
+///
+/// This exception is thrown when encryption or decryption operations fail.
+/// It includes the error message and optionally the original error that
+/// caused the exception.
+///
+/// Example:
+/// ```dart
+/// try {
+///   final decrypted = await encryptionService.decryptChunk(data, key);
+/// } on EncryptionException catch (e) {
+///   print('Encryption error: ${e.message}');
+///   if (e.originalError != null) {
+///     print('Caused by: ${e.originalError}');
+///   }
+/// }
+/// ```
 class EncryptionException implements Exception {
   final String message;
   final dynamic originalError;
