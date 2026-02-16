@@ -150,9 +150,11 @@ lib/
 | **State Management** | Riverpod |
 | **Network Discovery** | UDP broadcast + HTTP |
 | **File Transfer** | HTTP-based P2P with chunking |
+| **Encryption** | AES-256-GCM + X25519 (cryptography package) |
 | **Database** | SQLite (sqflite + sqflite_common_ffi) |
 | **QR Code** | mobile_scanner + qr_flutter |
 | **Secure Storage** | flutter_secure_storage |
+| **File Picker** | file_picker + path_provider |
 | **Platforms** | Android 5.0+, Windows 10+, Linux |
 
 ---
