@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
@@ -24,13 +26,18 @@ class DeviceCard extends ConsumerStatefulWidget {
 
 class _DeviceCardState extends ConsumerState<DeviceCard> {
   bool _isTapped = false;
+  Timer? _tapDebounceTimer; // FIXED (Bug #8): Add timer for cleanup
 
   void _handleTap() {
-    if (widget.onTap == null) return;
+    if (widget.onTap == null || _isTapped) return;
 
     setState(() => _isTapped = true);
 
-    Future.delayed(const Duration(milliseconds: 150), () {
+    // FIXED (Bug #8): Cancel existing timer to prevent conflicts
+    _tapDebounceTimer?.cancel();
+    
+    // FIXED (Bug #8): Reduce delay from 150ms to 100ms for better UX
+    _tapDebounceTimer = Timer(const Duration(milliseconds: 100), () {
       if (mounted) {
         setState(() => _isTapped = false);
         widget.onTap?.call();
@@ -54,6 +61,13 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
         );
       },
     );
+  }
+
+  // FIXED (Bug #8): Cleanup timer on dispose
+  @override
+  void dispose() {
+    _tapDebounceTimer?.cancel();
+    super.dispose();
   }
 
   @override
