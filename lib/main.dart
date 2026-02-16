@@ -10,10 +10,12 @@ import 'core/providers/device_provider.dart';
 import 'core/providers/transfer_provider.dart';
 import 'core/providers/incoming_files_provider.dart';
 import 'core/services/system_tray_service.dart';
+import 'core/services/share_intent_service.dart';
 import 'ui/screens/main_navigation_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/quick_send_screen.dart';
 import 'ui/theme/app_theme.dart';
+import 'ui/widgets/share_intent_dialog.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -119,6 +121,10 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   String? _initError;
   bool _windowListenerAdded = false;
 
+  // Share intent state
+  List<SharedFile>? _sharedFilesFromIntent;
+  bool _showShareIntentDialog = false;
+
   @override
   void initState() {
     super.initState();
@@ -172,6 +178,27 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       } catch (e) {
         debugPrint('⚠️ System tray initialization failed: $e');
         // Continue without system tray
+      }
+    }
+
+    // Initialize share intent service (Android)
+    if (Platform.isAndroid) {
+      try {
+        final shareIntentService = ShareIntentService();
+        await shareIntentService.initialize();
+        
+        // Listen for share intents
+        shareIntentService.sharedFilesStream.listen((files) {
+          if (files.isNotEmpty && mounted) {
+            debugPrint('📥 Received ${files.length} file(s) from share intent');
+            setState(() {
+              _sharedFilesFromIntent = files;
+              _showShareIntentDialog = true;
+            });
+          }
+        });
+      } catch (e) {
+        debugPrint('⚠️ Share intent service initialization failed: $e');
       }
     }
 
@@ -376,11 +403,95 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       );
     }
 
+    // Show share intent dialog if app was opened from another app
+    if (_showShareIntentDialog && _sharedFilesFromIntent != null && _initialized) {
+      return _buildShareIntentScreen();
+    }
+
     // Normal app flow
     if (widget.showOnboarding) {
       return const OnboardingScreen();
     }
 
     return const MainNavigationScreen();
+  }
+
+  // Build screen for handling share intents from other apps
+  Widget _buildShareIntentScreen() {
+    return Builder(
+      builder: (context) {
+        // Show dialog immediately when build is called
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showShareIntentDialog(context);
+        });
+
+        // Show loading while dialog is shown
+        return Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: AppTheme.backgroundGradient,
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 24),
+                  Text(
+                    'Preparing share...',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showShareIntentDialog(BuildContext context) {
+    if (!_showShareIntentDialog || _sharedFilesFromIntent == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ShareIntentDialog(
+        fileCount: _sharedFilesFromIntent!.length,
+        onAppToApp: () => _handleAppToAppShare(),
+        onBrowserShare: () => _handleBrowserShare(),
+      ),
+    );
+  }
+
+  void _handleAppToAppShare() {
+    // Convert SharedFile to file paths and show QuickSendScreen
+    // For now, we'll navigate to the file picker with pre-selected files
+    // TODO: Implement actual file handling from URIs
+    debugPrint('App to App share selected with ${_sharedFilesFromIntent?.length ?? 0} files');
+    
+    setState(() {
+      _showShareIntentDialog = false;
+    });
+
+    // Navigate to main screen which will show the file picker
+    // The files from share intent need to be copied to app storage first
+    // For now, clear the share intent
+    ShareIntentService().clearSharedFiles();
+  }
+
+  void _handleBrowserShare() {
+    debugPrint('Browser share selected with ${_sharedFilesFromIntent?.length ?? 0} files');
+    
+    setState(() {
+      _showShareIntentDialog = false;
+    });
+
+    // Navigate to browser share screen
+    // TODO: Implement browser share with shared files
+    ShareIntentService().clearSharedFiles();
   }
 }

@@ -15,12 +15,17 @@ class MainActivity : FlutterActivity() {
     private val DEVICE_INFO_CHANNEL = "com.syndro.app/device_info"
     private val TRANSFER_CHANNEL = "com.syndro.app/transfer"
     private val TRANSFER_EVENTS_CHANNEL = "com.syndro.app/transfer_events"
+    private val SHARE_INTENT_CHANNEL = "com.syndro.app/share_intent"
 
     private var eventSink: EventChannel.EventSink? = null
     private var transferEventReceiver: BroadcastReceiver? = null
+    private var pendingShareIntent: Intent? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+
+        // Handle share intent if app was launched from share
+        handleShareIntent(intent)
 
         // Device Info Channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_INFO_CHANNEL)
@@ -145,6 +150,24 @@ class MainActivity : FlutterActivity() {
                     }
                 }
             }
+
+        // Share Intent Channel - Get shared files from other apps
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SHARE_INTENT_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "getSharedFiles" -> {
+                        val sharedFiles = getSharedFiles()
+                        result.success(sharedFiles)
+                    }
+                    "clearSharedFiles" -> {
+                        pendingShareIntent = null
+                        result.success(null)
+                    }
+                    else -> {
+                        result.notImplemented()
+                    }
+                }
+            }
     }
 
     private fun registerTransferEventReceiver() {
@@ -212,6 +235,80 @@ class MainActivity : FlutterActivity() {
             s.split(" ").joinToString(" ") { word ->
                 word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleShareIntent(intent)
+    }
+
+    private fun handleShareIntent(intent: Intent?) {
+        if (intent == null) return
+
+        when (intent.action) {
+            Intent.ACTION_SEND -> {
+                if (intent.type != null) {
+                    pendingShareIntent = intent
+                    // Notify Flutter about the share intent
+                    MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger, SHARE_INTENT_CHANNEL)
+                        .invokeMethod("onShareIntentReceived", null)
+                }
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                if (intent.type != null) {
+                    pendingShareIntent = intent
+                    MethodChannel(flutterEngine?.dartExecutor?.binaryMessenger, SHARE_INTENT_CHANNEL)
+                        .invokeMethod("onShareIntentReceived", null)
+                }
+            }
+        }
+    }
+
+    private fun getSharedFiles(): List<Map<String, Any?>>? {
+        val intent = pendingShareIntent ?: intent
+        if (intent == null) return null
+
+        val files = mutableListOf<Map<String, Any?>>()
+
+        when (intent.action) {
+            Intent.ACTION_SEND -> {
+                val uri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
+                uri?.let {
+                    files.add(mapOf(
+                        "uri" to it.toString(),
+                        "mimeType" to intent.type,
+                        "name" to getFileName(it)
+                    ))
+                }
+            }
+            Intent.ACTION_SEND_MULTIPLE -> {
+                val uris = intent.getParcelableArrayListExtra<android.net.Uri>(Intent.EXTRA_STREAM)
+                uris?.forEach { uri ->
+                    files.add(mapOf(
+                        "uri" to uri.toString(),
+                        "mimeType" to intent.type,
+                        "name" to getFileName(uri)
+                    ))
+                }
+            }
+        }
+
+        return if (files.isNotEmpty()) files else null
+    }
+
+    private fun getFileName(uri: android.net.Uri): String? {
+        return try {
+            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (cursor.moveToFirst() && nameIndex >= 0) {
+                    cursor.getString(nameIndex)
+                } else {
+                    uri.lastPathSegment
+                }
+            }
+        } catch (e: Exception) {
+            uri.lastPathSegment
         }
     }
 }
