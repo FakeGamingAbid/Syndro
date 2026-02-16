@@ -482,7 +482,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.wifi_rounded,
                               size: 14,
                               color: AppTheme.textTertiary,
@@ -1436,7 +1436,7 @@ class _FileListTile extends StatelessWidget {
                           // File size
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.storage_rounded,
                                 size: 12,
                                 color: AppTheme.textTertiary,

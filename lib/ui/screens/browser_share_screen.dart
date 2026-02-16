@@ -836,7 +836,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                         Container(
                           width: 10,
                           height: 10,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: AppTheme.successColor,
                             shape: BoxShape.circle,
                             boxShadow: [

@@ -237,7 +237,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.storage_rounded,
                       size: 14,
                       color: AppTheme.textTertiary,

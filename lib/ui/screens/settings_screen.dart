@@ -412,7 +412,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         color: AppTheme.successColor.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(
+                      child: const Icon(
                         Icons.check_circle_outline,
                         color: AppTheme.successColor,
                         size: 24,
@@ -425,12 +425,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     value: _autoAcceptTrusted,
                     onChanged: (value) async {
+                      // FIXED: Capture ScaffoldMessenger before async gap
+                      final messenger = ScaffoldMessenger.of(context);
+                      
                       await _settingsService.setAutoAcceptTrusted(value);
-                      setState(() {
-                        _autoAcceptTrusted = value;
-                      });
+                      
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        setState(() {
+                          _autoAcceptTrusted = value;
+                        });
+                        
+                        messenger.showSnackBar(
                           SnackBar(
                             content: Text(
                               value
@@ -534,6 +539,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     decoration: BoxDecoration(
                       gradient: AppTheme.logoGradient,
                       borderRadius: BorderRadius.circular(20),
+                      // ignore: prefer_const_literals_to_create_immutables
                       boxShadow: [
                         BoxShadow(
                           color: AppTheme.primaryColor.withOpacity(0.3),

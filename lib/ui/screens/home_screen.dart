@@ -673,7 +673,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.wifi_rounded,
                         size: 14,
                         color: AppTheme.textTertiary,

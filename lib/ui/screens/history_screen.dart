@@ -525,7 +525,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                Icon(
+                                const Icon(
                                   Icons.access_time_rounded,
                                   size: 12,
                                   color: AppTheme.textTertiary,
