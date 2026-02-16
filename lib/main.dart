@@ -491,21 +491,24 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       return;
     }
 
-    // Set the files for QuickSendScreen
+    // Set the files FIRST - this triggers the state to show QuickSendScreen
     try {
       await ref.read(incomingFilesProvider.notifier).setFilesFromPaths(copiedPaths);
+      debugPrint('Set ${copiedPaths.length} files for QuickSendScreen');
     } catch (e) {
       debugPrint('Error setting incoming files: $e');
     }
 
-    setState(() {
-      _hasShareIntent = false;
-    });
-
-    // Clear the share intent
+    // Clear the share intent from Android
     ShareIntentService().clearSharedFiles();
     
-    // Navigate to main screen - the incomingFilesProvider will trigger QuickSendScreen
+    // NOW change state to close dialog and trigger rebuild
+    // The rebuild will see incomingFilesState.hasFiles is true and show QuickSendScreen
+    if (mounted) {
+      setState(() {
+        _hasShareIntent = false;
+      });
+    }
   }
 
   void _handleBrowserShare() async {
