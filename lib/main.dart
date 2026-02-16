@@ -123,7 +123,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
 
   // Share intent state
   List<SharedFile>? _sharedFilesFromIntent;
-  bool _showShareIntentDialog = false;
+  bool _hasShareIntent = false;
 
   @override
   void initState() {
@@ -193,7 +193,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
             debugPrint('📥 Received ${files.length} file(s) from share intent');
             setState(() {
               _sharedFilesFromIntent = files;
-              _showShareIntentDialog = true;
+              _hasShareIntent = true;
             });
           }
         });
@@ -404,7 +404,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     }
 
     // Show share intent dialog if app was opened from another app
-    if (_showShareIntentDialog && _sharedFilesFromIntent != null && _initialized) {
+    if (_hasShareIntent && _sharedFilesFromIntent != null && _initialized) {
       return _buildShareIntentScreen();
     }
 
@@ -454,7 +454,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   }
 
   void _showShareIntentDialog(BuildContext context) {
-    if (!_showShareIntentDialog || _sharedFilesFromIntent == null) return;
+    if (!_hasShareIntent || _sharedFilesFromIntent == null) return;
 
     showDialog(
       context: context,
@@ -474,7 +474,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     debugPrint('App to App share selected with ${_sharedFilesFromIntent?.length ?? 0} files');
     
     setState(() {
-      _showShareIntentDialog = false;
+      _hasShareIntent = false;
     });
 
     // Navigate to main screen which will show the file picker
@@ -487,7 +487,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     debugPrint('Browser share selected with ${_sharedFilesFromIntent?.length ?? 0} files');
     
     setState(() {
-      _showShareIntentDialog = false;
+      _hasShareIntent = false;
     });
 
     // Navigate to browser share screen
