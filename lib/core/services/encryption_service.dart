@@ -97,7 +97,7 @@ class EncryptionService {
       _usedNonces[_nonceInsertIndex] = nonceHex;
       _nonceInsertIndex = (_nonceInsertIndex + 1) % _maxNonceCache;
     }
-    
+
     _nonceCount++;
 
     // Encrypt with authentication

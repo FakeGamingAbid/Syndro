@@ -113,6 +113,14 @@ class FileService {
   Future<String> getSafeFilePath(String filename) async {
     final sanitizedName = sanitizeFilename(filename);
     final downloadDir = await getDownloadDirectory();
+    
+    if (downloadDir == null) {
+      throw FileServiceException(
+        'Download directory not available',
+        code: 'NO_DOWNLOAD_DIR',
+      );
+    }
+    
     final filePath = path.join(downloadDir, sanitizedName);
 
     if (!isPathWithinDirectory(filePath, downloadDir)) {

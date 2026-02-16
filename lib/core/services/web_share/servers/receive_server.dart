@@ -120,13 +120,12 @@ class ReceiveServer {
       String baseTempPath;
 
       if (Platform.isAndroid) {
-        // Use app's cache directory on Android
-        baseTempPath = '/data/data/com.example.syndro/cache/pending_files';
-        // Fallback to external cache
-        const externalCache = '/storage/emulated/0/Android/data/com.example.syndro/cache/pending_files';
-        final externalDir = Directory(externalCache);
-        if (await externalDir.parent.exists()) {
-          baseTempPath = externalCache;
+        // Use app's cache directory on Android - use a more portable path
+        baseTempPath = '/storage/emulated/0/Android/data/com.syndro.app/cache/pending_files';
+        final externalDir = Directory(baseTempPath);
+        if (!(await externalDir.parent.exists())) {
+          // Fallback to app's internal cache
+          baseTempPath = '/data/data/com.syndro.app/cache/pending_files';
         }
       } else if (Platform.isWindows) {
         final temp = Platform.environment['TEMP'] ?? 'C:\\Temp';

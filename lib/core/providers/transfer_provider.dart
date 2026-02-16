@@ -27,7 +27,7 @@ final transferServiceProvider = Provider<TransferService>((ref) {
   // Track disposal completion
   final disposalCompleter = Completer<void>();
   
-  ref.onDispose(() {
+  ref.onDispose(() async {
     // Start async disposal immediately
     service.dispose().then((_) {
       debugPrint('✅ TransferService disposed successfully');
@@ -37,12 +37,9 @@ final transferServiceProvider = Provider<TransferService>((ref) {
       debugPrint('Stack trace: $stackTrace');
       disposalCompleter.completeError(e, stackTrace);
     });
-  });
 
-  // Store completer for potential cleanup verification
-  ref.onDispose(() async {
+    // Wait up to 5 seconds for disposal to complete
     try {
-      // Wait up to 5 seconds for disposal to complete
       await disposalCompleter.future.timeout(
         const Duration(seconds: 5),
         onTimeout: () {
