@@ -195,6 +195,42 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
     }
   }
 
+  // NEW: Pick only media (photos & videos) - similar to browser share
+  Future<void> _pickMedia() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final fileService = ref.read(fileServiceProvider);
+      final files = await fileService.pickMedia();
+
+      if (mounted) {
+        setState(() {
+          _selectedFiles.addAll(files);
+          _isLoading = false;
+        });
+
+        // Trigger animation when files are added
+        if (files.isNotEmpty) {
+          _animationController.forward(from: 0);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking media: $e'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _pickFolder() async {
     setState(() {
       _isLoading = true;
@@ -559,6 +595,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
             Expanded(
               child: _AnimatedEmptyStateWithDrop(
                 onPickFiles: _pickFiles,
+                onPickMedia: _pickMedia,
                 onPickFolder: _pickFolder,
                 onFilesDropped: _handleDroppedFiles,
                 isDragging: _isDragging,
@@ -980,6 +1017,7 @@ class _AnimatedListItemState extends State<_AnimatedListItem>
 /// NEW: Animated empty state widget WITH DRAG & DROP
 class _AnimatedEmptyStateWithDrop extends StatefulWidget {
   final VoidCallback onPickFiles;
+  final VoidCallback onPickMedia;
   final VoidCallback onPickFolder;
   final Function(DropDoneDetails) onFilesDropped;
   final bool isDragging;
@@ -987,6 +1025,7 @@ class _AnimatedEmptyStateWithDrop extends StatefulWidget {
 
   const _AnimatedEmptyStateWithDrop({
     required this.onPickFiles,
+    required this.onPickMedia,
     required this.onPickFolder,
     required this.onFilesDropped,
     required this.isDragging,
@@ -1135,6 +1174,15 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
                       isPrimary: false,
                     );
 
+                    // NEW: Media button for photos & videos
+                    final mediaButton = _AnimatedButton(
+                      delay: const Duration(milliseconds: 500),
+                      onPressed: widget.onPickMedia,
+                      icon: Icons.photo_library_rounded,
+                      label: 'Select Media',
+                      isPrimary: false,
+                    );
+
                     if (isNarrow) {
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -1142,6 +1190,8 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SizedBox(width: double.infinity, child: fileButton),
+                            const SizedBox(height: 12),
+                            SizedBox(width: double.infinity, child: mediaButton),
                             const SizedBox(height: 12),
                             SizedBox(
                                 width: double.infinity, child: folderButton),
@@ -1154,7 +1204,9 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         fileButton,
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
+                        mediaButton,
+                        const SizedBox(width: 12),
                         folderButton,
                       ],
                     );

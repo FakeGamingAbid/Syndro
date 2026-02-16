@@ -214,6 +214,39 @@ class FileService {
     }
   }
 
+  /// Pick only media files (images and videos) - similar to browser share
+  Future<List<TransferItem>> pickMedia() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        type: FileType.media, // This picks images and videos
+      );
+
+      if (result == null) return [];
+
+      final items = <TransferItem>[];
+
+      for (final file in result.files) {
+        if (file.path != null) {
+          final fileInfo = File(file.path!);
+          final stat = await fileInfo.stat();
+
+          items.add(TransferItem(
+            name: file.name,
+            path: file.path!,
+            size: stat.size,
+            isDirectory: false,
+          ));
+        }
+      }
+
+      return items;
+    } catch (e) {
+      debugPrint('Error picking media: $e');
+      throw FileServiceException('Failed to pick media', originalError: e);
+    }
+  }
+
   Future<String?> pickFolder() async {
     try {
       final result = await FilePicker.platform.getDirectoryPath();
