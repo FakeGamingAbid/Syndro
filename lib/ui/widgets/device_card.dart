@@ -246,7 +246,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.router_rounded,
                                 size: 12,
                                 color: AppTheme.textTertiary,
