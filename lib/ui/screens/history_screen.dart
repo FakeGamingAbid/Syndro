@@ -23,6 +23,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
+    // FIXED (Bug #23): Add mounted check before setState
+    if (!mounted) return;
+    
     setState(() {
       _isLoading = true;
     });
@@ -32,15 +35,21 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       final transfers = await db.getTransferHistory(limit: 100);
       final stats = await db.getStatistics();
 
-      setState(() {
-        _transfers = transfers;
-        _statistics = stats;
-        _isLoading = false;
-      });
+      // FIXED (Bug #23): Add mounted check before setState
+      if (mounted) {
+        setState(() {
+          _transfers = transfers;
+          _statistics = stats;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+      // FIXED (Bug #23): Add mounted check before setState
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

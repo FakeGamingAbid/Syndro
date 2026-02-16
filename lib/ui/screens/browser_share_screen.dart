@@ -68,9 +68,27 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
 
   @override
   void dispose() {
-    _connectionCountSubscription?.cancel();
-    _connectionEventSubscription?.cancel();
-    _webShareService.stopSharing();
+    // FIXED (Bug #24): Wrap stream cancellations in try-catch
+    try {
+      _connectionCountSubscription?.cancel();
+      _connectionCountSubscription = null;
+    } catch (e) {
+      debugPrint('Error cancelling connection count subscription: $e');
+    }
+    
+    try {
+      _connectionEventSubscription?.cancel();
+      _connectionEventSubscription = null;
+    } catch (e) {
+      debugPrint('Error cancelling connection event subscription: $e');
+    }
+    
+    try {
+      _webShareService.stopSharing();
+    } catch (e) {
+      debugPrint('Error stopping web share service: $e');
+    }
+    
     // Clear FilePicker cache to free storage
     _clearFilePickerCache();
     super.dispose();

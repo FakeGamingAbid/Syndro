@@ -36,9 +36,27 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
 
   @override
   void dispose() {
-    _filesSubscription?.cancel();
-    _fileEventSubscription?.cancel();
-    _webShareService.dispose();
+    // FIXED (Bug #24): Wrap stream cancellations in try-catch
+    try {
+      _filesSubscription?.cancel();
+      _filesSubscription = null;
+    } catch (e) {
+      debugPrint('Error cancelling files subscription: $e');
+    }
+    
+    try {
+      _fileEventSubscription?.cancel();
+      _fileEventSubscription = null;
+    } catch (e) {
+      debugPrint('Error cancelling file event subscription: $e');
+    }
+    
+    try {
+      _webShareService.dispose();
+    } catch (e) {
+      debugPrint('Error disposing web share service: $e');
+    }
+    
     super.dispose();
   }
 
@@ -1250,7 +1268,12 @@ class _ImageGalleryPreviewState extends State<ImageGalleryPreview> {
 
   @override
   void dispose() {
-    _pageController.dispose();
+    // FIXED (Bug #25): Wrap PageController disposal in try-catch
+    try {
+      _pageController.dispose();
+    } catch (e) {
+      debugPrint('Error disposing page controller: $e');
+    }
     super.dispose();
   }
 
@@ -1508,8 +1531,11 @@ class _ImageGalleryPreviewState extends State<ImageGalleryPreview> {
                       child: ElevatedButton.icon(
                         onPressed: () async {
                           await widget.onSave(_currentFile);
+                          // FIXED (Bug #26): Explicit state refresh with mounted check
                           if (mounted) {
-                            setState(() {}); // Refresh status
+                            setState(() {
+                              // Refresh to show updated save status
+                            });
                           }
                         },
                         icon: const Icon(Icons.save_alt),
