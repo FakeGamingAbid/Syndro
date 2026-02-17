@@ -63,6 +63,7 @@ class TransferService {
   static const int maxRetries = 3;
   static const int initialRetryDelaySeconds = 2;
   static const int _maxCompletedTransfers = 10;
+  static const int _maxFileSizeBytes = 4 * 1024 * 1024 * 1024; // 4GB limit
 
   static const Duration _sessionMaxAge = Duration(hours: 1);
   Timer? _sessionCleanupTimer;
@@ -82,6 +83,7 @@ class TransferService {
   bool _isDisposed = false;
 
   bool _isInitialized = false;
+  Future<void>? _initFuture;
 
   TransferService(this._fileService) {
     _startPendingRequestsCleanup();
@@ -92,7 +94,19 @@ class TransferService {
 
   /// Must be awaited before using the service for transfers.
   Future<void> initialize() async {
+    // If already initialized, return immediately
     if (_isInitialized) return;
+    // If initialization is in progress, wait for it
+    if (_initFuture != null) {
+      await _initFuture;
+      return;
+    }
+    // Start initialization and store the future
+    _initFuture = _doInitialize();
+    await _initFuture;
+  }
+
+  Future<void> _doInitialize() async {
     await _loadTrustedDevices();
     await _initializeEncryption();
     _isInitialized = true;
@@ -352,7 +366,8 @@ class TransferService {
         return;
       }
 
-      await _sendError(request, 'Browser chunk download not implemented');
+      // Chunk download via browser not supported - use parallel transfer instead
+      await _sendError(request, 'Chunk download not supported for browser mode');
     } catch (e) {
       await _sendError(request, 'Error serving chunk: $e');
     }
@@ -398,9 +413,9 @@ class TransferService {
 
       switch (eventType) {
         case 'cancelled':
-          debugPrint('📱 Transfer cancelled from notification');
-          for (final transferId in _activeTransfers.keys.toList()) {
-            cancelTransfer(transferId);
+          debugPrint('📱 Transfer cancelled from notification: $requestId');
+          if (requestId != null && _activeTransfers.containsKey(requestId)) {
+            cancelTransfer(requestId);
           }
           break;
         case 'accepted':
@@ -569,7 +584,7 @@ class TransferService {
         debugPrint('🚀 Transfer server running on port ${_server!.port}');
         debugPrint(
             '🔐 Encryption: ${encryptionEnabled ? "ENABLED" : "DISABLED"}');
-        _serve();
+        await _serve();
         break;
       } catch (e) {
         if (p == port + 5) {
@@ -1041,7 +1056,7 @@ class TransferService {
         token: pending.senderToken,
         trustedAt: DateTime.now(),
       );
-      _saveTrustedDevices();
+      await _saveTrustedDevices();
     }
 
     if (pending.senderPublicKey != null && encryptionEnabled) {
@@ -1066,11 +1081,6 @@ class TransferService {
       pending.senderToken,
       pending.items,
     );
-
-    _pendingRequests.remove(requestId);
-    _pendingRequestsController.add(_pendingRequests.values.toList());
-
-    BackgroundTransferService.dismissTransferRequest();
   }
 
   void rejectTransfer(String requestId) {
@@ -1230,6 +1240,7 @@ class TransferService {
       int bytesReceived = 0;
       List<int> buffer = [];
       int lastReportedProgress = -1;
+      const int maxBufferSize = 10 * 1024 * 1024; // 10MB max buffer
 
       // Use streaming SHA-256 to avoid loading entire file into memory
       final hashOutput = AccumulatorSink<crypto_hash.Digest>();
@@ -1237,6 +1248,19 @@ class TransferService {
 
       await for (final chunk in request) {
         buffer.addAll(chunk);
+
+        // Check buffer size to prevent memory exhaustion
+        if (buffer.length > maxBufferSize) {
+          debugPrint('Buffer overflow: ${buffer.length} > $maxBufferSize');
+          await _sendBadRequest(request, 'Buffer overflow - chunk size mismatch');
+          await fileSink?.close();
+          if (tempFilePath != null) {
+            try {
+              await File(tempFilePath!).delete();
+            } catch (_) {}
+          }
+          return;
+        }
 
         while (buffer.length >= 4) {
           final sizeBytes = Uint8List.fromList(buffer.sublist(0, 4));
@@ -1397,6 +1421,13 @@ class TransferService {
 
       if (senderToken == null || senderToken.isEmpty) {
         await _sendBadRequest(request, 'Missing sender token header');
+        return;
+      }
+
+      // Validate file size limit
+      if (fileSize > _maxFileSizeBytes) {
+        debugPrint('Security: File size $fileSize exceeds maximum $_maxFileSizeBytes');
+        await _sendBadRequest(request, 'File size exceeds maximum allowed size (4GB)');
         return;
       }
 
@@ -2149,7 +2180,7 @@ class TransferService {
     final checkUrl =
         'http://${receiver.ipAddress}:${receiver.port}/transfer/approval/$requestId';
 
-    while (DateTime.now().isBefore(endTime)) {
+    while (DateTime.now().isBefore(endTime) && !_isDisposed) {
       try {
         final response = await http.get(Uri.parse(checkUrl)).timeout(
               const Duration(seconds: 5),
@@ -2249,17 +2280,17 @@ class TransferService {
     }
   }
 
-  void revokeTrust(String senderId) {
+  Future<void> revokeTrust(String senderId) async {
     final removed = _trustedDevices.remove(senderId);
     if (removed != null) {
       debugPrint('Revoked trust for device: ${removed.senderName}');
-      _saveTrustedDevices();
+      await _saveTrustedDevices();
     }
   }
 
-  void clearTrustedSenders() {
+  Future<void> clearTrustedSenders() async {
     _trustedDevices.clear();
-    _saveTrustedDevices();
+    await _saveTrustedDevices();
     debugPrint('Cleared all trusted devices');
   }
 
