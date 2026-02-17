@@ -123,9 +123,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   String? _initError;
   bool _windowListenerAdded = false;
 
-  // Global key for navigation
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-
   // Share intent state
   List<SharedFile>? _sharedFilesFromIntent;
   List<File>? _browserShareFiles;
