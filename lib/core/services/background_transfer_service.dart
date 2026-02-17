@@ -432,17 +432,38 @@ class BackgroundTransferService {
   /// Play notification sound on Linux
   static Future<void> _playLinuxSound() async {
     try {
+      // Check multiple possible sound file locations
+      final soundPaths = [
+        '/usr/share/sounds/freedesktop/stereo/complete.oga',
+        '/usr/share/sounds/gnome/default/sounds/complete.ogg',
+        '/usr/share/sounds/ui/sounds.conf',
+      ];
+
+      String? validSoundPath;
+      for (final path in soundPaths) {
+        if (await File(path).exists()) {
+          validSoundPath = path;
+          break;
+        }
+      }
+
+      if (validSoundPath == null) {
+        debugPrint('No system sound file found, skipping sound playback');
+        return;
+      }
+
       // Try paplay first (PulseAudio)
-      final result = await Process.run('which', ['paplay']);
+      var result = await Process.run('which', ['paplay']);
       if (result.exitCode == 0) {
-        await Process.run(
-            'paplay', ['/usr/share/sounds/freedesktop/stereo/complete.oga']);
+        await Process.run('paplay', [validSoundPath]);
         return;
       }
 
       // Fallback to aplay (ALSA)
-      await Process.run(
-          'aplay', ['/usr/share/sounds/freedesktop/stereo/complete.oga']);
+      result = await Process.run('which', ['aplay']);
+      if (result.exitCode == 0) {
+        await Process.run('aplay', [validSoundPath]);
+      }
     } catch (e) {
       // Sound playback failed, ignore
     }

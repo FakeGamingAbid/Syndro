@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../theme/app_theme.dart';
 
@@ -90,8 +91,11 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
           // Share button
           IconButton(
             icon: const Icon(Icons.share, color: Colors.white),
-            onPressed: () {
-              // TODO: Implement share
+            onPressed: () async {
+              final currentPath = widget.imagePaths[_currentIndex];
+              if (currentPath.isNotEmpty) {
+                await Share.shareXFiles([XFile(currentPath)]);
+              }
             },
           ),
         ],

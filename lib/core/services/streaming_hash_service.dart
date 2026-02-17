@@ -59,13 +59,17 @@ class StreamingHashService {
 
       // Apply timeout if specified
       if (timeout != null) {
-        return await completer.future.timeout(
-          timeout,
-          onTimeout: () {
-            subscription?.cancel();
-            throw TimeoutException('Hash calculation timed out after ${timeout.inSeconds}s');
-          },
-        );
+        try {
+          return await completer.future.timeout(
+            timeout,
+            onTimeout: () {
+              subscription?.cancel();
+              throw TimeoutException('Hash calculation timed out after ${timeout.inSeconds}s');
+            },
+          );
+        } finally {
+          subscription?.cancel();
+        }
       }
 
       return await completer.future;

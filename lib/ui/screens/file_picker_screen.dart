@@ -50,8 +50,8 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
     );
 
     // NEW: Load preselected files if any (from right-click send)
-    if (widget.preselectedFiles != null && widget.preselectedFiles!.isNotEmpty) {
-      _selectedFiles.addAll(widget.preselectedFiles!);
+    if (widget.preselectedFiles.isNotEmpty) {
+      _selectedFiles.addAll(widget.preselectedFiles);
       // Trigger animation
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _animationController.forward(from: 0);

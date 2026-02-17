@@ -639,11 +639,18 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
 
   Future<int> _getTotalSize() async {
     int total = 0;
+    int errorCount = 0;
     for (final file in _files) {
       try {
         final stat = await file.stat();
         total += stat.size;
-      } catch (e) { debugPrint("Error: $e"); }
+      } catch (e) { 
+        errorCount++;
+        debugPrint("Error getting file size: $e");
+      }
+    }
+    if (errorCount > 0 && errorCount == _files.length) {
+      debugPrint('Warning: Could not get size for any files');
     }
     return total;
   }

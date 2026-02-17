@@ -479,10 +479,13 @@ class DeviceDiscoveryService {
         final device = await _fetchDeviceInfo(ip, port);
 
         if (device != null && device.id != _currentDevice.id && !_isDisposed) {
+          // Use compute for thread-safe list creation
           _discoveredDevices[device.id] = device;
 
           if (!_deviceController.isClosed) {
-            _deviceController.add(_discoveredDevices.values.toList());
+            // Create a copy of the device list to avoid concurrent modification
+            final deviceList = _discoveredDevices.values.toList();
+            _deviceController.add(deviceList);
           }
         }
 

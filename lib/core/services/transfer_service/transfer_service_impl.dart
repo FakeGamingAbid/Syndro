@@ -655,7 +655,10 @@ class TransferService {
           request.response.statusCode = HttpStatus.internalServerError;
           request.response.write('Internal server error');
           await request.response.close();
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (closeError) { 
+          // Response may already be closed or in error state
+          debugPrint("Error closing response: $closeError"); 
+        }
       }
     }
   }

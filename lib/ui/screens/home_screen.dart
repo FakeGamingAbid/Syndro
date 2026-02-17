@@ -267,7 +267,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   // FIX (Bug #13 & #14): Safe dialog dismissal helper
   void _dismissLoadingDialog() {
-    if (mounted) {
+    if (mounted && context.mounted) {
       try {
         // Use root navigator to ensure we dismiss the right dialog
         Navigator.of(context, rootNavigator: true).pop();
