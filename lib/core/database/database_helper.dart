@@ -412,6 +412,7 @@ class DatabaseHelper {
     if (db != null) {
       await db.close();
       _database = null;
+      _initCompleter = null; // FIX: Reset completer to allow re-initialization
     }
   }
 }

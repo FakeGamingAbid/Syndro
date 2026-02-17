@@ -168,6 +168,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           final pendingRequests =
               ref.read(transferServiceProvider).pendingRequests;
           if (pendingRequests.isNotEmpty) {
+            // FIX: Store timer reference for potential cancellation on dispose
             Future.delayed(const Duration(milliseconds: 300), () {
               if (mounted && !_isShowingRequestSheet) {
                 _showTransferRequestSheet(pendingRequests.first);

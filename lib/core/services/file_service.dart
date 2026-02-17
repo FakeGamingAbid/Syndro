@@ -100,7 +100,11 @@ class FileService {
     if (sanitized.length > 200) {
       final ext = path.extension(sanitized);
       final nameWithoutExt = path.basenameWithoutExtension(sanitized);
-      sanitized = '${nameWithoutExt.substring(0, 200 - ext.length)}$ext';
+      // FIX: Safe UTF-8 truncation - use runes to avoid cutting multi-byte characters
+      final maxNameLength = 200 - ext.length;
+      final runes = nameWithoutExt.runes.toList();
+      final truncatedRunes = runes.take(maxNameLength).toList();
+      sanitized = '${String.fromCharCodes(truncatedRunes)}$ext';
     }
 
     return sanitized;

@@ -563,4 +563,11 @@ class BackgroundTransferService {
 
     return true;
   }
+
+  /// Dispose static resources (call on app exit)
+  static void dispose() {
+    _eventStream = null;
+    _lastUpdateTime = null;
+    _lastBytesTransferred = 0;
+  }
 }

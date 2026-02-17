@@ -271,8 +271,14 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       }
     } catch (e) {
       debugPrint('⚠️ Error handling window close: $e');
-      // FIXED: Use proper exit instead of SystemNavigator.pop()
-      // SystemNavigator.pop() doesn't cleanup resources properly on desktop
+      // Try graceful cleanup before fallback exit
+      try {
+        await DatabaseHelper.instance.close();
+        await SystemTrayService.dispose();
+      } catch (_) {
+        // Ignore cleanup errors in fallback
+      }
+      // Use dart:io exit only as last resort
       exit(0);
     }
   }

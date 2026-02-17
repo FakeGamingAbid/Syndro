@@ -98,12 +98,11 @@ class TransferService {
     if (_isInitialized) return;
     // If initialization is in progress, wait for it
     if (_initFuture != null) {
-      await _initFuture;
-      return;
+      return _initFuture;
     }
     // Start initialization and store the future
     _initFuture = _doInitialize();
-    await _initFuture;
+    return _initFuture;
   }
 
   Future<void> _doInitialize() async {
@@ -584,7 +583,8 @@ class TransferService {
         debugPrint('🚀 Transfer server running on port ${_server!.port}');
         debugPrint(
             '🔐 Encryption: ${encryptionEnabled ? "ENABLED" : "DISABLED"}');
-        await _serve();
+        // FIX: Don't await _serve() - it runs indefinitely and blocks initialization
+        _serve(); // Run in background
         break;
       } catch (e) {
         if (p == port + 5) {
