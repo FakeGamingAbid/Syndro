@@ -15,6 +15,7 @@ import 'core/services/share_intent_service.dart';
 import 'ui/screens/main_navigation_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/quick_send_screen.dart';
+import 'ui/screens/browser_share_screen.dart';
 import 'ui/theme/app_theme.dart';
 import 'ui/widgets/share_intent_dialog.dart';
 
@@ -122,8 +123,12 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   String? _initError;
   bool _windowListenerAdded = false;
 
+  // Global key for navigation
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
   // Share intent state
   List<SharedFile>? _sharedFilesFromIntent;
+  List<File>? _browserShareFiles;
   bool _hasShareIntent = false;
 
   @override
@@ -404,6 +409,15 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       );
     }
 
+    // If we have browser share files, show browser share screen
+    if (_browserShareFiles != null && _browserShareFiles!.isNotEmpty && _initialized) {
+      final files = _browserShareFiles!;
+      _browserShareFiles = null; // Clear after use
+      return BrowserShareScreen(
+        files: files,
+      );
+    }
+
     // Show share intent dialog if app was opened from another app
     if (_hasShareIntent && _sharedFilesFromIntent != null && _initialized) {
       return _buildShareIntentScreen();
@@ -532,15 +546,16 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       return;
     }
 
-    setState(() {
-      _hasShareIntent = false;
-    });
+    // Convert paths to File objects
+    final files = copiedPaths.map((path) => File(path)).toList();
 
-    // Clear the share intent
+    // Clear share intent and set browser share files
     ShareIntentService().clearSharedFiles();
     
-    // Navigate to BrowserShareScreen with the copied files
-    // TODO: Implement passing files to browser share screen
+    setState(() {
+      _hasShareIntent = false;
+      _browserShareFiles = files;
+    });
   }
 
   Future<List<String>> _copySharedFilesToAppStorage(List<SharedFile> sharedFiles) async {
