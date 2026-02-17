@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-enum ShareIntentMode { appToApp, browserShare }
-
-class ShareIntentDialog extends StatelessWidget {
+class ShareIntentDialog extends StatefulWidget {
   final VoidCallback onAppToApp;
   final VoidCallback onBrowserShare;
   final int fileCount;
@@ -16,7 +14,59 @@ class ShareIntentDialog extends StatelessWidget {
   });
 
   @override
+  State<ShareIntentDialog> createState() => _ShareIntentDialogState();
+}
+
+class _ShareIntentDialogState extends State<ShareIntentDialog> {
+  bool _isProcessing = false;
+
+  void _handleOptionTap(VoidCallback callback) async {
+    setState(() {
+      _isProcessing = true;
+    });
+    
+    // Close dialog first
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+    
+    // Then call the callback
+    callback();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isProcessing) {
+      return Dialog(
+        backgroundColor: AppTheme.surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 24),
+              Text(
+                'Preparing files...',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Please wait',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Dialog(
       backgroundColor: AppTheme.surfaceColor,
       shape: RoundedRectangleBorder(
@@ -53,9 +103,9 @@ class ShareIntentDialog extends StatelessWidget {
 
             // Subtitle
             Text(
-              fileCount == 1
+              widget.fileCount == 1
                   ? '1 file selected'
-                  : '$fileCount files selected',
+                  : '${widget.fileCount} files selected',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.textSecondary,
                   ),
@@ -67,10 +117,7 @@ class ShareIntentDialog extends StatelessWidget {
               icon: Icons.phone_android,
               title: 'App to App',
               subtitle: 'Direct transfer to nearby devices',
-              onTap: () {
-                Navigator.of(context).pop();
-                onAppToApp();
-              },
+              onTap: () => _handleOptionTap(widget.onAppToApp),
             ),
             const SizedBox(height: 12),
 
@@ -79,10 +126,7 @@ class ShareIntentDialog extends StatelessWidget {
               icon: Icons.language,
               title: 'Browser Share',
               subtitle: 'Share via web browser',
-              onTap: () {
-                Navigator.of(context).pop();
-                onBrowserShare();
-              },
+              onTap: () => _handleOptionTap(widget.onBrowserShare),
             ),
             const SizedBox(height: 16),
 
