@@ -68,7 +68,8 @@ class StreamingHashService {
             },
           );
         } finally {
-          subscription?.cancel();
+          // Cancel subscription if it was created
+          subscription.cancel();
         }
       }
 
