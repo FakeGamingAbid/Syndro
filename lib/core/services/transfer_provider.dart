@@ -24,24 +24,17 @@ final transferServiceProvider = Provider<TransferService>((ref) {
   final fileService = ref.watch(fileServiceProvider);
   final service = TransferService(fileService);
 
-  // Use single onDispose callback with proper async handling
-  ref.onDispose(() async {
-    try {
-      debugPrint('🧹 Starting TransferService disposal...');
-      
-      // Wait for disposal with timeout to prevent hanging
-      await service.dispose().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          debugPrint('⚠️ TransferService disposal timed out');
-        },
-      );
-      
-      debugPrint('✅ TransferService disposed successfully');
-    } catch (e, stackTrace) {
+  // FIX: onDispose doesn't await - call dispose without await
+  ref.onDispose(() {
+    debugPrint('🧹 Starting TransferService disposal...');
+    service.dispose().timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        debugPrint('⚠️ TransferService disposal timed out');
+      },
+    ).catchError((e) {
       debugPrint('⚠️ ERROR disposing TransferService: $e');
-      debugPrint('Stack trace: $stackTrace');
-    }
+    });
   });
 
   return service;

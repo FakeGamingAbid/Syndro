@@ -201,14 +201,7 @@ class DeviceDiscoveryNotifier extends StateNotifier<List<Device>> {
 final deviceDiscoveryProvider =
     StateNotifierProvider<DeviceDiscoveryNotifier, List<Device>>((ref) {
   final service = ref.watch(deviceDiscoveryServiceProvider);
-  final notifier = DeviceDiscoveryNotifier(service);
-
-  // FIX: Ensure cleanup on dispose
-  ref.onDispose(() {
-    notifier.dispose();
-  });
-
-  return notifier;
+  return DeviceDiscoveryNotifier(service);
 });
 
 // ============================================
