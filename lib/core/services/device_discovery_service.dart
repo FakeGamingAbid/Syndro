@@ -139,7 +139,10 @@ class DeviceDiscoveryService {
   /// Get or create a persistent device ID
   Future<String> _getOrCreateDeviceId() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => throw TimeoutException('SharedPreferences timeout'),
+      );
       String? deviceId = prefs.getString(_deviceIdKey);
 
       if (deviceId == null || deviceId.isEmpty) {
@@ -262,9 +265,12 @@ class DeviceDiscoveryService {
   Future<List<String>> _getAllLocalIps() async {
     final ips = <String>{};
 
-    // 1. Try WiFi IP first
+    // 1. Try WiFi IP first (with timeout)
     try {
-      final wifiIP = await _networkInfo.getWifiIP();
+      final wifiIP = await _networkInfo.getWifiIP().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () => null,
+      );
       if (wifiIP != null && wifiIP.isNotEmpty && _isPrivateIP(wifiIP)) {
         ips.add(wifiIP);
       }
@@ -272,11 +278,14 @@ class DeviceDiscoveryService {
       debugPrint('Error getting WiFi IP: $e');
     }
 
-    // 2. Scan all network interfaces
+    // 2. Scan all network interfaces (with timeout)
     try {
       final interfaces = await NetworkInterface.list(
         type: InternetAddressType.IPv4,
         includeLoopback: false,
+      ).timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => [],
       );
 
       for (final interface in interfaces) {
