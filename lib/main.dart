@@ -489,22 +489,14 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       return;
     }
 
-    // Copy files from content URIs to app storage
-    final copiedPaths = await _copySharedFilesToAppStorage(_sharedFilesFromIntent!);
+    // Skip copying - just use the URIs directly
+    // Get the file paths from URIs
+    final paths = _sharedFilesFromIntent!.map((f) => f.uri).toList();
     
-    if (copiedPaths.isEmpty) {
-      debugPrint('Failed to copy shared files');
-      setState(() {
-        _hasShareIntent = false;
-      });
-      ShareIntentService().clearSharedFiles();
-      return;
-    }
-
     // Set the files FIRST - this triggers the state to show QuickSendScreen
     try {
-      await ref.read(incomingFilesProvider.notifier).setFilesFromPaths(copiedPaths);
-      debugPrint('Set ${copiedPaths.length} files for QuickSendScreen');
+      await ref.read(incomingFilesProvider.notifier).setFilesFromPaths(paths);
+      debugPrint('Set ${paths.length} files for QuickSendScreen');
     } catch (e) {
       debugPrint('Error setting incoming files: $e');
     }
@@ -531,20 +523,11 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       return;
     }
 
-    // Copy files from content URIs to app storage
-    final copiedPaths = await _copySharedFilesToAppStorage(_sharedFilesFromIntent!);
-    
-    if (copiedPaths.isEmpty) {
-      debugPrint('Failed to copy shared files for browser share');
-      setState(() {
-        _hasShareIntent = false;
-      });
-      ShareIntentService().clearSharedFiles();
-      return;
-    }
+    // Skip copying - just use the URIs directly
+    final paths = _sharedFilesFromIntent!.map((f) => f.uri).toList();
 
-    // Convert paths to File objects
-    final files = copiedPaths.map((path) => File(path)).toList();
+    // Convert URI strings to File objects
+    final files = paths.map((path) => File(path)).toList();
 
     // Clear share intent and set browser share files
     ShareIntentService().clearSharedFiles();
@@ -556,46 +539,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   }
 
   Future<List<String>> _copySharedFilesToAppStorage(List<SharedFile> sharedFiles) async {
-    final List<String> copiedPaths = [];
-    
-    // Create a temporary directory for shared files
-    final tempDir = Directory.systemTemp.createTempSync('syndro_share_');
-    
-    for (final sharedFile in sharedFiles) {
-      try {
-        // For Android content URIs, we need to use platform channel to copy
-        if (Platform.isAndroid && sharedFile.uri.startsWith('content://')) {
-          final copiedPath = await _copyContentUriToFile(sharedFile.uri, tempDir.path, sharedFile.name);
-          if (copiedPath != null) {
-            copiedPaths.add(copiedPath);
-          }
-        } else if (sharedFile.uri.startsWith('file://')) {
-          // Direct file path
-          final filePath = sharedFile.uri.replaceFirst('file://', '');
-          if (File(filePath).existsSync()) {
-            copiedPaths.add(filePath);
-          }
-        }
-      } catch (e) {
-        debugPrint('Error copying file ${sharedFile.name}: $e');
-      }
-    }
-    
-    return copiedPaths;
-  }
-
-  Future<String?> _copyContentUriToFile(String contentUri, String tempDir, String? fileName) async {
-    try {
-      const channel = MethodChannel('com.syndro.app/share_intent');
-      final result = await channel.invokeMethod<String>('copyContentUri', {
-        'uri': contentUri,
-        'tempDir': tempDir,
-        'fileName': fileName,
-      });
-      return result;
-    } catch (e) {
-      debugPrint('Error copying content URI: $e');
-      return null;
-    }
+    // No longer needed - we use URIs directly
+    return sharedFiles.map((f) => f.uri).toList();
   }
 }
