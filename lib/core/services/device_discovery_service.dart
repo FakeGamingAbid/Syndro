@@ -398,6 +398,12 @@ class DeviceDiscoveryService {
   Future<void> _scanNetwork() async {
     if (_isDisposed) return;
 
+    // IMPROVEMENT: Handle empty subnets gracefully
+    if (_subnets.isEmpty) {
+      debugPrint('⚠️ No subnets available for scanning');
+      return;
+    }
+    
     final subnetsToScan = List<String>.from(_subnets);
 
     final ipsToScan = <String>[];

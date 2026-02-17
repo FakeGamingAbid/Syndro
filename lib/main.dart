@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'core/database/database_helper.dart';
 import 'core/providers/device_provider.dart';
 import 'core/providers/transfer_provider.dart';
 import 'core/providers/incoming_files_provider.dart';
@@ -251,6 +252,14 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       } else {
         // FIXED: Properly dispose resources before exiting
         debugPrint('🧹 Cleaning up resources before exit...');
+        
+        // FIX (Bug #8): Close database before exiting
+        try {
+          await DatabaseHelper.instance.close();
+          debugPrint('✅ Database closed');
+        } catch (e) {
+          debugPrint('⚠️ Error closing database: $e');
+        }
         
         // Dispose system tray
         await SystemTrayService.dispose();

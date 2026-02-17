@@ -1607,8 +1607,24 @@ class TransferService {
     required List<TransferItem> items,
     bool? encrypted,
   }) async {
+    // IMPROVEMENT: Add defensive null checks
+    if (sender == null || sender.id.isEmpty) {
+      throw TransferException('Invalid sender device', code: 'INVALID_SENDER');
+    }
+    
+    if (receiver == null || receiver.id.isEmpty) {
+      throw TransferException('Invalid receiver device', code: 'INVALID_RECEIVER');
+    }
+    
     if (items.isEmpty) {
       throw TransferException('No items to transfer', code: 'EMPTY_ITEMS');
+    }
+
+    // IMPROVEMENT: Validate all items have valid paths
+    for (final item in items) {
+      if (item.path.isEmpty) {
+        throw TransferException('Item has invalid path: ${item.name}', code: 'INVALID_PATH');
+      }
     }
 
     _cleanupCompletedTransfers();

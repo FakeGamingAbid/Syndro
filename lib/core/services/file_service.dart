@@ -167,8 +167,16 @@ class FileService {
   /// - Download directory is not available
   /// - The filename would result in path traversal
   Future<String> getSafeFilePath(String filename) async {
+    if (filename.isEmpty) {
+      throw FileServiceException('Filename cannot be empty', code: 'EMPTY_FILENAME');
+    }
+    
     final sanitizedName = sanitizeFilename(filename);
     final downloadDir = await getDownloadDirectory();
+    
+    if (downloadDir == null || downloadDir.isEmpty) {
+      throw FileServiceException('Download directory not available', code: 'DIR_NOT_AVAILABLE');
+    }
     
     final filePath = path.join(downloadDir, sanitizedName);
 

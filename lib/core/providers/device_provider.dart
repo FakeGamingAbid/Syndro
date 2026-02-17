@@ -37,6 +37,17 @@ final deviceDiscoveryServiceProvider = Provider<DeviceDiscoveryService>((ref) {
 
 final currentDeviceProvider = Provider<Device>((ref) {
   final service = ref.watch(deviceDiscoveryServiceProvider);
+  // FIX (Bug #10): Check if service is initialized before returning device
+  if (!service.isInitialized) {
+    return Device(
+      id: '',
+      name: 'Initializing...',
+      platform: DevicePlatform.unknown,
+      ipAddress: '0.0.0.0',
+      port: 8765,
+      lastSeen: DateTime.now(),
+    );
+  }
   return service.currentDevice;
 });
 
