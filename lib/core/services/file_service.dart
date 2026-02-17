@@ -174,7 +174,7 @@ class FileService {
     final sanitizedName = sanitizeFilename(filename);
     final downloadDir = await getDownloadDirectory();
     
-    if (downloadDir == null || downloadDir.isEmpty) {
+    if (downloadDir.isEmpty) {
       throw FileServiceException('Download directory not available', code: 'DIR_NOT_AVAILABLE');
     }
     

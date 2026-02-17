@@ -1607,12 +1607,12 @@ class TransferService {
     required List<TransferItem> items,
     bool? encrypted,
   }) async {
-    // IMPROVEMENT: Add defensive null checks
-    if (sender == null || sender.id.isEmpty) {
+    // IMPROVEMENT: Add validation for empty IDs
+    if (sender.id.isEmpty) {
       throw TransferException('Invalid sender device', code: 'INVALID_SENDER');
     }
     
-    if (receiver == null || receiver.id.isEmpty) {
+    if (receiver.id.isEmpty) {
       throw TransferException('Invalid receiver device', code: 'INVALID_RECEIVER');
     }
     

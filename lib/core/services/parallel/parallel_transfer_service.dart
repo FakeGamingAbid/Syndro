@@ -653,27 +653,4 @@ class _SimpleLock {
       completer.complete();
     }
   }
-
-  /// Release any pending waiters so they don't hang on dispose
-  void dispose() {
-    _isDisposed = true;
-    _lock = null;
-    
-    // FIX (Bug #7): Close all HTTP clients in the pool
-    for (final client in _clientPool) {
-      try {
-        client.close();
-      } catch (e) {
-        debugPrint('Error closing HTTP client: $e');
-      }
-    }
-    _clientPool.clear();
-    
-    // Close progress controller
-    try {
-      _progressController.close();
-    } catch (e) {
-      debugPrint('Error closing progress controller: $e');
-    }
-  }
 }
