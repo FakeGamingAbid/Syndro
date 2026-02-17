@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.media.RingtoneManager
 import android.os.Build
+import android.util.Log
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -359,7 +360,7 @@ class MainActivity : FlutterActivity() {
             
             outputFile.absolutePath
         } catch (e: Exception) {
-            debugPrint("Error copying content URI: $e")
+            Log.e("MainActivity", "Error copying content URI: $e")
             null
         }
     }
@@ -370,7 +371,7 @@ class MainActivity : FlutterActivity() {
             val ringtone = RingtoneManager.getRingtone(applicationContext, notification)
             ringtone?.play()
         } catch (e: Exception) {
-            debugPrint("Error playing notification sound: $e")
+            Log.e("MainActivity", "Error playing notification sound: $e")
         }
     }
 }
