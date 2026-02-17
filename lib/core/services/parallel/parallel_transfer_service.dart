@@ -653,4 +653,8 @@ class _SimpleLock {
       completer.complete();
     }
   }
+  
+  void dispose() {
+    _isDisposed = true;
+  }
 }
