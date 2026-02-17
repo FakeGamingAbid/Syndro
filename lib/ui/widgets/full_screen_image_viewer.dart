@@ -91,8 +91,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
           IconButton(
             icon: const Icon(Icons.share, color: Colors.white),
             onPressed: () {
-              // Share functionality - requires share_plus package
-              // TODO: Implement share when share_plus is added as dependency
+              // Share functionality placeholder
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Share will be available in future update')),
               );
