@@ -1253,12 +1253,10 @@ class TransferService {
         if (buffer.length > maxBufferSize) {
           debugPrint('Buffer overflow: ${buffer.length} > $maxBufferSize');
           await _sendBadRequest(request, 'Buffer overflow - chunk size mismatch');
-          await fileSink?.close();
-          if (tempFilePath != null) {
-            try {
-              await File(tempFilePath!).delete();
-            } catch (_) {}
-          }
+          await fileSink.close();
+          try {
+            await File(tempFilePath).delete();
+          } catch (_) {}
           return;
         }
 

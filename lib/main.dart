@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -545,10 +544,5 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       _hasShareIntent = false;
       _browserShareFiles = files;
     });
-  }
-
-  Future<List<String>> _copySharedFilesToAppStorage(List<SharedFile> sharedFiles) async {
-    // No longer needed - we use URIs directly
-    return sharedFiles.map((f) => f.uri).toList();
   }
 }
