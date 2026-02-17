@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../theme/app_theme.dart';
 
@@ -91,11 +90,12 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
           // Share button
           IconButton(
             icon: const Icon(Icons.share, color: Colors.white),
-            onPressed: () async {
-              final currentPath = widget.imagePaths[_currentIndex];
-              if (currentPath.isNotEmpty) {
-                await Share.shareXFiles([XFile(currentPath)]);
-              }
+            onPressed: () {
+              // Share functionality - requires share_plus package
+              // TODO: Implement share when share_plus is added as dependency
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Share will be available in future update')),
+              );
             },
           ),
         ],
