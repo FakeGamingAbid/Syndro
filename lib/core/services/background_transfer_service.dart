@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'sound_service.dart';
+import 'desktop_notification_service.dart';
 
 class BackgroundTransferService {
   static const MethodChannel _channel =
@@ -182,14 +183,17 @@ class BackgroundTransferService {
     required int fileCount,
     required int totalSize,
     String requestId = '',
+    String? thumbnailPath,
+    String? firstFileName,
   }) async {
     // Play notification sound for incoming transfer request
     SoundService().playRequestSound();
     
     final sizeStr = _formatBytes(totalSize);
-    const String title = '📥 Incoming Transfer Request';
-    final String body =
-        '$senderName wants to send $fileCount file(s) ($sizeStr)';
+    final String title = '📥 Incoming Transfer from $senderName';
+    final String body = firstFileName != null
+        ? '$fileCount file(s) ($sizeStr) • $firstFileName'
+        : '$senderName wants to send $fileCount file(s) ($sizeStr)';
 
     if (Platform.isAndroid) {
       // FIX: Wrap in try-catch
@@ -199,6 +203,8 @@ class BackgroundTransferService {
           'fileCount': fileCount,
           'totalSize': totalSize,
           'requestId': requestId,
+          'thumbnailPath': thumbnailPath,
+          'firstFileName': firstFileName,
         });
       } on PlatformException catch (e) {
         debugPrint('Platform error showing request: $e');
@@ -207,17 +213,14 @@ class BackgroundTransferService {
       } catch (e) {
         debugPrint('Error showing transfer request (Android): $e');
       }
-    } else if (Platform.isWindows) {
-      await _showWindowsNotification(
-        title: title,
-        body: body,
-        isImportant: true,
-      );
-    } else if (Platform.isLinux) {
-      await _showLinuxNotification(
-        title: title,
-        body: body,
-        urgency: 'critical',
+    } else if (Platform.isWindows || Platform.isLinux) {
+      // Use desktop notification service with thumbnail support
+      await DesktopNotificationService.showTransferRequest(
+        senderName: senderName,
+        fileCount: fileCount,
+        totalSize: totalSize,
+        firstFileName: firstFileName,
+        thumbnailPath: thumbnailPath,
       );
     }
   }
@@ -244,13 +247,14 @@ class BackgroundTransferService {
     required String filePath,
     int fileCount = 1,
     int totalSize = 0,
+    String? thumbnailPath,
   }) async {
     // Play notification sound for completed transfer (received)
     SoundService().playCompleteSound();
     
     const String title = '✅ Transfer Complete';
     final String body = fileCount == 1 && fileName.isNotEmpty
-        ? 'Received: $fileName'
+        ? 'Received: $fileName (${_formatBytes(totalSize)})'
         : 'Received $fileCount file(s) (${_formatBytes(totalSize)})';
 
     if (Platform.isAndroid) {
@@ -261,6 +265,7 @@ class BackgroundTransferService {
           'filePath': filePath,
           'fileCount': fileCount,
           'totalSize': totalSize,
+          'thumbnailPath': thumbnailPath,
         });
       } on PlatformException catch (e) {
         debugPrint('Platform error showing complete: $e');
@@ -269,23 +274,14 @@ class BackgroundTransferService {
       } catch (e) {
         debugPrint('Error showing transfer complete (Android): $e');
       }
-    } else if (Platform.isWindows) {
-      await _showWindowsNotification(
-        title: title,
-        body: body,
-        isImportant: true,
-      );
-
-      // Open file location on Windows if path is valid
-      if (filePath.isNotEmpty) {
-        await _openFileLocationWindows(filePath);
-      }
-    } else if (Platform.isLinux) {
-      await _showLinuxNotification(
-        title: title,
-        body: body,
-        urgency: 'normal',
-        playSound: true,
+    } else if (Platform.isWindows || Platform.isLinux) {
+      // Use desktop notification service with thumbnail support
+      await DesktopNotificationService.showTransferComplete(
+        fileCount: fileCount,
+        totalSize: totalSize,
+        firstFileName: fileName,
+        thumbnailPath: thumbnailPath,
+        filePath: filePath,
       );
     }
   }

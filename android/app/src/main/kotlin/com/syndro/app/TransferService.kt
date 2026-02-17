@@ -7,11 +7,16 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import androidx.core.app.Person
 import androidx.core.content.FileProvider
+import androidx.core.graphics.drawable.IconCompat
 import java.io.File
 
 class TransferService : Service() {
@@ -49,6 +54,8 @@ class TransferService : Service() {
         const val EXTRA_FILE_COUNT = "file_count"
         const val EXTRA_TOTAL_SIZE = "total_size"
         const val EXTRA_REQUEST_ID = "request_id"
+        const val EXTRA_THUMBNAIL_PATH = "thumbnail_path"
+        const val EXTRA_FIRST_FILE_NAME = "first_file_name"
     }
 
     private var currentRequestId: String? = null
@@ -96,8 +103,10 @@ class TransferService : Service() {
                 val senderName = intent.getStringExtra(EXTRA_SENDER_NAME) ?: "Unknown"
                 val fileCount = intent.getIntExtra(EXTRA_FILE_COUNT, 1)
                 val totalSize = intent.getLongExtra(EXTRA_TOTAL_SIZE, 0L)
+                val thumbnailPath = intent.getStringExtra(EXTRA_THUMBNAIL_PATH)
+                val firstFileName = intent.getStringExtra(EXTRA_FIRST_FILE_NAME)
                 currentRequestId = intent.getStringExtra(EXTRA_REQUEST_ID)
-                showTransferRequestNotification(senderName, fileCount, totalSize)
+                showTransferRequestNotification(senderName, fileCount, totalSize, thumbnailPath, firstFileName)
             }
 
             ACTION_ACCEPT_TRANSFER -> {
@@ -129,9 +138,10 @@ class TransferService : Service() {
                 val filePath = intent.getStringExtra(EXTRA_FILE_PATH) ?: ""
                 val fileCount = intent.getIntExtra(EXTRA_FILE_COUNT, 1)
                 val totalSize = intent.getLongExtra(EXTRA_TOTAL_SIZE, 0L)
+                val thumbnailPath = intent.getStringExtra(EXTRA_THUMBNAIL_PATH)
                 lastFilePath = filePath
                 lastFileName = fileName
-                showCompletionNotification(fileName, filePath, fileCount, totalSize)
+                showCompletionNotification(fileName, filePath, fileCount, totalSize, thumbnailPath)
                 stopForeground(STOP_FOREGROUND_REMOVE)
             }
 
@@ -263,7 +273,13 @@ class TransferService : Service() {
         notificationManager.notify(NOTIFICATION_PROGRESS, notification)
     }
 
-    private fun showTransferRequestNotification(senderName: String, fileCount: Int, totalSize: Long) {
+    private fun showTransferRequestNotification(
+        senderName: String,
+        fileCount: Int,
+        totalSize: Long,
+        thumbnailPath: String? = null,
+        firstFileName: String? = null
+    ) {
         val intent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -291,9 +307,10 @@ class TransferService : Service() {
         val sizeText = formatBytes(totalSize)
         val filesText = if (fileCount == 1) "1 file" else "$fileCount files"
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_REQUESTS)
-            .setContentTitle("📥 Incoming Transfer")
-            .setContentText("$senderName wants to send $filesText ($sizeText)")
+        // Build the notification with rich content
+        val builder = NotificationCompat.Builder(this, CHANNEL_REQUESTS)
+            .setContentTitle("📥 Incoming Transfer from $senderName")
+            .setContentText("$filesText ($sizeText)")
             .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_SOCIAL)
@@ -303,9 +320,36 @@ class TransferService : Service() {
             .addAction(R.drawable.ic_reject, "Reject", rejectPendingIntent)
             .setAutoCancel(false)
             .setOngoing(true)
-            .build()
 
-        startForeground(NOTIFICATION_REQUEST, notification)
+        // Add large icon/thumbnail if available
+        if (!thumbnailPath.isNullOrEmpty()) {
+            try {
+                val thumbnailFile = File(thumbnailPath)
+                if (thumbnailFile.exists()) {
+                    val bitmap = loadThumbnail(thumbnailPath, 256)
+                    if (bitmap != null) {
+                        builder.setLargeIcon(bitmap)
+                        // Add big picture style for expanded view
+                        builder.setStyle(
+                            NotificationCompat.BigPictureStyle()
+                                .bigPicture(bitmap)
+                                .setBigContentTitle("Incoming Transfer from $senderName")
+                                .setSummaryText("$filesText ($sizeText)${firstFileName?.let { " • $it" } ?: ""}")
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore thumbnail errors
+            }
+        } else if (!firstFileName.isNullOrEmpty()) {
+            // Show file name in expanded text
+            builder.setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText("$senderName wants to send $filesText ($sizeText)\n\nFirst file: $firstFileName")
+            )
+        }
+
+        startForeground(NOTIFICATION_REQUEST, builder.build())
     }
 
     private fun dismissRequestNotification() {
@@ -320,13 +364,16 @@ class TransferService : Service() {
         fileName: String,
         filePath: String,
         fileCount: Int,
-        totalSize: Long
+        totalSize: Long,
+        thumbnailPath: String? = null
     ) {
         val intent = packageManager.getLaunchIntentForPackage(packageName)
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
+        val sizeText = formatBytes(totalSize)
 
         val builder = NotificationCompat.Builder(this, CHANNEL_COMPLETE)
             .setContentTitle("✅ Transfer Complete")
@@ -337,7 +384,28 @@ class TransferService : Service() {
             .setAutoCancel(true)
 
         if (fileCount == 1 && fileName.isNotEmpty()) {
-            builder.setContentText("Received: $fileName")
+            builder.setContentText("Received: $fileName ($sizeText)")
+
+            // Add thumbnail for images
+            if (!thumbnailPath.isNullOrEmpty()) {
+                try {
+                    val thumbnailFile = File(thumbnailPath)
+                    if (thumbnailFile.exists()) {
+                        val bitmap = loadThumbnail(thumbnailPath, 256)
+                        if (bitmap != null) {
+                            builder.setLargeIcon(bitmap)
+                            builder.setStyle(
+                                NotificationCompat.BigPictureStyle()
+                                    .bigPicture(bitmap)
+                                    .setBigContentTitle("Transfer Complete")
+                                    .setSummaryText(fileName)
+                            )
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Ignore thumbnail errors
+                }
+            }
 
             if (filePath.isNotEmpty()) {
                 try {
@@ -366,7 +434,6 @@ class TransferService : Service() {
                 }
             }
         } else {
-            val sizeText = formatBytes(totalSize)
             builder.setContentText("Received $fileCount files ($sizeText)")
         }
 
@@ -454,6 +521,35 @@ class TransferService : Service() {
             bytes < 1024 * 1024 -> "${bytes / 1024} KB"
             bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
             else -> String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+        }
+    }
+
+    /// Load a thumbnail from a file path with size limit
+    private fun loadThumbnail(path: String, maxSize: Int): Bitmap? {
+        return try {
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            BitmapFactory.decodeFile(path, options)
+
+            val width = options.outWidth
+            val height = options.outHeight
+            var scale = 1
+
+            if (width > maxSize || height > maxSize) {
+                val halfWidth = width / 2
+                val halfHeight = height / 2
+                while (halfWidth / scale >= maxSize && halfHeight / scale >= maxSize) {
+                    scale *= 2
+                }
+            }
+
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = scale
+            }
+            BitmapFactory.decodeFile(path, decodeOptions)
+        } catch (e: Exception) {
+            null
         }
     }
 }

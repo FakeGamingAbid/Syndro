@@ -92,6 +92,7 @@ dependencies:
   system_tray: ^2.0.3
   window_manager: ^0.3.7
   launch_at_startup: ^0.2.2
+  local_notifier: ^0.1.5        # Desktop notifications with images
 
   # ============================================
   # 🔐 ENCRYPTION (NEW!)

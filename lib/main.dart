@@ -12,6 +12,7 @@ import 'core/providers/transfer_provider.dart';
 import 'core/providers/incoming_files_provider.dart';
 import 'core/services/system_tray_service.dart';
 import 'core/services/share_intent_service.dart';
+import 'core/services/desktop_notification_service.dart';
 import 'ui/screens/main_navigation_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/quick_send_screen.dart';
@@ -71,6 +72,10 @@ void main(List<String> args) async {
         await windowManager.show();
         await windowManager.focus();
       });
+
+      // Initialize desktop notification service
+      await DesktopNotificationService.initialize();
+      debugPrint('✅ Desktop notification service initialized');
     } catch (e) {
       debugPrint('⚠️ Window manager initialization failed: $e');
       // Continue without window manager - app will still work

@@ -111,6 +111,8 @@ class MainActivity : FlutterActivity() {
                         val fileCount = call.argument<Int>("fileCount") ?: 1
                         val totalSize = call.argument<Number>("totalSize")?.toLong() ?: 0L
                         val requestId = call.argument<String>("requestId") ?: ""
+                        val thumbnailPath = call.argument<String>("thumbnailPath")
+                        val firstFileName = call.argument<String>("firstFileName")
 
                         val intent = Intent(this, TransferService::class.java).apply {
                             action = TransferService.ACTION_SHOW_REQUEST
@@ -118,6 +120,8 @@ class MainActivity : FlutterActivity() {
                             putExtra(TransferService.EXTRA_FILE_COUNT, fileCount)
                             putExtra(TransferService.EXTRA_TOTAL_SIZE, totalSize)
                             putExtra(TransferService.EXTRA_REQUEST_ID, requestId)
+                            putExtra(TransferService.EXTRA_THUMBNAIL_PATH, thumbnailPath)
+                            putExtra(TransferService.EXTRA_FIRST_FILE_NAME, firstFileName)
                         }
                         ContextCompat.startForegroundService(this, intent)
                         result.success(null)
@@ -128,6 +132,7 @@ class MainActivity : FlutterActivity() {
                         val filePath = call.argument<String>("filePath") ?: ""
                         val fileCount = call.argument<Int>("fileCount") ?: 1
                         val totalSize = call.argument<Number>("totalSize")?.toLong() ?: 0L
+                        val thumbnailPath = call.argument<String>("thumbnailPath")
 
                         val intent = Intent(this, TransferService::class.java).apply {
                             action = TransferService.ACTION_SHOW_COMPLETE
@@ -135,6 +140,7 @@ class MainActivity : FlutterActivity() {
                             putExtra(TransferService.EXTRA_FILE_PATH, filePath)
                             putExtra(TransferService.EXTRA_FILE_COUNT, fileCount)
                             putExtra(TransferService.EXTRA_TOTAL_SIZE, totalSize)
+                            putExtra(TransferService.EXTRA_THUMBNAIL_PATH, thumbnailPath)
                         }
                         startService(intent)
                         result.success(null)

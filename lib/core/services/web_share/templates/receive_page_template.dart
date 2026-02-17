@@ -593,6 +593,140 @@ class ReceivePageTemplate {
             fill: #FBBF24;
         }
 
+        /* ========================================
+           DROP ZONE
+        ======================================== */
+        .drop-zone {
+            border: 2px dashed rgba(123, 94, 242, 0.4);
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 24px 0;
+            transition: all 0.3s ease;
+            background: rgba(123, 94, 242, 0.05);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(91, 141, 239, 0.1), rgba(123, 94, 242, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .drop-zone:hover {
+            border-color: rgba(123, 94, 242, 0.6);
+            background: rgba(123, 94, 242, 0.1);
+        }
+
+        .drop-zone:hover::before {
+            opacity: 1;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #7B5EF2;
+            background: rgba(123, 94, 242, 0.2);
+            transform: scale(1.02);
+            box-shadow: 0 0 30px rgba(123, 94, 242, 0.3);
+        }
+
+        .drop-zone.drag-over::before {
+            opacity: 1;
+        }
+
+        .drop-zone-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            background: linear-gradient(135deg, rgba(91, 141, 239, 0.2), rgba(123, 94, 242, 0.2));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
+
+        .drop-zone:hover .drop-zone-icon {
+            transform: scale(1.1);
+        }
+
+        .drop-zone.drag-over .drop-zone-icon {
+            transform: scale(1.2);
+        }
+
+        .drop-zone-icon svg {
+            width: 32px;
+            height: 32px;
+            fill: #7B5EF2;
+            transition: transform 0.3s ease;
+        }
+
+        .drop-zone.drag-over .drop-zone-icon svg {
+            transform: translateY(-4px);
+        }
+
+        .drop-zone-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #F8FAFC;
+        }
+
+        .drop-zone-subtitle {
+            font-size: 14px;
+            color: #94A3B8;
+            margin-bottom: 16px;
+        }
+
+        .drop-zone-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #64748B;
+            background: rgba(100, 116, 139, 0.1);
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .drop-zone-hint svg {
+            width: 14px;
+            height: 14px;
+            fill: #64748B;
+        }
+
+        /* Mobile adjustments for drop zone */
+        @media (max-width: 500px) {
+            .drop-zone {
+                padding: 30px 16px;
+            }
+            
+            .drop-zone-icon {
+                width: 56px;
+                height: 56px;
+            }
+            
+            .drop-zone-icon svg {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .drop-zone-title {
+                font-size: 16px;
+            }
+            
+            .drop-zone-subtitle {
+                font-size: 13px;
+            }
+        }
+
         .footer {
             text-align: center;
             padding: 24px;
@@ -618,6 +752,19 @@ class ReceivePageTemplate {
 
         <!-- Main Content -->
         <div id="main-content">
+            <!-- Drop Zone -->
+            <div class="drop-zone" id="drop-zone">
+                <div class="drop-zone-icon">
+                    <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                </div>
+                <div class="drop-zone-title">Drop files here</div>
+                <div class="drop-zone-subtitle">or click to browse</div>
+                <div class="drop-zone-hint">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    Supports all file types
+                </div>
+            </div>
+
             <!-- Picker Buttons - Side by Side -->
             <div class="picker-row" id="picker-row">
                 <button type="button" class="picker-btn files" id="files-btn">
@@ -695,6 +842,7 @@ class ReceivePageTemplate {
         let mediaInput = document.getElementById('media-input');
         const filesBtn = document.getElementById('files-btn');
         const mediaBtn = document.getElementById('media-btn');
+        const dropZone = document.getElementById('drop-zone');
         const fileList = document.getElementById('file-list');
         const fileItemsContainer = document.getElementById('file-items');
         const fileCount = document.getElementById('file-count');
@@ -727,6 +875,13 @@ class ReceivePageTemplate {
         mediaBtn.addEventListener('click', function(e) {
             e.preventDefault();
             mediaInput.click();
+        });
+
+        // Drop zone click to open file picker
+        dropZone.addEventListener('click', function(e) {
+            // Don't trigger if clicking on hint text
+            if (e.target.closest('.drop-zone-hint')) return;
+            filesInput.click();
         });
 
         filesInput.addEventListener('change', handleFileSelect);
@@ -1120,13 +1275,63 @@ class ReceivePageTemplate {
         // DRAG & DROP
         // ========================================
 
-        document.body.addEventListener('dragover', (e) => {
+        let dragCounter = 0;
+
+        // Prevent default drag behaviors on document
+        document.addEventListener('dragover', (e) => {
             e.preventDefault();
         });
 
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+        });
+
+        // Drop zone drag enter
+        dropZone.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter++;
+            dropZone.classList.add('drag-over');
+        });
+
+        // Drop zone drag leave
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter--;
+            if (dragCounter === 0) {
+                dropZone.classList.remove('drag-over');
+            }
+        });
+
+        // Drop zone drag over
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        // Drop zone drop
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounter = 0;
+            dropZone.classList.remove('drag-over');
+
+            const files = Array.from(e.dataTransfer.files);
+            handleDroppedFiles(files);
+        });
+
+        // Also support dropping anywhere on the page (fallback)
         document.body.addEventListener('drop', (e) => {
             e.preventDefault();
             const files = Array.from(e.dataTransfer.files);
+            if (files.length > 0) {
+                handleDroppedFiles(files);
+            }
+        });
+
+        function handleDroppedFiles(files) {
+            if (!files || files.length === 0) return;
 
             files.forEach(file => {
                 const exists = fileItems.some(f => f.file.name === file.name && f.file.size === file.size);
@@ -1144,7 +1349,7 @@ class ReceivePageTemplate {
 
             renderFileList();
             uploadPendingFiles();
-        });
+        }
     </script>
 </body>
 </html>
