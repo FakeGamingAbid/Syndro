@@ -30,7 +30,7 @@ A secure, fast, and easy-to-use file sharing application for Android, Windows, a
 | **Large File Support** | Transfer files of any size (GBs supported) |
 | **Folder Transfer** | Send entire folders with directory structure preserved |
 | **Resume Transfers** | Interrupted transfers can be resumed from where they left off using checkpoints |
-| **Parallel Transfer** | Multi-connection transfers for large files (>10MB) with automatic speed optimization |
+| **Parallel Transfer** | Multi-connection transfers for large files (>10MB) with automatic speed optimization and adaptive chunk sizing |
 
 ### Security & Privacy
 
@@ -331,9 +331,14 @@ A secure, fast, and easy-to-use file sharing application for Android, Windows, a
    - File-based locking for cross-process safety
 
 6. **Parallel Transfer**: For files >10MB
-   - 6 concurrent HTTP connections
-   - Chunk-based transfer with resume support
-   - Automatic speed optimization
+    - 6 concurrent HTTP connections
+    - Chunk-based transfer with resume support
+    - Automatic speed optimization
+    - **Adaptive Chunk Sizing**: Dynamically adjusts based on network speed
+      - Slow (<1 MB/s) → 256KB chunks
+      - Medium (1-10 MB/s) → 1MB chunks
+      - Fast (10-50 MB/s) → 4MB chunks
+      - Very fast (>50 MB/s) → 8MB chunks
 
 ### File Size Limits
 
