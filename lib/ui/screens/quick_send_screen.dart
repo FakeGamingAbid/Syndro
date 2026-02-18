@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/device.dart';
@@ -5,6 +7,7 @@ import '../../core/models/transfer.dart';
 import '../../core/providers/device_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/device_card.dart';
+import '../widgets/file_preview_widgets.dart';
 import 'file_picker_screen.dart';
 
 /// Screen for quick sending files received from right-click context menu
@@ -194,29 +197,8 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              gradient: AppTheme.logoGradient,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.3),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Icon(
-              widget.files.length == 1
-                  ? (widget.files.first.isDirectory
-                      ? Icons.folder_rounded
-                      : Icons.insert_drive_file_rounded)
-                  : Icons.folder_copy_rounded,
-              color: Colors.white,
-              size: 26,
-            ),
-          ),
+          // Show thumbnail for images/videos, icon for others
+          _buildFileIcon(),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -280,6 +262,88 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFileIcon() {
+    // For single file, show thumbnail if it's an image/video
+    if (widget.files.length == 1) {
+      final file = widget.files.first;
+      final fileName = file.name.toLowerCase();
+      
+      // Check if it's an image or video
+      final isImage = fileName.endsWith('.jpg') || 
+                      fileName.endsWith('.jpeg') || 
+                      fileName.endsWith('.png') || 
+                      fileName.endsWith('.gif') || 
+                      fileName.endsWith('.webp') ||
+                      fileName.endsWith('.heic') ||
+                      fileName.endsWith('.heif');
+      
+      final isVideo = fileName.endsWith('.mp4') || 
+                      fileName.endsWith('.mov') || 
+                      fileName.endsWith('.avi') || 
+                      fileName.endsWith('.mkv') ||
+                      fileName.endsWith('.webm');
+      
+      if ((isImage || isVideo) && file.path.isNotEmpty) {
+        // Show thumbnail
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: FilePreviewWidget(
+            filePath: file.path,
+            fileName: file.name,
+            size: 56,
+            borderRadius: BorderRadius.circular(14),
+          ),
+        );
+      }
+      
+      // Show folder icon for directories
+      if (file.isDirectory) {
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: AppTheme.logoGradient,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.folder_rounded,
+            color: Colors.white,
+            size: 26,
+          ),
+        );
+      }
+    }
+    
+    // Default icon for multiple files or non-media files
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: AppTheme.logoGradient,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Icon(
+        widget.files.length == 1
+            ? Icons.insert_drive_file_rounded
+            : Icons.folder_copy_rounded,
+        color: Colors.white,
+        size: 26,
       ),
     );
   }
