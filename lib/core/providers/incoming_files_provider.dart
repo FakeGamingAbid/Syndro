@@ -168,6 +168,18 @@ class IncomingFilesNotifier extends StateNotifier<IncomingFilesState> {
     );
   }
 
+  /// Set files directly (for Android share intents where we already have the info)
+  void setFiles(List<TransferItem> files) {
+    state = IncomingFilesState(
+      files: files,
+      hasFiles: files.isNotEmpty,
+      isProcessing: false,
+    );
+    if (files.isNotEmpty) {
+      debugPrint('✅ Set ${files.length} file(s) directly');
+    }
+  }
+
   /// Remove a file from the list
   void removeFile(TransferItem item) {
     final updatedFiles = state.files.where((f) => f.path != item.path).toList();

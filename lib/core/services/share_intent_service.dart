@@ -6,11 +6,13 @@ class SharedFile {
   final String uri;
   final String? mimeType;
   final String? name;
+  final int size;
 
   SharedFile({
     required this.uri,
     this.mimeType,
     this.name,
+    this.size = 0,
   });
 
   factory SharedFile.fromMap(Map<dynamic, dynamic> map) {
@@ -18,6 +20,7 @@ class SharedFile {
       uri: map['uri'] as String,
       mimeType: map['mimeType'] as String?,
       name: map['name'] as String?,
+      size: map['size'] as int? ?? 0,
     );
   }
 

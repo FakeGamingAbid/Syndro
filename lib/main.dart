@@ -8,6 +8,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'core/database/database_helper.dart';
+import 'core/models/transfer.dart';
 import 'core/providers/device_provider.dart';
 import 'core/providers/transfer_provider.dart';
 import 'core/providers/incoming_files_provider.dart';
@@ -514,7 +515,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
 
     // On Android, content:// URIs need to be copied to actual files
     // Use the copyContentUri method from ShareIntentService via platform channel
-    final paths = <String>[];
+    final items = <TransferItem>[];
     
     for (final sharedFile in _sharedFilesFromIntent!) {
       final uri = sharedFile.uri;
@@ -530,8 +531,15 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
           );
           
           if (result != null) {
-            paths.add(result);
-            debugPrint('✅ Copied content URI to: $result');
+            // Use the original name from the share intent, not the temp file name
+            final fileName = sharedFile.name ?? result.split('/').last;
+            items.add(TransferItem(
+              name: fileName,
+              path: result,
+              size: sharedFile.size,
+              isDirectory: false,
+            ));
+            debugPrint('✅ Copied content URI to: $result (name: $fileName, size: ${sharedFile.size})');
           } else {
             debugPrint('⚠️ Failed to copy content URI: $uri');
           }
@@ -539,24 +547,26 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
           debugPrint('❌ Error copying content URI: $e');
         }
       } else {
-        // Regular file path
-        paths.add(uri);
+        // Regular file path - use the name from share intent
+        final fileName = sharedFile.name ?? uri.split('/').last;
+        items.add(TransferItem(
+          name: fileName,
+          path: uri,
+          size: sharedFile.size,
+          isDirectory: false,
+        ));
       }
     }
     
-    debugPrint('Processed ${paths.length} files:');
-    for (final path in paths) {
-      debugPrint('  - $path');
+    debugPrint('Processed ${items.length} files:');
+    for (final item in items) {
+      debugPrint('  - ${item.name} (${item.size} bytes)');
     }
     
-    // Set the files - this triggers the state to show QuickSendScreen
-    if (paths.isNotEmpty) {
-      try {
-        await ref.read(incomingFilesProvider.notifier).setFilesFromPaths(paths);
-        debugPrint('Set ${paths.length} files for QuickSendScreen');
-      } catch (e) {
-        debugPrint('Error setting incoming files: $e');
-      }
+    // Set the files directly - this triggers the state to show QuickSendScreen
+    if (items.isNotEmpty) {
+      ref.read(incomingFilesProvider.notifier).setFiles(items);
+      debugPrint('Set ${items.length} files for QuickSendScreen');
     }
 
     // Clear the share intent from Android

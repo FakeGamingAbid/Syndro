@@ -328,21 +328,29 @@ class MainActivity : FlutterActivity() {
             Intent.ACTION_SEND -> {
                 val uri = intent.getParcelableExtra<android.net.Uri>(Intent.EXTRA_STREAM)
                 uri?.let {
+                    val fileName = getFileName(it)
+                    val fileSize = getFileSize(it)
                     files.add(mapOf(
                         "uri" to it.toString(),
                         "mimeType" to intent.type,
-                        "name" to getFileName(it)
+                        "name" to fileName,
+                        "size" to fileSize
                     ))
+                    Log.d("MainActivity", "Shared file: $fileName, size: $fileSize, uri: $it")
                 }
             }
             Intent.ACTION_SEND_MULTIPLE -> {
                 val uris = intent.getParcelableArrayListExtra<android.net.Uri>(Intent.EXTRA_STREAM)
                 uris?.forEach { uri ->
+                    val fileName = getFileName(uri)
+                    val fileSize = getFileSize(uri)
                     files.add(mapOf(
                         "uri" to uri.toString(),
                         "mimeType" to intent.type,
-                        "name" to getFileName(uri)
+                        "name" to fileName,
+                        "size" to fileSize
                     ))
+                    Log.d("MainActivity", "Shared file: $fileName, size: $fileSize, uri: $uri")
                 }
             }
         }
@@ -361,7 +369,24 @@ class MainActivity : FlutterActivity() {
                 }
             }
         } catch (e: Exception) {
+            Log.e("MainActivity", "Error getting file name: $e")
             uri.lastPathSegment
+        }
+    }
+
+    private fun getFileSize(uri: android.net.Uri): Long {
+        return try {
+            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                if (cursor.moveToFirst() && sizeIndex >= 0) {
+                    cursor.getLong(sizeIndex)
+                } else {
+                    0L
+                }
+            } ?: 0L
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error getting file size: $e")
+            0L
         }
     }
 
@@ -370,8 +395,14 @@ class MainActivity : FlutterActivity() {
             val uri = android.net.Uri.parse(contentUri)
             val inputStream = contentResolver.openInputStream(uri) ?: return null
             
-            val name = fileName ?: getFileName(uri) ?: "shared_file"
-            val outputFile = java.io.File(tempDir, name)
+            // Get the proper file name
+            val actualFileName = fileName ?: getFileName(uri) ?: "shared_file"
+            
+            // Create a unique file path to avoid conflicts
+            val sanitizedFileName = sanitizeFileName(actualFileName)
+            val outputFile = java.io.File(tempDir, sanitizedFileName)
+            
+            Log.d("MainActivity", "Copying content URI to: ${outputFile.absolutePath}")
             
             inputStream.use { input ->
                 outputFile.outputStream().use { output ->
@@ -379,11 +410,26 @@ class MainActivity : FlutterActivity() {
                 }
             }
             
+            Log.d("MainActivity", "Successfully copied file: ${outputFile.absolutePath}, size: ${outputFile.length()}")
             outputFile.absolutePath
         } catch (e: Exception) {
             Log.e("MainActivity", "Error copying content URI: $e")
             null
         }
+    }
+    
+    private fun sanitizeFileName(fileName: String): String {
+        // Remove any path separators and invalid characters
+        return fileName
+            .replace("/", "_")
+            .replace("\\", "_")
+            .replace(":", "_")
+            .replace("*", "_")
+            .replace("?", "_")
+            .replace("\"", "_")
+            .replace("<", "_")
+            .replace(">", "_")
+            .replace("|", "_")
     }
 
     private fun playNotificationSound() {
