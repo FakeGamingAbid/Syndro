@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
 
 import '../models/transfer.dart';
 
@@ -40,7 +42,10 @@ class IncomingFilesState {
 class IncomingFilesNotifier extends StateNotifier<IncomingFilesState> {
   IncomingFilesNotifier() : super(const IncomingFilesState());
 
-  /// Process file paths from command line arguments
+  /// Process file paths from command line arguments or Android share intents
+  /// 
+  /// On Android, paths may be content:// URIs that need special handling.
+  /// On desktop, paths are regular file system paths.
   Future<void> setFilesFromPaths(List<String> paths) async {
     if (paths.isEmpty) return;
 
@@ -52,6 +57,24 @@ class IncomingFilesNotifier extends StateNotifier<IncomingFilesState> {
       try {
         // Skip Flutter/Dart internal arguments
         if (path.startsWith('--') || path.startsWith('-')) {
+          continue;
+        }
+
+        // Handle Android content:// URIs
+        if (path.startsWith('content://')) {
+          debugPrint('📱 Processing Android content URI: $path');
+          // For content URIs, we'll use the URI directly
+          // The transfer service will handle reading from the content resolver
+          final name = _extractNameFromContentUri(path);
+          
+          items.add(TransferItem(
+            name: name,
+            path: path,
+            size: 0, // Size unknown for content URIs until read
+            isDirectory: false,
+          ));
+          
+          debugPrint('📁 Added content URI: $name');
           continue;
         }
 
@@ -109,6 +132,31 @@ class IncomingFilesNotifier extends StateNotifier<IncomingFilesState> {
     if (items.isNotEmpty) {
       debugPrint('✅ Loaded ${items.length} incoming file(s)');
     }
+  }
+
+  /// Extract a readable name from Android content URI
+  String _extractNameFromContentUri(String uri) {
+    // Try to extract from the last segment
+    // e.g., content://media/external/images/media/123 -> media/123
+    // or content://com.android.providers.media.documents/document/image%3A123
+    try {
+      final decoded = Uri.decodeComponent(uri);
+      final segments = decoded.split('/');
+      if (segments.isNotEmpty) {
+        // Return last meaningful segment
+        for (int i = segments.length - 1; i >= 0; i--) {
+          if (segments[i].isNotEmpty && 
+              !segments[i].startsWith('content:') &&
+              segments[i] != 'document' &&
+              segments[i] != 'media') {
+            return segments[i];
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error extracting name from URI: $e');
+    }
+    return 'shared_file';
   }
 
   /// Add more files to the existing list

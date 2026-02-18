@@ -53,12 +53,12 @@
             </intent-filter>
         </activity>
 
-        <!-- App to App Share Activity - Shows in share sheet as "Syndro (App to App)" -->
+        <!-- App to App Share Activity - Shows in share sheet as "App to App" -->
         <activity-alias
             android:name=".ShareAppToApp"
             android:targetActivity=".MainActivity"
             android:exported="true"
-            android:label="Syndro (App to App)"
+            android:label="App to App"
             android:icon="@mipmap/ic_launcher">
             
             <!-- Share Intent - Images -->
@@ -97,12 +97,12 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- Browser Share Activity - Shows in share sheet as "Syndro (Browser Share)" -->
+        <!-- Browser Share Activity - Shows in share sheet as "Browser Share" -->
         <activity-alias
             android:name=".ShareBrowser"
             android:targetActivity=".MainActivity"
             android:exported="true"
-            android:label="Syndro (Browser Share)"
+            android:label="Browser Share"
             android:icon="@mipmap/ic_launcher">
             
             <!-- Share Intent - Images -->

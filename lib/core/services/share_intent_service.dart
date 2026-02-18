@@ -121,6 +121,30 @@ class ShareIntentService {
     }
   }
 
+  /// Copy content URI to a file path (Android only)
+  /// 
+  /// On Android, shared files come as content:// URIs that need to be
+  /// copied to actual files before they can be used by the transfer service.
+  /// 
+  /// Returns the path to the copied file, or null if the copy failed.
+  Future<String?> copyContentUri({
+    required String uri,
+    required String tempDir,
+    String? fileName,
+  }) async {
+    try {
+      final result = await _channel.invokeMethod<String>('copyContentUri', {
+        'uri': uri,
+        'tempDir': tempDir,
+        'fileName': fileName,
+      });
+      return result;
+    } on PlatformException catch (e) {
+      print('Error copying content URI: ${e.message}');
+      return null;
+    }
+  }
+
   void dispose() {
     _sharedFilesController.close();
     _shareModeController.close();

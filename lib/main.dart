@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:window_manager/window_manager.dart';
@@ -511,16 +512,51 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       return;
     }
 
-    // Skip copying - just use the URIs directly
-    // Get the file paths from URIs
-    final paths = _sharedFilesFromIntent!.map((f) => f.uri).toList();
+    // On Android, content:// URIs need to be copied to actual files
+    // Use the copyContentUri method from ShareIntentService via platform channel
+    final paths = <String>[];
     
-    // Set the files FIRST - this triggers the state to show QuickSendScreen
-    try {
-      await ref.read(incomingFilesProvider.notifier).setFilesFromPaths(paths);
-      debugPrint('Set ${paths.length} files for QuickSendScreen');
-    } catch (e) {
-      debugPrint('Error setting incoming files: $e');
+    for (final sharedFile in _sharedFilesFromIntent!) {
+      final uri = sharedFile.uri;
+      
+      if (uri.startsWith('content://')) {
+        // Copy content URI to temp file
+        try {
+          final tempDir = await getTemporaryDirectory();
+          final result = await ShareIntentService().copyContentUri(
+            uri: uri,
+            tempDir: tempDir.path,
+            fileName: sharedFile.name,
+          );
+          
+          if (result != null) {
+            paths.add(result);
+            debugPrint('✅ Copied content URI to: $result');
+          } else {
+            debugPrint('⚠️ Failed to copy content URI: $uri');
+          }
+        } catch (e) {
+          debugPrint('❌ Error copying content URI: $e');
+        }
+      } else {
+        // Regular file path
+        paths.add(uri);
+      }
+    }
+    
+    debugPrint('Processed ${paths.length} files:');
+    for (final path in paths) {
+      debugPrint('  - $path');
+    }
+    
+    // Set the files - this triggers the state to show QuickSendScreen
+    if (paths.isNotEmpty) {
+      try {
+        await ref.read(incomingFilesProvider.notifier).setFilesFromPaths(paths);
+        debugPrint('Set ${paths.length} files for QuickSendScreen');
+      } catch (e) {
+        debugPrint('Error setting incoming files: $e');
+      }
     }
 
     // Clear the share intent from Android
