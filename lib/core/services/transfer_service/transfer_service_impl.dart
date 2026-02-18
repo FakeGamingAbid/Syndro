@@ -28,6 +28,50 @@ import '../parallel/parallel_config.dart';
 import '../parallel/parallel_receiver_handler.dart';
 import '../parallel/parallel_transfer_service.dart';
 
+/// Core transfer service for peer-to-peer file transfers.
+///
+/// This service handles all aspects of file transfers between devices:
+/// - HTTP server for receiving files
+/// - HTTP client for sending files
+/// - Encryption and key exchange (X25519, AES-256-GCM)
+/// - Trusted device management
+/// - Transfer progress tracking
+/// - Resume/checkpoint support for large files
+/// - Parallel transfer support for improved speed
+///
+/// ## Usage
+///
+/// ```dart
+/// final transferService = TransferService(fileService);
+/// await transferService.initialize();
+/// await transferService.startServer(8765);
+///
+/// // Send files
+/// await transferService.sendFiles(
+///   recipientIp: '192.168.1.100',
+///   recipientPort: 8765,
+///   files: [TransferItem(...)],
+/// );
+///
+/// // Listen for incoming transfer requests
+/// transferService.onTransferRequest = (senderId, senderName, items) {
+///   // Handle incoming transfer request
+/// };
+/// ```
+///
+/// ## Encryption
+///
+/// All transfers are encrypted by default using:
+/// - X25519 for key exchange (same as Signal, WhatsApp)
+/// - AES-256-GCM for symmetric encryption
+/// - Unique nonce per chunk to prevent replay attacks
+///
+/// ## Parallel Transfers
+///
+/// For large files (>10MB), parallel transfers are automatically enabled:
+/// - Multiple HTTP connections for faster transfer
+/// - Chunk-based transfer with resume support
+/// - Automatic speed optimization
 class TransferService {
   final FileService _fileService;
   final CheckpointManager _checkpointManager = CheckpointManager();

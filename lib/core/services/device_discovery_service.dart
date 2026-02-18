@@ -12,6 +12,45 @@ import 'package:uuid/uuid.dart';
 import '../models/device.dart';
 import 'device_nickname_service.dart';
 
+/// Service for discovering and tracking devices on the local network.
+///
+/// This service uses multiple discovery mechanisms:
+/// - UDP broadcast for fast device announcement
+/// - HTTP polling for reliable detection
+/// - mDNS-style service discovery
+///
+/// ## Discovery Process
+///
+/// 1. On initialization, generates or loads a persistent device ID
+/// 2. Broadcasts UDP packets announcing presence on port 8771
+/// 3. Listens for UDP broadcasts from other devices
+/// 4. Periodically scans known ports for HTTP endpoints
+/// 5. Removes stale devices after timeout (30 seconds)
+///
+/// ## Usage
+///
+/// ```dart
+/// final discoveryService = DeviceDiscoveryService();
+/// await discoveryService.initialize();
+///
+/// // Listen for discovered devices
+/// discoveryService.devicesStream.listen((devices) {
+///   for (final device in devices) {
+///     print('Found: ${device.name} at ${device.ipAddress}');
+///   }
+/// });
+///
+/// // Start broadcasting presence
+/// await discoveryService.startBroadcasting();
+///
+/// // Start scanning for devices
+/// await discoveryService.startScanning();
+/// ```
+///
+/// ## Device Identity
+///
+/// Each device has a unique, persistent ID stored in SharedPreferences.
+/// The device name can be customized and is persisted across sessions.
 class DeviceDiscoveryService {
   static const int _defaultPort = 8765;
   static const List<int> _scanPorts = [
