@@ -188,12 +188,6 @@ class BackgroundTransferService {
   }) async {
     // Play notification sound for incoming transfer request
     SoundService().playRequestSound();
-    
-    final sizeStr = _formatBytes(totalSize);
-    final String title = '📥 Incoming Transfer from $senderName';
-    final String body = firstFileName != null
-        ? '$fileCount file(s) ($sizeStr) • $firstFileName'
-        : '$senderName wants to send $fileCount file(s) ($sizeStr)';
 
     if (Platform.isAndroid) {
       // FIX: Wrap in try-catch
@@ -251,11 +245,6 @@ class BackgroundTransferService {
   }) async {
     // Play notification sound for completed transfer (received)
     SoundService().playCompleteSound();
-    
-    const String title = '✅ Transfer Complete';
-    final String body = fileCount == 1 && fileName.isNotEmpty
-        ? 'Received: $fileName (${_formatBytes(totalSize)})'
-        : 'Received $fileCount file(s) (${_formatBytes(totalSize)})';
 
     if (Platform.isAndroid) {
       // FIX: Wrap in try-catch
@@ -466,7 +455,9 @@ class BackgroundTransferService {
   }
 
   /// Open file location on Windows (show in Explorer)
-  static Future<void> _openFileLocationWindows(String filePath) async {
+  static Future<void> openFileLocation(String filePath) async {
+    if (!Platform.isWindows) return;
+    
     try {
       // FIX: Validate file path to prevent command injection
       if (!_isValidWindowsPath(filePath)) {

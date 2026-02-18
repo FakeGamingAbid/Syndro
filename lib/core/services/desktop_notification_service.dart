@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:local_notifier/local_notifier.dart';
@@ -46,30 +45,13 @@ class DesktopNotificationService {
       final filesText = fileCount == 1 ? '1 file' : '$fileCount files';
 
       final notification = LocalNotification(
-        title: '📥 Incoming Transfer',
-        body: '$senderName wants to send $filesText ($sizeText)${firstFileName != null ? '\n${_truncate(firstFileName, 50)}' : ''}',
-        image: thumbnailPath,
-        actions: [
-          LocalNotificationAction(
-            text: 'Accept',
-            actionId: 'accept',
-          ),
-          LocalNotificationAction(
-            text: 'Reject',
-            actionId: 'reject',
-          ),
-        ],
+        title: '📥 Incoming Transfer from $senderName',
+        body: '$filesText ($sizeText)${firstFileName != null ? '\n${_truncate(firstFileName, 50)}' : ''}',
       );
 
-      notification.onAction = (actionId) {
-        if (actionId == 'accept') {
-          onAccept?.call();
-        } else if (actionId == 'reject') {
-          onReject?.call();
-        }
-      };
-
       await notification.show();
+      
+      debugPrint('Transfer request notification shown: $senderName, $filesText');
     } catch (e) {
       debugPrint('❌ Failed to show transfer request notification: $e');
     }
@@ -96,20 +78,7 @@ class DesktopNotificationService {
       final notification = LocalNotification(
         title: title,
         body: body,
-        image: thumbnailPath,
-        actions: [
-          LocalNotificationAction(
-            text: 'Cancel',
-            actionId: 'cancel',
-          ),
-        ],
       );
-
-      notification.onAction = (actionId) {
-        if (actionId == 'cancel') {
-          onCancel?.call();
-        }
-      };
 
       await notification.show();
     } catch (e) {
@@ -142,34 +111,10 @@ class DesktopNotificationService {
         body = 'Received $fileCount files ($sizeText)';
       }
 
-      final actions = <LocalNotificationAction>[];
-      if (onOpen != null) {
-        actions.add(LocalNotificationAction(
-          text: 'Open',
-          actionId: 'open',
-        ));
-      }
-      if (onShare != null) {
-        actions.add(LocalNotificationAction(
-          text: 'Share',
-          actionId: 'share',
-        ));
-      }
-
       final notification = LocalNotification(
         title: '✅ Transfer Complete',
         body: body,
-        image: thumbnailPath,
-        actions: actions,
       );
-
-      notification.onAction = (actionId) {
-        if (actionId == 'open') {
-          onOpen?.call();
-        } else if (actionId == 'share') {
-          onShare?.call();
-        }
-      };
 
       await notification.show();
     } catch (e) {
@@ -192,7 +137,6 @@ class DesktopNotificationService {
       final notification = LocalNotification(
         title: title,
         body: body,
-        image: thumbnailPath,
       );
 
       await notification.show();
