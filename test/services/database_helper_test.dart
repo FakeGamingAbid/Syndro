@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:syndro/core/database/database_helper.dart';
 import 'package:syndro/core/models/transfer.dart';
+import 'package:syndro/core/models/device.dart';
 
 void main() {
   group('DatabaseHelper', () {
@@ -32,24 +33,34 @@ void main() {
         senderName: 'Test Sender',
         receiverName: 'Test Receiver',
         status: TransferStatus.completed,
-        totalBytes: 1024,
-        bytesTransferred: 1024,
-        fileCount: 1,
+        progress: TransferProgress(
+          bytesTransferred: 1024,
+          totalBytes: 1024,
+        ),
         createdAt: DateTime.now(),
         items: [
           TransferItem(
-            fileName: 'test.txt',
-            fileSize: 1024,
+            name: 'test.txt',
+            size: 1024,
             isDirectory: false,
           ),
         ],
       );
 
-      await databaseHelper.insertTransfer(transfer);
+      final sender = Device(
+        id: 'sender-1',
+        name: 'Test Sender',
+        platform: DevicePlatform.android,
+        ipAddress: '192.168.1.1',
+        port: 8765,
+        lastSeen: DateTime.now(),
+      );
       
-      final transfers = await databaseHelper.getTransfers();
-      expect(transfers, isNotEmpty);
-      expect(transfers.first.id, equals('test-transfer-1'));
+      await databaseHelper.insertTransfer(transfer, sender, null);
+      
+      final history = await databaseHelper.getTransferHistory();
+      expect(history, isNotEmpty);
+      expect(history.first['id'], equals('test-transfer-1'));
     });
 
     test('should update transfer status', () async {
@@ -57,15 +68,16 @@ void main() {
         id: 'test-transfer-2',
         senderId: 'sender-1',
         receiverId: 'receiver-1',
-        status: TransferStatus.inProgress,
-        totalBytes: 2048,
-        bytesTransferred: 512,
-        fileCount: 1,
+        status: TransferStatus.transferring,
+        progress: TransferProgress(
+          bytesTransferred: 512,
+          totalBytes: 2048,
+        ),
         createdAt: DateTime.now(),
         items: [],
       );
 
-      await databaseHelper.insertTransfer(transfer);
+      await databaseHelper.insertTransfer(transfer, null, null);
       
       await databaseHelper.updateTransferStatus(
         'test-transfer-2',
@@ -73,9 +85,9 @@ void main() {
         bytesTransferred: 2048,
       );
       
-      final transfers = await databaseHelper.getTransfers();
-      final updated = transfers.firstWhere((t) => t.id == 'test-transfer-2');
-      expect(updated.status, equals(TransferStatus.completed));
+      final history = await databaseHelper.getTransferHistory();
+      final updated = history.firstWhere((t) => t['id'] == 'test-transfer-2');
+      expect(updated['status'], equals('completed'));
     });
 
     test('should delete transfer', () async {
@@ -84,18 +96,19 @@ void main() {
         senderId: 'sender-1',
         receiverId: 'receiver-1',
         status: TransferStatus.completed,
-        totalBytes: 512,
-        bytesTransferred: 512,
-        fileCount: 1,
+        progress: TransferProgress(
+          bytesTransferred: 512,
+          totalBytes: 512,
+        ),
         createdAt: DateTime.now(),
-        items: [],
+        items: const [],
       );
 
-      await databaseHelper.insertTransfer(transfer);
+      await databaseHelper.insertTransfer(transfer, null, null);
       await databaseHelper.deleteTransfer('test-transfer-3');
       
-      final transfers = await databaseHelper.getTransfers();
-      expect(transfers.where((t) => t.id == 'test-transfer-3'), isEmpty);
+      final history = await databaseHelper.getTransferHistory();
+      expect(history.where((t) => t['id'] == 'test-transfer-3'), isEmpty);
     });
 
     test('should handle concurrent database access', () async {
@@ -108,20 +121,21 @@ void main() {
             senderId: 'sender',
             receiverId: 'receiver',
             status: TransferStatus.completed,
-            totalBytes: 100,
-            bytesTransferred: 100,
-            fileCount: 1,
+            progress: TransferProgress(
+              bytesTransferred: 100,
+              totalBytes: 100,
+            ),
             createdAt: DateTime.now(),
-            items: [],
-          )),
+            items: const [],
+          ), null, null),
         );
       }
       
       await Future.wait(futures);
       
-      final transfers = await databaseHelper.getTransfers();
+      final history = await databaseHelper.getTransferHistory();
       expect(
-        transfers.where((t) => t.id.startsWith('concurrent-test-')).length,
+        history.where((t) => (t['id'] as String).startsWith('concurrent-test-')).length,
         equals(10),
       );
     });

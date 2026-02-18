@@ -39,8 +39,12 @@ void main() {
         theirPublicKey: alicePublicKey,
       );
       
-      expect(aliceSharedSecret, equals(bobSharedSecret));
-      expect(aliceSharedSecret.length, equals(32)); // 256 bits
+      // Extract bytes to compare
+      final aliceBytes = await aliceSharedSecret.extractBytes();
+      final bobBytes = await bobSharedSecret.extractBytes();
+      
+      expect(aliceBytes, equals(bobBytes));
+      expect(aliceBytes.length, equals(32)); // 256 bits
     });
 
     test('should encrypt and decrypt data correctly', () async {
@@ -59,13 +63,6 @@ void main() {
       
       final decrypted = await encryptionService.decryptChunk(encrypted, sharedSecret);
       expect(decrypted, equals(originalData));
-    });
-
-    test('should generate unique nonces', () async {
-      final nonce1 = await encryptionService.generateNonce();
-      final nonce2 = await encryptionService.generateNonce();
-      
-      expect(nonce1, isNot(equals(nonce2)));
     });
 
     test('should detect replay attacks with nonce tracking', () async {

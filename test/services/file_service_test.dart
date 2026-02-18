@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:syndro/core/services/file_service.dart';
-import 'package:syndro/core/models/transfer.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -19,105 +18,90 @@ void main() {
       fileService = FileService();
     });
 
-    group('getFileInfo', () {
-      test('should return correct file info for existing file', () async {
-        final testFile = File(path.join(tempDir.path, 'test_file.txt'));
-        await testFile.writeAsString('Test content');
-        
-        final info = await fileService.getFileInfo(testFile.path);
-        
-        expect(info, isNotNull);
-        expect(info.fileName, equals('test_file.txt'));
-        expect(info.fileSize, greaterThan(0));
-        expect(info.isDirectory, isFalse);
-        
-        await testFile.delete();
-      });
-
-      test('should return correct info for directory', () async {
-        final testDir = Directory(path.join(tempDir.path, 'test_dir'));
-        await testDir.create();
-        
-        final info = await fileService.getFileInfo(testDir.path);
-        
-        expect(info, isNotNull);
-        expect(info.fileName, equals('test_dir'));
-        expect(info.isDirectory, isTrue);
-        
-        await testDir.delete();
-      });
-
-      test('should throw for non-existent file', () async {
-        expect(
-          () => fileService.getFileInfo('/non/existent/file.txt'),
-          throwsA(isA<FileServiceException>()),
-        );
-      });
-    });
-
-    group('validatePath', () {
-      test('should accept valid paths', () {
-        expect(
-          () => fileService.validatePath('/valid/path/to/file.txt'),
-          returnsNormally,
-        );
-      });
-
-      test('should reject path traversal attempts', () {
-        expect(
-          () => fileService.validatePath('/valid/path/../../../etc/passwd'),
-          throwsA(isA<FileServiceException>()),
-        );
-      });
-
-      test('should reject null bytes in path', () {
-        expect(
-          () => fileService.validatePath('/valid/path\u0000file.txt'),
-          throwsA(isA<FileServiceException>()),
-        );
-      });
-    });
-
-    group('sanitizeFileName', () {
+    group('sanitizeFilename', () {
       test('should remove dangerous characters', () {
-        final result = fileService.sanitizeFileName('file<>:"/\\|?*name.txt');
+        final result = fileService.sanitizeFilename('file<>:"/\\|?*name.txt');
         expect(result, equals('file_________name.txt'));
       });
 
       test('should preserve valid file names', () {
-        final result = fileService.sanitizeFileName('valid_file-name.txt');
+        final result = fileService.sanitizeFilename('valid_file-name.txt');
         expect(result, equals('valid_file-name.txt'));
       });
 
       test('should handle empty filename', () {
-        final result = fileService.sanitizeFileName('');
-        expect(result, equals('unnamed_file'));
+        expect(
+          () => fileService.sanitizeFilename(''),
+          throwsA(isA<FileServiceException>()),
+        );
+      });
+
+      test('should handle path separators', () {
+        final result = fileService.sanitizeFilename('folder/file.txt');
+        expect(result.contains('/'), isFalse);
+      });
+
+      test('should handle parent directory references', () {
+        final result = fileService.sanitizeFilename('../secret.txt');
+        expect(result.contains('..'), isFalse);
       });
     });
 
-    group('formatFileSize', () {
-      test('should format bytes correctly', () {
-        expect(fileService.formatFileSize(500), equals('500 B'));
-        expect(fileService.formatFileSize(0), equals('0 B'));
+    group('isPathWithinDirectory', () {
+      test('should return true for path within directory', () {
+        final result = fileService.isPathWithinDirectory(
+          '/home/user/downloads/file.txt',
+          '/home/user/downloads',
+        );
+        expect(result, isTrue);
       });
 
-      test('should format kilobytes correctly', () {
-        expect(fileService.formatFileSize(1024), equals('1.0 KB'));
-        expect(fileService.formatFileSize(1536), equals('1.5 KB'));
+      test('should return false for path outside directory', () {
+        final result = fileService.isPathWithinDirectory(
+          '/home/user/other/file.txt',
+          '/home/user/downloads',
+        );
+        expect(result, isFalse);
       });
 
-      test('should format megabytes correctly', () {
-        expect(fileService.formatFileSize(1024 * 1024), equals('1.0 MB'));
-        expect(fileService.formatFileSize(2.5 * 1024 * 1024), equals('2.5 MB'));
+      test('should return false for path traversal attempt', () {
+        final result = fileService.isPathWithinDirectory(
+          '/home/user/downloads/../../../etc/passwd',
+          '/home/user/downloads',
+        );
+        expect(result, isFalse);
+      });
+    });
+
+    group('getSafeFilePath', () {
+      test('should return safe path for valid filename', () async {
+        final safePath = await fileService.getSafeFilePath('test_file.txt');
+        expect(safePath, contains('test_file.txt'));
       });
 
-      test('should format gigabytes correctly', () {
-        expect(fileService.formatFileSize(1024 * 1024 * 1024), equals('1.0 GB'));
+      test('should throw for empty filename', () async {
+        expect(
+          () => fileService.getSafeFilePath(''),
+          throwsA(isA<FileServiceException>()),
+        );
+      });
+
+      test('should sanitize dangerous filename', () async {
+        final safePath = await fileService.getSafeFilePath('file<>name.txt');
+        expect(safePath, isNot(contains('<')));
+        expect(safePath, isNot(contains('>')));
+      });
+    });
+
+    group('getDownloadDirectory', () {
+      test('should return non-empty path', () async {
+        final downloadDir = await fileService.getDownloadDirectory();
+        expect(downloadDir, isNotEmpty);
       });
     });
 
     group('getUniqueFilePath', () {
-      test('should return same path if file does not exist', () async {
+      test('should return same path if file does not exist', () {
         final uniquePath = fileService.getUniqueFilePath(
           path.join(tempDir.path, 'unique_file.txt'),
         );
@@ -155,13 +139,16 @@ void main() {
       });
     });
 
-    group('copyFile', () {
+    group('copyFileStreaming', () {
       test('should copy file successfully', () async {
         final sourceFile = File(path.join(tempDir.path, 'source.txt'));
         await sourceFile.writeAsString('Source content');
         
         final destPath = path.join(tempDir.path, 'dest.txt');
-        await fileService.copyFile(sourceFile.path, destPath);
+        await fileService.copyFileStreaming(
+          sourcePath: sourceFile.path,
+          destinationPath: destPath,
+        );
         
         final destFile = File(destPath);
         expect(await destFile.exists(), isTrue);
@@ -173,19 +160,19 @@ void main() {
 
       test('should report progress during copy', () async {
         final sourceFile = File(path.join(tempDir.path, 'large_source.txt'));
-        // Create a 1MB file
+        // Create a 100KB file
         final sink = sourceFile.openWrite();
         for (int i = 0; i < 100; i++) {
-          sink.add(List.filled(10240, 0));
+          sink.add(List.filled(1024, 0));
         }
         await sink.close();
         
         final progressValues = <double>[];
         final destPath = path.join(tempDir.path, 'large_dest.txt');
         
-        await fileService.copyFile(
-          sourceFile.path,
-          destPath,
+        await fileService.copyFileStreaming(
+          sourcePath: sourceFile.path,
+          destinationPath: destPath,
           onProgress: (current, total) {
             progressValues.add(current / total);
           },

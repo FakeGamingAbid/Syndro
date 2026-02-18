@@ -8,15 +8,10 @@ import 'package:path/path.dart' as path;
 
 void main() {
   group('StreamingHashService', () {
-    late StreamingHashService hashService;
     late Directory tempDir;
 
     setUpAll(() async {
       tempDir = await getTemporaryDirectory();
-    });
-
-    setUp(() {
-      hashService = StreamingHashService();
     });
 
     test('should compute correct SHA256 hash for small file', () async {
@@ -24,7 +19,7 @@ void main() {
       final testFile = File(path.join(tempDir.path, 'test_small.txt'));
       await testFile.writeAsString('Hello, World!');
       
-      final hash = await hashService.computeFileHash(testFile.path);
+      final hash = await StreamingHashService.calculateFileHash(testFile);
       
       expect(hash, isNotNull);
       expect(hash, isNotEmpty);
@@ -37,8 +32,8 @@ void main() {
       final testFile = File(path.join(tempDir.path, 'test_consistent.txt'));
       await testFile.writeAsString('Same content');
       
-      final hash1 = await hashService.computeFileHash(testFile.path);
-      final hash2 = await hashService.computeFileHash(testFile.path);
+      final hash1 = await StreamingHashService.calculateFileHash(testFile);
+      final hash2 = await StreamingHashService.calculateFileHash(testFile);
       
       expect(hash1, equals(hash2));
       
@@ -52,8 +47,8 @@ void main() {
       await file1.writeAsString('Content 1');
       await file2.writeAsString('Content 2');
       
-      final hash1 = await hashService.computeFileHash(file1.path);
-      final hash2 = await hashService.computeFileHash(file2.path);
+      final hash1 = await StreamingHashService.calculateFileHash(file1);
+      final hash2 = await StreamingHashService.calculateFileHash(file2);
       
       expect(hash1, isNot(equals(hash2)));
       
@@ -71,7 +66,7 @@ void main() {
       }
       await sink.close();
       
-      final hash = await hashService.computeFileHash(largeFile.path);
+      final hash = await StreamingHashService.calculateFileHash(largeFile);
       
       expect(hash, isNotNull);
       expect(hash.length, equals(64));
@@ -85,10 +80,10 @@ void main() {
       
       final progressValues = <double>[];
       
-      await hashService.computeFileHash(
-        testFile.path,
-        onProgress: (progress) {
-          progressValues.add(progress);
+      await StreamingHashService.calculateFileHashWithProgress(
+        testFile,
+        onProgress: (bytesProcessed, totalBytes) {
+          progressValues.add(bytesProcessed / totalBytes);
         },
       );
       
@@ -100,27 +95,62 @@ void main() {
 
     test('should throw for non-existent file', () async {
       expect(
-        () => hashService.computeFileHash('/non/existent/file.txt'),
-        throwsA(isA<FileSystemException>()),
+        () => StreamingHashService.calculateFileHash(File('/non/existent/file.txt')),
+        throwsA(isA<FileNotFoundException>()),
       );
     });
 
-    test('should verify hash correctly', () async {
-      final testFile = File(path.join(tempDir.path, 'test_verify.txt'));
-      await testFile.writeAsString('Content to verify');
+    test('should support cancellation', () async {
+      final testFile = File(path.join(tempDir.path, 'test_cancel.txt'));
+      // Create a larger file for cancellation test
+      final sink = testFile.openWrite();
+      for (int i = 0; i < 100; i++) {
+        sink.add(Uint8List(10240));
+      }
+      await sink.close();
       
-      final hash = await hashService.computeFileHash(testFile.path);
-      final isValid = await hashService.verifyFileHash(testFile.path, hash);
+      final cancellationToken = CancellationToken();
       
-      expect(isValid, isTrue);
+      // Cancel immediately
+      cancellationToken.cancel();
       
-      // Modify file and verify hash fails
-      await testFile.writeAsString('Modified content');
-      final isStillValid = await hashService.verifyFileHash(testFile.path, hash);
-      
-      expect(isStillValid, isFalse);
+      expect(
+        () => StreamingHashService.calculateFileHash(testFile, cancellationToken: cancellationToken),
+        throwsA(isA<CancelledException>()),
+      );
       
       await testFile.delete();
+    });
+
+    test('should calculate bytes hash correctly', () {
+      final bytes = Uint8List.fromList([1, 2, 3, 4, 5]);
+      final hash = StreamingHashService.calculateBytesHash(bytes);
+      
+      expect(hash, isNotNull);
+      expect(hash.length, equals(64));
+    });
+
+    test('should support incremental hash calculation', () {
+      final calculator = StreamingHashService.createIncrementalCalculator();
+      
+      calculator.addChunk([1, 2, 3]);
+      calculator.addChunk([4, 5, 6]);
+      
+      final hash = calculator.finalize();
+      
+      expect(hash, isNotNull);
+      expect(hash.length, equals(64));
+      expect(calculator.isFinalized, isTrue);
+    });
+
+    test('should throw when adding to finalized calculator', () {
+      final calculator = StreamingHashService.createIncrementalCalculator();
+      calculator.finalize();
+      
+      expect(
+        () => calculator.addChunk([1, 2, 3]),
+        throwsA(isA<StateError>()),
+      );
     });
   });
 }
