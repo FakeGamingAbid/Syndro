@@ -2,6 +2,68 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
+/// Adaptive chunk size manager that adjusts based on network conditions
+///
+/// Dynamically calculates optimal chunk size based on:
+/// - Current network speed (bytes per second)
+/// - Network latency (milliseconds)
+///
+/// This improves transfer efficiency by:
+/// - Using smaller chunks on slow networks (less retransmission on error)
+/// - Using larger chunks on fast networks (less overhead)
+class AdaptiveChunkManager {
+  /// Calculate optimal chunk size based on network conditions
+  ///
+  /// Network speed thresholds:
+  /// - Slow (<1 MB/s) → 256KB chunks
+  /// - Medium (1-10 MB/s) → 1MB chunks
+  /// - Fast (10-50 MB/s) → 4MB chunks
+  /// - Very fast (>50 MB/s) → 8MB chunks
+  int calculateOptimalChunkSize(double currentSpeedBytesPerSec, int latencyMs) {
+    // Slow network (<1 MB/s) → 256KB chunks
+    if (currentSpeedBytesPerSec < 1 * 1024 * 1024) {
+      return 256 * 1024;
+    }
+    // Medium network (1-10 MB/s) → 1MB chunks
+    if (currentSpeedBytesPerSec < 10 * 1024 * 1024) {
+      return 1 * 1024 * 1024;
+    }
+    // Fast network (10-50 MB/s) → 4MB chunks
+    if (currentSpeedBytesPerSec < 50 * 1024 * 1024) {
+      return 4 * 1024 * 1024;
+    }
+    // Very fast network (>50 MB/s) → 8MB chunks
+    return 8 * 1024 * 1024;
+  }
+
+  /// Calculate optimal number of connections based on network conditions
+  ///
+  /// More connections help on high-latency networks
+  int calculateOptimalConnections(double currentSpeedBytesPerSec, int latencyMs) {
+    // High latency (>100ms) - use more connections to saturate link
+    if (latencyMs > 100) {
+      if (currentSpeedBytesPerSec < 1 * 1024 * 1024) {
+        return 4; // Slow + high latency
+      } else if (currentSpeedBytesPerSec < 10 * 1024 * 1024) {
+        return 8; // Medium + high latency
+      } else {
+        return 12; // Fast + high latency
+      }
+    }
+    
+    // Low latency - fewer connections needed
+    if (currentSpeedBytesPerSec < 1 * 1024 * 1024) {
+      return 2; // Slow network
+    } else if (currentSpeedBytesPerSec < 10 * 1024 * 1024) {
+      return 4; // Medium network
+    } else if (currentSpeedBytesPerSec < 50 * 1024 * 1024) {
+      return 6; // Fast network
+    } else {
+      return 8; // Very fast network
+    }
+  }
+}
+
 /// Configuration for parallel chunk transfers
 ///
 /// Automatically adjusts based on device capabilities
