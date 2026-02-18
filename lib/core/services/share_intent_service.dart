@@ -26,6 +26,12 @@ class SharedFile {
   bool get isAudio => mimeType?.startsWith('audio/') ?? false;
 }
 
+/// Share mode enum
+enum ShareMode {
+  appToApp,
+  browserShare,
+}
+
 /// Service to handle share intents from other apps
 class ShareIntentService {
   static const MethodChannel _channel =
@@ -38,10 +44,17 @@ class ShareIntentService {
   final StreamController<List<SharedFile>> _sharedFilesController =
       StreamController<List<SharedFile>>.broadcast();
 
+  final StreamController<ShareMode> _shareModeController =
+      StreamController<ShareMode>.broadcast();
+
   Stream<List<SharedFile>> get sharedFilesStream => _sharedFilesController.stream;
+  Stream<ShareMode> get shareModeStream => _shareModeController.stream;
 
   List<SharedFile>? _lastSharedFiles;
   List<SharedFile>? get lastSharedFiles => _lastSharedFiles;
+
+  ShareMode _lastShareMode = ShareMode.appToApp;
+  ShareMode get lastShareMode => _lastShareMode;
 
   bool get hasSharedFiles => _lastSharedFiles != null && _lastSharedFiles!.isNotEmpty;
 
@@ -50,12 +63,21 @@ class ShareIntentService {
     // Set up method call handler for share intent events
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'onShareIntentReceived') {
-        await _handleShareIntentReceived();
+        final mode = _parseShareMode(call.arguments);
+        await _handleShareIntentReceived(mode);
       }
     });
 
     // Check if app was launched with shared files
     await checkForSharedFiles();
+  }
+
+  ShareMode _parseShareMode(dynamic arguments) {
+    if (arguments is Map && arguments['mode'] != null) {
+      final mode = arguments['mode'] as String;
+      return mode == 'browser_share' ? ShareMode.browserShare : ShareMode.appToApp;
+    }
+    return ShareMode.appToApp;
   }
 
   /// Check if app was launched with shared files
@@ -79,7 +101,10 @@ class ShareIntentService {
   }
 
   /// Handle incoming share intent
-  Future<void> _handleShareIntentReceived() async {
+  Future<void> _handleShareIntentReceived(ShareMode mode) async {
+    _lastShareMode = mode;
+    _shareModeController.add(mode);
+    
     final files = await checkForSharedFiles();
     if (files != null && files.isNotEmpty) {
       _sharedFilesController.add(files);
@@ -98,5 +123,6 @@ class ShareIntentService {
 
   void dispose() {
     _sharedFilesController.close();
+    _shareModeController.close();
   }
 }

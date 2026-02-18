@@ -18,7 +18,6 @@ import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/quick_send_screen.dart';
 import 'ui/screens/browser_share_screen.dart';
 import 'ui/theme/app_theme.dart';
-import 'ui/widgets/share_intent_dialog.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -132,6 +131,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   List<SharedFile>? _sharedFilesFromIntent;
   List<File>? _browserShareFiles;
   bool _hasShareIntent = false;
+  ShareMode _shareMode = ShareMode.appToApp;
 
   @override
   void initState() {
@@ -199,9 +199,24 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
         shareIntentService.sharedFilesStream.listen((files) {
           if (files.isNotEmpty && mounted) {
             debugPrint('📥 Received ${files.length} file(s) from share intent');
+            // Get the share mode from the service
+            final mode = shareIntentService.lastShareMode;
+            debugPrint('📱 Share mode: $mode');
+            
             setState(() {
               _sharedFilesFromIntent = files;
               _hasShareIntent = true;
+              _shareMode = mode;
+            });
+          }
+        });
+        
+        // Also listen for share mode changes
+        shareIntentService.shareModeStream.listen((mode) {
+          if (mounted) {
+            debugPrint('📱 Share mode changed to: $mode');
+            setState(() {
+              _shareMode = mode;
             });
           }
         });
@@ -448,52 +463,40 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   }
 
   // Build screen for handling share intents from other apps
+  // On Android, directly navigates based on share mode (no dialog)
   Widget _buildShareIntentScreen() {
-    return Builder(
-      builder: (context) {
-        // Show dialog immediately when build is called
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showShareIntentDialog(context);
-        });
+    // Directly handle based on share mode - no dialog needed
+    // The mode was set by the activity-alias selected in Android share sheet
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_shareMode == ShareMode.browserShare) {
+        _handleBrowserShare();
+      } else {
+        _handleAppToAppShare();
+      }
+    });
 
-        // Show loading while dialog is shown
-        return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
-              gradient: AppTheme.backgroundGradient,
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 24),
-                  Text(
-                    'Preparing share...',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
+    // Show loading while processing
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppTheme.backgroundGradient,
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 24),
+              Text(
+                'Preparing share...',
+                style: TextStyle(
+                  color: AppTheme.textSecondary,
+                  fontSize: 16,
+                ),
               ),
-            ),
+            ],
           ),
-        );
-      },
-    );
-  }
-
-  void _showShareIntentDialog(BuildContext context) {
-    if (!_hasShareIntent || _sharedFilesFromIntent == null) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => ShareIntentDialog(
-        fileCount: _sharedFilesFromIntent!.length,
-        onAppToApp: () => _handleAppToAppShare(),
-        onBrowserShare: () => _handleBrowserShare(),
+        ),
       ),
     );
   }

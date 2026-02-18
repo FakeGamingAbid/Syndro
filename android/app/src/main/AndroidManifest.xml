@@ -51,7 +51,16 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+        </activity>
 
+        <!-- App to App Share Activity - Shows in share sheet as "Syndro (App to App)" -->
+        <activity-alias
+            android:name=".ShareAppToApp"
+            android:targetActivity=".MainActivity"
+            android:exported="true"
+            android:label="Syndro (App to App)"
+            android:icon="@mipmap/ic_launcher">
+            
             <!-- Share Intent - Images -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND"/>
@@ -86,7 +95,51 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="*/*"/>
             </intent-filter>
-        </activity>
+        </activity-alias>
+
+        <!-- Browser Share Activity - Shows in share sheet as "Syndro (Browser Share)" -->
+        <activity-alias
+            android:name=".ShareBrowser"
+            android:targetActivity=".MainActivity"
+            android:exported="true"
+            android:label="Syndro (Browser Share)"
+            android:icon="@mipmap/ic_launcher">
+            
+            <!-- Share Intent - Images -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="image/*"/>
+            </intent-filter>
+
+            <!-- Share Intent - Videos -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="video/*"/>
+            </intent-filter>
+
+            <!-- Share Intent - Audio -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="audio/*"/>
+            </intent-filter>
+
+            <!-- Share Intent - Any file -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="*/*"/>
+            </intent-filter>
+
+            <!-- Share Intent - Multiple files -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="*/*"/>
+            </intent-filter>
+        </activity-alias>
 
         <!-- Transfer Service for notifications -->
         <service

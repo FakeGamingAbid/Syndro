@@ -284,22 +284,37 @@ class MainActivity : FlutterActivity() {
             Intent.ACTION_SEND -> {
                 if (intent.type != null) {
                     pendingShareIntent = intent
-                    // Notify Flutter about the share intent
+                    // Determine share mode from component name
+                    val shareMode = determineShareMode(intent)
+                    // Notify Flutter about the share intent with mode
                     flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
                         MethodChannel(messenger, SHARE_INTENT_CHANNEL)
-                            .invokeMethod("onShareIntentReceived", null)
+                            .invokeMethod("onShareIntentReceived", mapOf("mode" to shareMode))
                     }
                 }
             }
             Intent.ACTION_SEND_MULTIPLE -> {
                 if (intent.type != null) {
                     pendingShareIntent = intent
+                    // Determine share mode from component name
+                    val shareMode = determineShareMode(intent)
+                    // Notify Flutter about the share intent with mode
                     flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
                         MethodChannel(messenger, SHARE_INTENT_CHANNEL)
-                            .invokeMethod("onShareIntentReceived", null)
+                            .invokeMethod("onShareIntentReceived", mapOf("mode" to shareMode))
                     }
                 }
             }
+        }
+    }
+
+    private fun determineShareMode(intent: Intent): String {
+        // Check which activity-alias was used based on component name
+        val componentName = intent.component?.className ?: ""
+        return when {
+            componentName.contains("ShareAppToApp") -> "app_to_app"
+            componentName.contains("ShareBrowser") -> "browser_share"
+            else -> "app_to_app" // Default
         }
     }
 
