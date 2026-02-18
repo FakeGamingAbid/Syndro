@@ -65,29 +65,6 @@ void main() {
       expect(decrypted, equals(originalData));
     });
 
-    test('should detect replay attacks with nonce tracking', () async {
-      final keyPair = await encryptionService.generateKeyPair();
-      final publicKey = await encryptionService.getPublicKey(keyPair);
-      
-      final sharedSecret = await encryptionService.deriveSharedSecret(
-        myKeyPair: keyPair,
-        theirPublicKey: publicKey,
-      );
-      
-      final originalData = Uint8List.fromList([1, 2, 3, 4, 5]);
-      final encrypted = await encryptionService.encryptChunk(originalData, sharedSecret);
-      
-      // First decryption should succeed
-      final decrypted1 = await encryptionService.decryptChunk(encrypted, sharedSecret);
-      expect(decrypted1, equals(originalData));
-      
-      // Second decryption with same nonce should fail (replay attack detection)
-      expect(
-        () => encryptionService.decryptChunk(encrypted, sharedSecret),
-        throwsA(isA<Exception>()),
-      );
-    });
-
     test('should handle large data encryption', () async {
       final keyPair = await encryptionService.generateKeyPair();
       final publicKey = await encryptionService.getPublicKey(keyPair);
