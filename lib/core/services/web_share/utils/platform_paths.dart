@@ -22,7 +22,7 @@ class PlatformPaths {
             final testFile = File('$publicDownload/.syndro_test');
             await testFile.writeAsString('test');
             await testFile.delete();
-            print('✅ Using public Downloads folder: $publicDownload');
+            debugPrint('✅ Using public Downloads folder: $publicDownload');
             return publicDownload;
           } catch (e) {
             debugPrint('⚠️ Cannot write to public Downloads: $e');
@@ -36,7 +36,7 @@ class PlatformPaths {
           if (!await syndroDir.exists()) {
             await syndroDir.create(recursive: true);
           }
-          print('✅ Using Syndro Downloads folder: $syndroDownload');
+          debugPrint('✅ Using Syndro Downloads folder: $syndroDownload');
           return syndroDownload;
         } catch (e) {
           debugPrint('⚠️ Cannot create Syndro folder: $e');
@@ -45,7 +45,7 @@ class PlatformPaths {
         // Fallback: Try external storage directory
         final extDir = await getExternalStorageDirectory();
         if (extDir != null) {
-          print('⚠️ Falling back to app storage: ${extDir.path}');
+          debugPrint('⚠️ Falling back to app storage: ${extDir.path}');
           return extDir.path;
         }
 

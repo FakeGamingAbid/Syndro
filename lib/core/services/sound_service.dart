@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 /// Service to play notification sounds
@@ -24,7 +25,7 @@ class SoundService {
         const channel = MethodChannel('com.syndro.app/sound');
         await channel.invokeMethod('playNotificationSound');
       } catch (e) {
-        print('Could not play notification sound: $e');
+        debugPrint('Could not play notification sound: $e');
       }
     }
   }

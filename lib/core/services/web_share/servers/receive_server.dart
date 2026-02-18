@@ -320,7 +320,7 @@ class ReceiveServer {
         await tempSink.flush();
         await tempSink.close();
 
-        print('📦 Received $totalSize bytes (streamed to temp file)');
+        debugPrint('📦 Received $totalSize bytes (streamed to temp file)');
 
         // Read back from temp file for parsing (still needed for multipart boundary detection)
         final bytes = await tempBodyFile.readAsBytes();

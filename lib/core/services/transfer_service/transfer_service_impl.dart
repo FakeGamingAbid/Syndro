@@ -1303,7 +1303,9 @@ class TransferService {
           await fileSink.close();
           try {
             await File(tempFilePath).delete();
-          } catch (_) {}
+          } catch (e) {
+            debugPrint('⚠️ Failed to delete temp file: $e');
+          }
           return;
         }
 

@@ -98,7 +98,7 @@ class ShareIntentService {
         return files;
       }
     } on PlatformException catch (e) {
-      print('Error checking for shared files: ${e.message}');
+      debugPrint('Error checking for shared files: ${e.message}');
     }
     return null;
   }
@@ -120,7 +120,7 @@ class ShareIntentService {
       await _channel.invokeMethod('clearSharedFiles');
       _lastSharedFiles = null;
     } on PlatformException catch (e) {
-      print('Error clearing shared files: ${e.message}');
+      debugPrint('Error clearing shared files: ${e.message}');
     }
   }
 
@@ -143,7 +143,7 @@ class ShareIntentService {
       });
       return result;
     } on PlatformException catch (e) {
-      print('Error copying content URI: ${e.message}');
+      debugPrint('Error copying content URI: ${e.message}');
       return null;
     }
   }
