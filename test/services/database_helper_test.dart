@@ -30,17 +30,16 @@ void main() {
         id: 'test-transfer-1',
         senderId: 'sender-1',
         receiverId: 'receiver-1',
-        senderName: 'Test Sender',
-        receiverName: 'Test Receiver',
         status: TransferStatus.completed,
-        progress: TransferProgress(
+        progress: const TransferProgress(
           bytesTransferred: 1024,
           totalBytes: 1024,
         ),
         createdAt: DateTime.now(),
         items: [
-          TransferItem(
+          const TransferItem(
             name: 'test.txt',
+            path: '/path/to/test.txt',
             size: 1024,
             isDirectory: false,
           ),
@@ -69,12 +68,12 @@ void main() {
         senderId: 'sender-1',
         receiverId: 'receiver-1',
         status: TransferStatus.transferring,
-        progress: TransferProgress(
+        progress: const TransferProgress(
           bytesTransferred: 512,
           totalBytes: 2048,
         ),
         createdAt: DateTime.now(),
-        items: [],
+        items: const [],
       );
 
       await databaseHelper.insertTransfer(transfer, null, null);
@@ -96,7 +95,7 @@ void main() {
         senderId: 'sender-1',
         receiverId: 'receiver-1',
         status: TransferStatus.completed,
-        progress: TransferProgress(
+        progress: const TransferProgress(
           bytesTransferred: 512,
           totalBytes: 512,
         ),
@@ -121,7 +120,7 @@ void main() {
             senderId: 'sender',
             receiverId: 'receiver',
             status: TransferStatus.completed,
-            progress: TransferProgress(
+            progress: const TransferProgress(
               bytesTransferred: 100,
               totalBytes: 100,
             ),

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:syndro/core/services/file_service.dart';
 import 'package:syndro/core/services/encryption_service.dart';
-import 'package:syndro/core/models/transfer.dart';
+import 'package:syndro/core/services/streaming_hash_service.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
@@ -26,7 +26,7 @@ void main() {
       test('should encrypt, transfer, and decrypt file correctly', () async {
         // 1. Create test file
         final originalFile = File(path.join(tempDir.path, 'original.txt'));
-        final originalContent = 'This is sensitive data to transfer';
+        const originalContent = 'This is sensitive data to transfer';
         await originalFile.writeAsString(originalContent);
         
         // 2. Generate encryption keys (simulating two devices)
@@ -47,8 +47,10 @@ void main() {
           theirPublicKey: senderPublicKey,
         );
         
-        // Secrets should match
-        expect(senderSharedSecret, equals(receiverSharedSecret));
+        // Secrets should match (compare bytes)
+        final senderBytes = await senderSharedSecret.extractBytes();
+        final receiverBytes = await receiverSharedSecret.extractBytes();
+        expect(senderBytes, equals(receiverBytes));
         
         // 4. Encrypt file content
         final fileBytes = await originalFile.readAsBytes();
@@ -96,9 +98,9 @@ void main() {
         
         // Copy with progress tracking
         final destFile = File(path.join(tempDir.path, 'large_file_copy.bin'));
-        await fileService.copyFile(
-          largeFile.path,
-          destFile.path,
+        await fileService.copyFileStreaming(
+          sourcePath: largeFile.path,
+          destinationPath: destFile.path,
           onProgress: (current, total) {
             lastProgress = current / total;
           },
@@ -130,9 +132,9 @@ void main() {
         // Simulate concurrent transfers (copy operations)
         for (int i = 0; i < files.length; i++) {
           transferFutures.add(
-            fileService.copyFile(
-              files[i].path,
-              path.join(tempDir.path, 'concurrent_${i}_copy.txt'),
+            fileService.copyFileStreaming(
+              sourcePath: files[i].path,
+              destinationPath: path.join(tempDir.path, 'concurrent_${i}_copy.txt'),
             ),
           );
         }
@@ -188,14 +190,17 @@ void main() {
         await sourceFile.writeAsString('Original content for integrity check');
         
         // Compute original hash
-        final originalHash = await fileService.computeFileHash(sourceFile.path);
+        final originalHash = await StreamingHashService.calculateFileHash(sourceFile);
         
         // Copy file
         final destFile = File(path.join(tempDir.path, 'integrity_dest.txt'));
-        await fileService.copyFile(sourceFile.path, destFile.path);
+        await fileService.copyFileStreaming(
+          sourcePath: sourceFile.path,
+          destinationPath: destFile.path,
+        );
         
         // Compute destination hash
-        final destHash = await fileService.computeFileHash(destFile.path);
+        final destHash = await StreamingHashService.calculateFileHash(destFile);
         
         // Hashes should match
         expect(destHash, equals(originalHash));

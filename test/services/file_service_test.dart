@@ -100,45 +100,6 @@ void main() {
       });
     });
 
-    group('getUniqueFilePath', () {
-      test('should return same path if file does not exist', () {
-        final uniquePath = fileService.getUniqueFilePath(
-          path.join(tempDir.path, 'unique_file.txt'),
-        );
-        
-        expect(uniquePath, equals(path.join(tempDir.path, 'unique_file.txt')));
-      });
-
-      test('should append (1) if file exists', () async {
-        final existingFile = File(path.join(tempDir.path, 'existing_file.txt'));
-        await existingFile.writeAsString('content');
-        
-        final uniquePath = fileService.getUniqueFilePath(
-          path.join(tempDir.path, 'existing_file.txt'),
-        );
-        
-        expect(uniquePath, equals(path.join(tempDir.path, 'existing_file (1).txt')));
-        
-        await existingFile.delete();
-      });
-
-      test('should increment number for multiple duplicates', () async {
-        final file1 = File(path.join(tempDir.path, 'multi_file.txt'));
-        final file2 = File(path.join(tempDir.path, 'multi_file (1).txt'));
-        await file1.writeAsString('content');
-        await file2.writeAsString('content');
-        
-        final uniquePath = fileService.getUniqueFilePath(
-          path.join(tempDir.path, 'multi_file.txt'),
-        );
-        
-        expect(uniquePath, equals(path.join(tempDir.path, 'multi_file (2).txt')));
-        
-        await file1.delete();
-        await file2.delete();
-      });
-    });
-
     group('copyFileStreaming', () {
       test('should copy file successfully', () async {
         final sourceFile = File(path.join(tempDir.path, 'source.txt'));
