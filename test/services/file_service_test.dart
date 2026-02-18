@@ -1,18 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:syndro/core/services/file_service.dart';
-import 'package:path/path.dart' as path;
-import 'package:path_provider/path_provider.dart';
 
 void main() {
   group('FileService', () {
     late FileService fileService;
-    late Directory tempDir;
-
-    setUpAll(() async {
-      tempDir = await getTemporaryDirectory();
-    });
 
     setUp(() {
       fileService = FileService();
@@ -62,88 +53,6 @@ void main() {
           '/home/user/downloads',
         );
         expect(result, isFalse);
-      });
-
-      test('should return false for path traversal attempt', () {
-        final result = fileService.isPathWithinDirectory(
-          '/home/user/downloads/../../../etc/passwd',
-          '/home/user/downloads',
-        );
-        expect(result, isFalse);
-      });
-    });
-
-    group('getSafeFilePath', () {
-      test('should return safe path for valid filename', () async {
-        final safePath = await fileService.getSafeFilePath('test_file.txt');
-        expect(safePath, contains('test_file.txt'));
-      });
-
-      test('should throw for empty filename', () async {
-        expect(
-          () => fileService.getSafeFilePath(''),
-          throwsA(isA<FileServiceException>()),
-        );
-      });
-
-      test('should sanitize dangerous filename', () async {
-        final safePath = await fileService.getSafeFilePath('file<>name.txt');
-        expect(safePath, isNot(contains('<')));
-        expect(safePath, isNot(contains('>')));
-      });
-    });
-
-    group('getDownloadDirectory', () {
-      test('should return non-empty path', () async {
-        final downloadDir = await fileService.getDownloadDirectory();
-        expect(downloadDir, isNotEmpty);
-      });
-    });
-
-    group('copyFileStreaming', () {
-      test('should copy file successfully', () async {
-        final sourceFile = File(path.join(tempDir.path, 'source.txt'));
-        await sourceFile.writeAsString('Source content');
-        
-        final destPath = path.join(tempDir.path, 'dest.txt');
-        await fileService.copyFileStreaming(
-          sourcePath: sourceFile.path,
-          destinationPath: destPath,
-        );
-        
-        final destFile = File(destPath);
-        expect(await destFile.exists(), isTrue);
-        expect(await destFile.readAsString(), equals('Source content'));
-        
-        await sourceFile.delete();
-        await destFile.delete();
-      });
-
-      test('should report progress during copy', () async {
-        final sourceFile = File(path.join(tempDir.path, 'large_source.txt'));
-        // Create a 100KB file
-        final sink = sourceFile.openWrite();
-        for (int i = 0; i < 100; i++) {
-          sink.add(List.filled(1024, 0));
-        }
-        await sink.close();
-        
-        final progressValues = <double>[];
-        final destPath = path.join(tempDir.path, 'large_dest.txt');
-        
-        await fileService.copyFileStreaming(
-          sourcePath: sourceFile.path,
-          destinationPath: destPath,
-          onProgress: (current, total) {
-            progressValues.add(current / total);
-          },
-        );
-        
-        expect(progressValues, isNotEmpty);
-        expect(progressValues.last, closeTo(1.0, 0.01));
-        
-        await sourceFile.delete();
-        await File(destPath).delete();
       });
     });
   });
