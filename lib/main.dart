@@ -131,7 +131,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   List<SharedFile>? _sharedFilesFromIntent;
   List<File>? _browserShareFiles;
   bool _hasShareIntent = false;
-  ShareMode _shareMode = ShareMode.appToApp;
+  AndroidShareMode _shareMode = AndroidShareMode.appToApp;
 
   @override
   void initState() {
@@ -468,7 +468,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     // Directly handle based on share mode - no dialog needed
     // The mode was set by the activity-alias selected in Android share sheet
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_shareMode == ShareMode.browserShare) {
+      if (_shareMode == AndroidShareMode.browserShare) {
         _handleBrowserShare();
       } else {
         _handleAppToAppShare();

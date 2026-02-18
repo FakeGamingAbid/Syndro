@@ -303,21 +303,6 @@ class BackgroundTransferService {
     }
   }
 
-  /// Format bytes to human readable string
-  static String _formatBytes(int bytes) {
-    if (bytes <= 0) return '0 B';
-
-    if (bytes < 1024) {
-      return '$bytes B';
-    } else if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    } else if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    } else {
-      return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-    }
-  }
-
   /// Show Windows notification using PowerShell
   static Future<void> _showWindowsNotification({
     required String title,

@@ -26,8 +26,8 @@ class SharedFile {
   bool get isAudio => mimeType?.startsWith('audio/') ?? false;
 }
 
-/// Share mode enum
-enum ShareMode {
+/// Android share mode enum (for share sheet selection)
+enum AndroidShareMode {
   appToApp,
   browserShare,
 }
@@ -44,17 +44,17 @@ class ShareIntentService {
   final StreamController<List<SharedFile>> _sharedFilesController =
       StreamController<List<SharedFile>>.broadcast();
 
-  final StreamController<ShareMode> _shareModeController =
-      StreamController<ShareMode>.broadcast();
+  final StreamController<AndroidShareMode> _shareModeController =
+      StreamController<AndroidShareMode>.broadcast();
 
   Stream<List<SharedFile>> get sharedFilesStream => _sharedFilesController.stream;
-  Stream<ShareMode> get shareModeStream => _shareModeController.stream;
+  Stream<AndroidShareMode> get shareModeStream => _shareModeController.stream;
 
   List<SharedFile>? _lastSharedFiles;
   List<SharedFile>? get lastSharedFiles => _lastSharedFiles;
 
-  ShareMode _lastShareMode = ShareMode.appToApp;
-  ShareMode get lastShareMode => _lastShareMode;
+  AndroidShareMode _lastShareMode = AndroidShareMode.appToApp;
+  AndroidShareMode get lastShareMode => _lastShareMode;
 
   bool get hasSharedFiles => _lastSharedFiles != null && _lastSharedFiles!.isNotEmpty;
 
@@ -72,12 +72,12 @@ class ShareIntentService {
     await checkForSharedFiles();
   }
 
-  ShareMode _parseShareMode(dynamic arguments) {
+  AndroidShareMode _parseShareMode(dynamic arguments) {
     if (arguments is Map && arguments['mode'] != null) {
       final mode = arguments['mode'] as String;
-      return mode == 'browser_share' ? ShareMode.browserShare : ShareMode.appToApp;
+      return mode == 'browser_share' ? AndroidShareMode.browserShare : AndroidShareMode.appToApp;
     }
-    return ShareMode.appToApp;
+    return AndroidShareMode.appToApp;
   }
 
   /// Check if app was launched with shared files
@@ -101,7 +101,7 @@ class ShareIntentService {
   }
 
   /// Handle incoming share intent
-  Future<void> _handleShareIntentReceived(ShareMode mode) async {
+  Future<void> _handleShareIntentReceived(AndroidShareMode mode) async {
     _lastShareMode = mode;
     _shareModeController.add(mode);
     
