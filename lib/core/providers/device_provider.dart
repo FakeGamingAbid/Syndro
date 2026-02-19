@@ -67,6 +67,18 @@ final discoveredDevicesProvider = StreamProvider<List<Device>>((ref) {
 final selectedDeviceProvider = StateProvider<Device?>((ref) => null);
 
 // ============================================
+// MULTI-SELECT DEVICES PROVIDER
+// ============================================
+
+/// Provider for selecting multiple devices for batch transfer
+final selectedDevicesProvider = StateProvider<Set<Device>>((ref) => {});
+
+/// Provider to check if multi-select mode is enabled
+final isMultiSelectModeProvider = Provider<bool>((ref) {
+  return ref.watch(selectedDevicesProvider).isNotEmpty;
+});
+
+// ============================================
 // SERVICE STATUS PROVIDERS
 // ============================================
 

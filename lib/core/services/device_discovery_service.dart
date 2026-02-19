@@ -124,7 +124,8 @@ class DeviceDiscoveryService {
 
       try {
         _localIps = await _getAllLocalIps();
-        if (_localIps.isNotEmpty && _localIps.first != '0.0.0.0') {
+        // FIX: Handle empty IP list consistently - use first valid IP or fallback
+        if (_localIps.isNotEmpty) {
           final primaryIp = _localIps.first;
           _subnets = _localIps
               .map((ip) => _getSubnetFromIp(ip))
@@ -132,9 +133,13 @@ class DeviceDiscoveryService {
               .toSet()
               .toList();
           ipAddress = primaryIp;
+          debugPrint('📍 Using IP: $ipAddress with ${_subnets.length} subnet(s)');
+        } else {
+          debugPrint('⚠️ No valid IP addresses found, using fallback: $ipAddress');
         }
       } catch (e) {
         debugPrint('Error getting IPs: $e');
+        // Keep default '0.0.0.0' on error
       }
 
       _currentDevice = Device(

@@ -296,10 +296,18 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       // Try graceful cleanup before fallback exit
       try {
         await DatabaseHelper.instance.close();
-        await SystemTrayService.dispose();
-      } catch (_) {
-        // Ignore cleanup errors in fallback
+        debugPrint('✅ Database closed in fallback');
+      } catch (dbError) {
+        debugPrint('⚠️ Database close error in fallback: $dbError');
       }
+      try {
+        await SystemTrayService.dispose();
+        debugPrint('✅ System tray disposed in fallback');
+      } catch (trayError) {
+        debugPrint('⚠️ System tray dispose error in fallback: $trayError');
+      }
+      // Give a brief moment for cleanup to complete
+      await Future.delayed(const Duration(milliseconds: 100));
       // Use dart:io exit only as last resort
       exit(0);
     }

@@ -468,8 +468,15 @@ class ParallelTransferService {
       );
 
       return Uint8List.fromList(plaintext);
+    } on SecretBoxAuthenticationError catch (e) {
+      throw DecryptionException(
+        'Decryption failed: Authentication error - data may be corrupted or tampered',
+        originalError: e,
+      );
+    } on ArgumentError catch (e) {
+      throw DecryptionException('Invalid encrypted data: ${e.message}', originalError: e);
     } catch (e) {
-      throw Exception('Decryption failed: Authentication error - $e');
+      throw DecryptionException('Decryption failed: ${e.runtimeType}', originalError: e);
     }
   }
 
@@ -656,5 +663,21 @@ class _SimpleLock {
   
   void dispose() {
     _isDisposed = true;
+  }
+}
+
+/// Custom exception for decryption errors in parallel transfers
+class DecryptionException implements Exception {
+  final String message;
+  final dynamic originalError;
+
+  DecryptionException(this.message, {this.originalError});
+
+  @override
+  String toString() {
+    if (originalError != null) {
+      return 'DecryptionException: $message (caused by: $originalError)';
+    }
+    return 'DecryptionException: $message';
   }
 }

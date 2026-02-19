@@ -103,6 +103,7 @@ class FileService {
       // FIX: Safe UTF-8 truncation - use runes to avoid cutting multi-byte characters
       final maxNameLength = 200 - ext.length;
       final runes = nameWithoutExt.runes.toList();
+      // FIX: Use String.fromCharCodes correctly with runes (code points)
       final truncatedRunes = runes.take(maxNameLength).toList();
       sanitized = '${String.fromCharCodes(truncatedRunes)}$ext';
     }

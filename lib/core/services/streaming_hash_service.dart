@@ -63,7 +63,7 @@ class StreamingHashService {
           timeout,
           onTimeout: () {
             subscription?.cancel();
-            throw TimeoutException('Hash calculation timed out after ${timeout.inSeconds}s');
+            throw HashTimeoutException('Hash calculation timed out after ${timeout.inSeconds}s');
           },
         );
       }
@@ -133,7 +133,7 @@ class StreamingHashService {
           timeout,
           onTimeout: () {
             subscription?.cancel();
-            throw TimeoutException('Hash calculation timed out after ${timeout.inSeconds}s');
+            throw HashTimeoutException('Hash calculation timed out after ${timeout.inSeconds}s');
           },
         );
       }
@@ -247,10 +247,11 @@ class CancelledException implements Exception {
 }
 
 /// Exception thrown when hash calculation times out
-class TimeoutException implements Exception {
+/// FIX (Bug #10): Rename to avoid shadowing dart:async.TimeoutException
+class HashTimeoutException implements Exception {
   final String message;
-  TimeoutException(this.message);
+  HashTimeoutException(this.message);
 
   @override
-  String toString() => 'TimeoutException: $message';
+  String toString() => 'HashTimeoutException: $message';
 }

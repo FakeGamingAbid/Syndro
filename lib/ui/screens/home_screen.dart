@@ -29,6 +29,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   ProviderSubscription<AsyncValue<List<PendingTransferRequest>>>?
       _pendingRequestsSubscription;
+  
+  // FIX (Bug #6): Store timer reference for cancellation on dispose
+  Timer? _pendingRequestTimer;
 
   @override
   void initState() {
@@ -41,6 +44,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    
+    // FIX (Bug #6): Cancel pending request timer
+    _pendingRequestTimer?.cancel();
+    _pendingRequestTimer = null;
     
     // Cancel subscription with try-catch
     try {
@@ -168,8 +175,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           final pendingRequests =
               ref.read(transferServiceProvider).pendingRequests;
           if (pendingRequests.isNotEmpty) {
-            // FIX: Store timer reference for potential cancellation on dispose
-            Future.delayed(const Duration(milliseconds: 300), () {
+            // FIX (Bug #6): Store timer reference for cancellation on dispose
+            _pendingRequestTimer?.cancel();
+            _pendingRequestTimer = Timer(const Duration(milliseconds: 300), () {
               if (mounted && !_isShowingRequestSheet) {
                 _showTransferRequestSheet(pendingRequests.first);
               }
@@ -893,6 +901,95 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ),
                 ),
               ),
+            
+            // Multi-select Send FAB (when multiple devices selected)
+            if (ref.watch(selectedDevicesProvider).isNotEmpty)
+              Positioned(
+                right: 20,
+                bottom: _isMobile() ? 190 : 80,
+                child: GestureDetector(
+                  onTap: () {
+                    final selectedDevices = ref.read(selectedDevicesProvider);
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (routeContext) => FilePickerScreen(
+                          recipientDevices: selectedDevices.toList(),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    height: 56,
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.logoGradient,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withOpacity(0.4),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.send,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          'Send to ${ref.watch(selectedDevicesProvider).length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            
+            // Multi-select cancel button
+            if (ref.watch(selectedDevicesProvider).isNotEmpty)
+              Positioned(
+                left: 20,
+                bottom: _isMobile() ? 190 : 80,
+                child: GestureDetector(
+                  onTap: () {
+                    ref.read(selectedDevicesProvider.notifier).state = {};
+                  },
+                  child: Container(
+                    height: 56,
+                    width: 56,
+                    decoration: BoxDecoration(
+                      color: AppTheme.surfaceColor,
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: AppTheme.errorColor.withOpacity(0.5),
+                        width: 1.5,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: AppTheme.errorColor,
+                      size: 24,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -1040,13 +1137,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             itemCount: devices.length,
             itemBuilder: (context, index) {
               final device = devices[index];
+              final selectedDevices = ref.watch(selectedDevicesProvider);
+              final isMultiSelectMode = selectedDevices.isNotEmpty;
+              final isSelected = selectedDevices.any((d) => d.id == device.id) || 
+                                 (!isMultiSelectMode && selectedDevice?.id == device.id);
+              
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: DeviceCard(
                   device: device,
-                  isSelected: selectedDevice?.id == device.id,
+                  isSelected: isSelected,
                   onTap: () {
-                    ref.read(selectedDeviceProvider.notifier).state = device;
+                    if (isMultiSelectMode) {
+                      // Multi-select mode: toggle device in selection
+                      final currentSelection = Set<Device>.from(selectedDevices);
+                      if (currentSelection.any((d) => d.id == device.id)) {
+                        currentSelection.removeWhere((d) => d.id == device.id);
+                      } else {
+                        currentSelection.add(device);
+                      }
+                      ref.read(selectedDevicesProvider.notifier).state = currentSelection;
+                      // Clear single selection when in multi-select mode
+                      ref.read(selectedDeviceProvider.notifier).state = null;
+                    } else {
+                      // Single-select mode
+                      ref.read(selectedDeviceProvider.notifier).state = device;
+                    }
+                  },
+                  onLongPress: () {
+                    // Enter multi-select mode on long press
+                    if (!isMultiSelectMode) {
+                      ref.read(selectedDevicesProvider.notifier).state = {device};
+                      ref.read(selectedDeviceProvider.notifier).state = null;
+                    }
                   },
                 ),
               );

@@ -175,10 +175,16 @@ class EncryptionService {
     // Add to active set for collision detection
     _activeNonces.add(nonceHex);
 
+    // FIX (Bug #9): Properly manage circular buffer with activeNonces sync
     // Use circular buffer to prevent unbounded memory growth
     if (_usedNonces.length < _maxNonceCache) {
       _usedNonces.add(nonceHex);
     } else {
+      // Remove old nonce from active set before overwriting
+      if (_nonceInsertIndex < _usedNonces.length) {
+        final oldNonce = _usedNonces[_nonceInsertIndex];
+        _activeNonces.remove(oldNonce);
+      }
       // Overwrite oldest nonce in circular fashion
       _usedNonces[_nonceInsertIndex] = nonceHex;
       _nonceInsertIndex = (_nonceInsertIndex + 1) % _maxNonceCache;

@@ -89,11 +89,10 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       debugPrint('Error stopping web share service: $e');
     }
     
-    // Clear FilePicker cache to free storage (fire and forget)
-    // FIX: Can't await in dispose, so we fire and forget
-    _clearFilePickerCache().catchError((e) {
-      debugPrint('Error clearing FilePicker cache: $e');
-    });
+    // Clear FilePicker cache to free storage
+    // FIX (Bug #8): Use unawaited to explicitly mark fire-and-forget as intentional
+    // This is acceptable for cache cleanup - if it fails, it's not critical
+    _clearFilePickerCache().ignore();
     super.dispose();
   }
 

@@ -13,16 +13,30 @@ import '../../core/models/transfer.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/providers/transfer_provider.dart';
 import 'transfer_progress_screen.dart';
+import 'multi_transfer_progress_screen.dart';
 
 class FilePickerScreen extends ConsumerStatefulWidget {
-  final Device recipientDevice;
+  final Device? recipientDevice;
+  final List<Device>? recipientDevices; // NEW: For multi-device transfer
   final List<TransferItem>? preselectedFiles; // NEW: For right-click send
 
   const FilePickerScreen({
     super.key,
-    required this.recipientDevice,
-    this.preselectedFiles, // NEW
+    this.recipientDevice,
+    this.recipientDevices,
+    this.preselectedFiles,
   });
+
+  /// Get all recipient devices
+  List<Device> get allRecipients {
+    if (recipientDevices != null && recipientDevices!.isNotEmpty) {
+      return recipientDevices!;
+    }
+    if (recipientDevice != null) {
+      return [recipientDevice!];
+    }
+    return [];
+  }
 
   @override
   ConsumerState<FilePickerScreen> createState() => _FilePickerScreenState();
@@ -285,6 +299,17 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
   Future<void> _sendFiles() async {
     if (_selectedFiles.isEmpty || _isSending) return;
 
+    final recipients = widget.allRecipients;
+    if (recipients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No recipients selected'),
+          backgroundColor: AppTheme.errorColor,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isSending = true;
     });
@@ -295,102 +320,156 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
     // Store files before sending
     final filesToSend = List<TransferItem>.from(_selectedFiles);
 
-    StreamSubscription<Transfer>? subscription;
-
     try {
-      // Create a completer to wait for transfer creation
-      final transferCompleter = Completer<Transfer>();
-
-      subscription = transferService.transferStream.listen(
-        (transfer) {
-          if (transfer.receiverId == widget.recipientDevice.id &&
-              transfer.items.length == filesToSend.length &&
-              !transferCompleter.isCompleted) {
-            transferCompleter.complete(transfer);
-          }
-        },
-        onError: (error) {
-          if (!transferCompleter.isCompleted) {
-            transferCompleter.completeError(error);
-          }
-        },
-      );
-
-      // Start sending (this creates the transfer)
-      final sendFuture = transferService.sendFiles(
-        sender: currentDevice,
-        receiver: widget.recipientDevice,
-        items: filesToSend,
-      );
-
-      Transfer? transfer;
-      try {
-        // Wait for transfer to be created via stream (with timeout)
-        transfer = await transferCompleter.future.timeout(
-          const Duration(seconds: 5),
-          onTimeout: () {
-            // Fallback: check active transfers directly
-            final activeTransfers = transferService.activeTransfers;
-            if (activeTransfers.isNotEmpty) {
-              return activeTransfers.lastWhere(
-                (t) => t.receiverId == widget.recipientDevice.id,
-                orElse: () => activeTransfers.last,
-              );
-            }
-            throw TimeoutException('Transfer creation timed out');
-          },
-        );
-      } catch (e) {
-        // Retry logic - poll for transfer
-        debugPrint('Stream timeout, using retry logic: $e');
-        const maxRetries = 10;
-        const retryDelay = Duration(milliseconds: 200);
-
-        for (int i = 0; i < maxRetries; i++) {
-          await Future.delayed(retryDelay);
-          final activeTransfers = transferService.activeTransfers;
-          if (activeTransfers.isNotEmpty) {
-            final foundTransfer = activeTransfers.lastWhere(
-              (t) => t.receiverId == widget.recipientDevice.id,
-              orElse: () => activeTransfers.last,
-            );
-            transfer = foundTransfer;
-            debugPrint('Found transfer on retry ${i + 1}');
-            break;
+      // Multi-device transfer: send to all recipients in parallel
+      if (recipients.length > 1) {
+        final transferIds = <String>[];
+        final errors = <String, String>{};
+        
+        // Start all transfers in parallel
+        final futures = <Future<Transfer?>>[];
+        for (final recipient in recipients) {
+          futures.add(_sendToSingleRecipient(
+            transferService: transferService,
+            sender: currentDevice,
+            receiver: recipient,
+            items: filesToSend,
+          ));
+        }
+        
+        // Wait for all transfers to start
+        final results = await Future.wait(futures);
+        
+        for (int i = 0; i < results.length; i++) {
+          final transfer = results[i];
+          if (transfer != null) {
+            transferIds.add(transfer.id);
+          } else {
+            errors[recipients[i].name] = 'Failed to start transfer';
           }
         }
-
-        if (transfer == null) {
-          throw Exception('Could not create transfer after $maxRetries retries');
+        
+        if (transferIds.isEmpty) {
+          throw Exception('All transfers failed to start');
         }
-      }
-
-      // Navigate to progress screen with animation
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                TransferProgressScreen(
-              transferId: transfer!.id,
-              remoteDevice: widget.recipientDevice,
-              isSender: true,
-              items: filesToSend,
+        
+        // Navigate to multi-transfer progress screen
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => MultiTransferProgressScreen(
+                transferIds: transferIds,
+                recipients: recipients,
+                items: filesToSend,
+                errors: errors,
+              ),
             ),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) {
-              return FadeThroughTransition(
-                animation: animation,
-                secondaryAnimation: secondaryAnimation,
-                child: child,
-              );
-            },
-            transitionDuration: const Duration(milliseconds: 400),
-          ),
-        );
-      }
+          );
+        }
+      } else {
+        // Single device transfer (original behavior)
+        final recipient = recipients.first;
+        
+        StreamSubscription<Transfer>? subscription;
+        try {
+          // Create a completer to wait for transfer creation
+          final transferCompleter = Completer<Transfer>();
 
-      // Wait for send to complete (in background)
-      await sendFuture;
+          subscription = transferService.transferStream.listen(
+            (transfer) {
+              if (transfer.receiverId == recipient.id &&
+                  transfer.items.length == filesToSend.length &&
+                  !transferCompleter.isCompleted) {
+                transferCompleter.complete(transfer);
+              }
+            },
+            onError: (error) {
+              if (!transferCompleter.isCompleted) {
+                transferCompleter.completeError(error);
+              }
+            },
+          );
+
+          // Start sending (this creates the transfer)
+          final sendFuture = transferService.sendFiles(
+            sender: currentDevice,
+            receiver: recipient,
+            items: filesToSend,
+          );
+
+          Transfer? transfer;
+          try {
+            // Wait for transfer to be created via stream (with timeout)
+            transfer = await transferCompleter.future.timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                // Fallback: check active transfers directly
+                final activeTransfers = transferService.activeTransfers;
+                final matchingTransfer = activeTransfers.where(
+                  (t) => t.receiverId == recipient.id,
+                ).toList();
+                
+                if (matchingTransfer.isNotEmpty) {
+                  return matchingTransfer.last;
+                }
+                throw TimeoutException('Transfer creation timed out');
+              },
+            );
+          } catch (e) {
+            // Retry logic - poll for transfer
+            debugPrint('Stream timeout, using retry logic: $e');
+            const maxRetries = 10;
+            const retryDelay = Duration(milliseconds: 200);
+
+            for (int i = 0; i < maxRetries; i++) {
+              await Future.delayed(retryDelay);
+              final activeTransfers = transferService.activeTransfers;
+              final matchingTransfer = activeTransfers.where(
+                (t) => t.receiverId == recipient.id,
+              ).toList();
+              
+              if (matchingTransfer.isNotEmpty) {
+                transfer = matchingTransfer.last;
+                debugPrint('Found transfer on retry ${i + 1}');
+                break;
+              }
+            }
+
+            if (transfer == null) {
+              throw Exception('Could not create transfer after $maxRetries retries');
+            }
+          }
+
+          // Navigate to progress screen with animation
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              PageRouteBuilder(
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    TransferProgressScreen(
+                  transferId: transfer!.id,
+                  remoteDevice: recipient,
+                  isSender: true,
+                  items: filesToSend,
+                ),
+                transitionsBuilder:
+                    (context, animation, secondaryAnimation, child) {
+                  return FadeThroughTransition(
+                    animation: animation,
+                    secondaryAnimation: secondaryAnimation,
+                    child: child,
+                  );
+                },
+                transitionDuration: const Duration(milliseconds: 400),
+              ),
+            );
+          }
+
+          // Wait for send to complete (in background)
+          await sendFuture;
+        } finally {
+          await subscription?.cancel();
+        }
+      }
     } catch (e) {
       debugPrint('Transfer error: $e');
       if (mounted) {
@@ -404,10 +483,37 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
           ),
         );
       }
-    } finally {
-      // ALWAYS cancel subscription to prevent memory leak
-      await subscription?.cancel();
-      subscription = null;
+    }
+  }
+
+  /// Helper method to send to a single recipient and return the transfer
+  Future<Transfer?> _sendToSingleRecipient({
+    required dynamic transferService,
+    required dynamic sender,
+    required Device receiver,
+    required List<TransferItem> items,
+  }) async {
+    try {
+      // Start the transfer
+      await transferService.sendFiles(
+        sender: sender,
+        receiver: receiver,
+        items: items,
+      );
+      
+      // Find the transfer from active transfers
+      final activeTransfers = transferService.activeTransfers;
+      final matchingTransfer = activeTransfers.where(
+        (t) => t.receiverId == receiver.id,
+      ).toList();
+      
+      if (matchingTransfer.isNotEmpty) {
+        return matchingTransfer.last;
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Error sending to ${receiver.name}: $e');
+      return null;
     }
   }
 

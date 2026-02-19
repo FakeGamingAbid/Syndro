@@ -11,12 +11,14 @@ import 'device_nickname_dialog.dart';
 class DeviceCard extends ConsumerStatefulWidget {
   final Device device;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final bool isSelected;
 
   const DeviceCard({
     super.key,
     required this.device,
     this.onTap,
+    this.onLongPress,
     this.isSelected = false,
   });
 
@@ -46,6 +48,12 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
   }
 
   void _handleLongPress() {
+    // If onLongPress callback is provided, use it (for multi-select)
+    if (widget.onLongPress != null) {
+      widget.onLongPress!();
+      return;
+    }
+    // Otherwise show nickname dialog (default behavior)
     showDialog(
       context: context,
       builder: (context) {
