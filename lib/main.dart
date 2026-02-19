@@ -591,11 +591,37 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       return;
     }
 
-    // Skip copying - just use the URIs directly
-    final paths = _sharedFilesFromIntent!.map((f) => f.uri).toList();
-
-    // Convert URI strings to File objects
-    final files = paths.map((path) => File(path)).toList();
+    // On Android, content:// URIs need to be copied to actual files
+    // Same as _handleAppToAppShare - we need proper file paths for thumbnails and file info
+    final files = <File>[];
+    
+    for (final sharedFile in _sharedFilesFromIntent!) {
+      final uri = sharedFile.uri;
+      
+      if (uri.startsWith('content://')) {
+        // Copy content URI to temp file
+        try {
+          final tempDir = await getTemporaryDirectory();
+          final result = await ShareIntentService().copyContentUri(
+            uri: uri,
+            tempDir: tempDir.path,
+            fileName: sharedFile.name,
+          );
+          
+          if (result != null) {
+            files.add(File(result));
+            debugPrint('✅ Copied content URI to: $result (name: ${sharedFile.name}, size: ${sharedFile.size})');
+          } else {
+            debugPrint('⚠️ Failed to copy content URI: $uri');
+          }
+        } catch (e) {
+          debugPrint('❌ Error copying content URI: $e');
+        }
+      } else {
+        // Regular file path
+        files.add(File(uri));
+      }
+    }
 
     // Clear share intent and set browser share files
     ShareIntentService().clearSharedFiles();
