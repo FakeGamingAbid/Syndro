@@ -456,12 +456,12 @@ class _TransferProgressCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.error_outline, size: 16, color: AppTheme.errorColor),
+                  const Icon(Icons.error_outline, size: 16, color: AppTheme.errorColor),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       error!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: AppTheme.errorColor,
                         fontSize: 12,
                       ),

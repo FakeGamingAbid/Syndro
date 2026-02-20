@@ -1242,7 +1242,6 @@ class TransferService {
       final fileHash = request.headers.value('x-file-hash');
       // Read file metadata timestamps
       final modifiedHeader = request.headers.value('x-file-modified');
-      final createdHeader = request.headers.value('x-file-created');
 
       final originalSize = originalSizeHeader != null
           ? int.tryParse(originalSizeHeader) ?? 0
