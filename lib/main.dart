@@ -65,8 +65,11 @@ void main(List<String> args) async {
       final savedBounds = await WindowSettingsService.loadWindowBounds();
 
       // Configure window options
+      final windowSize = savedBounds != null 
+          ? Size(savedBounds.width, savedBounds.height) 
+          : WindowSettingsService.getDefaultSize();
       final windowOptions = WindowOptions(
-        size: savedBounds ?? WindowSettingsService.getDefaultSize(),
+        size: windowSize,
         minimumSize: WindowSettingsService.getMinimumSize(),
         center: savedBounds == null || savedBounds.x == null || savedBounds.y == null,
         backgroundColor: Colors.transparent,

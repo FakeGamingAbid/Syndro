@@ -1490,7 +1490,6 @@ class TransferService {
       final senderToken = request.headers.value('x-sender-token');
       // Read file metadata timestamps
       final modifiedHeader = request.headers.value('x-file-modified');
-      final createdHeader = request.headers.value('x-file-created');
 
       final fileSize =
           fileSizeHeader != null ? int.tryParse(fileSizeHeader) ?? 0 : 0;
