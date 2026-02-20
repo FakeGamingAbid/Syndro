@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 
 enum TransferStatus {
   pending,
@@ -270,13 +271,17 @@ class TransferItem extends Equatable {
     if (json['createdAt'] != null) {
       try {
         createdAt = DateTime.parse(json['createdAt'] as String);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Warning: Failed to parse createdAt: $e');
+      }
     }
     
     if (json['modifiedAt'] != null) {
       try {
         modifiedAt = DateTime.parse(json['modifiedAt'] as String);
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Warning: Failed to parse modifiedAt: $e');
+      }
     }
 
     return TransferItem(

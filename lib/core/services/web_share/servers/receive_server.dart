@@ -30,6 +30,11 @@ class ReceiveServer {
 
   static const int _receivePort = 8767;
   static const Duration _shareExpiration = Duration(hours: 1);
+  
+  // FIX (Bug #6): Maximum upload size limit (10GB for browser uploads)
+  static const int _maxUploadSizeBytes = 10 * 1024 * 1024 * 1024;
+  // Maximum single file size (5GB)
+  static const int _maxFileSizeBytes = 5 * 1024 * 1024 * 1024;
 
   /// Stream of received files
   Stream<ReceivedFile> get receivedFilesStream => _receivedFilesController.stream;
@@ -232,7 +237,9 @@ class ReceiveServer {
         try {
           request.response.statusCode = HttpStatus.internalServerError;
           await request.response.close();
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (closeError) {
+          debugPrint('Error closing error response: $closeError');
+        }
       }
     }
   }
@@ -316,6 +323,18 @@ class ReceiveServer {
         await for (final chunk in request) {
           tempSink.add(chunk);
           totalSize += chunk.length;
+          
+          // FIX (Bug #6): Validate total upload size during streaming
+          if (totalSize > _maxUploadSizeBytes) {
+            await tempSink.close();
+            try {
+              await tempBodyFile.delete();
+            } catch (_) {}
+            request.response.statusCode = HttpStatus.requestEntityTooLarge;
+            request.response.write('Upload exceeds maximum size limit (${_maxUploadSizeBytes ~/ (1024 * 1024 * 1024)}GB)');
+            await request.response.close();
+            return;
+          }
         }
         await tempSink.flush();
         await tempSink.close();
@@ -332,6 +351,12 @@ class ReceiveServer {
           if (part.filename != null &&
               part.filename!.isNotEmpty &&
               part.data.isNotEmpty) {
+            // FIX (Bug #6): Validate individual file size
+            if (part.data.length > _maxFileSizeBytes) {
+              debugPrint('⚠️ File ${part.filename} exceeds size limit, skipping');
+              continue;
+            }
+            
             // Clean filename (remove path traversal attempts)
             final cleanFilename = path.basename(part.filename!);
 
@@ -388,7 +413,9 @@ class ReceiveServer {
           if (await tempBodyFile.exists()) {
             await tempBodyFile.delete();
           }
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (deleteError) {
+          debugPrint('Error deleting temp body file: $deleteError');
+        }
       }
 
       debugPrint('📊 Total files received: ${uploadedFiles.length}');

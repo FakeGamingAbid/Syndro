@@ -62,6 +62,9 @@ class EncryptionService {
   // Maximum nonces before requiring new key (2^32 for safety margin)
   static const int _maxNoncesPerKey = 0xFFFFFFFF;
   int _nonceCount = 0;
+  
+  // FIX (Bug #7): Lock for thread-safe nonce operations
+  final _nonceLock = _EncryptionLock();
 
   /// Generate a new key pair for key exchange
   ///
@@ -122,7 +125,6 @@ class EncryptionService {
     // FIX: Reset nonce counter for new shared secret
     _nonceCount = 0;
     _usedNonces.clear();
-    _usedNonces.clear();
 
     return sharedSecret;
   }
@@ -143,57 +145,60 @@ class EncryptionService {
   /// Throws [EncryptionException] if nonce limit is reached.
   Future<Uint8List> encryptChunk(
       Uint8List plaintext, SecretKey secretKey) async {
-    // Check nonce counter
-    if (_nonceCount >= _maxNoncesPerKey) {
-      throw EncryptionException(
-          'Nonce limit reached. Generate new key pair for security.');
-    }
-
-    // Generate unique nonce using Set for O(1) collision detection
-    List<int> nonce;
-    String nonceHex;
-    int attempts = 0;
-    const maxAttempts = 10;
-
-    do {
-      nonce = _aesGcm.newNonce();
-      nonceHex = _bytesToHex(Uint8List.fromList(nonce));
-      attempts++;
-
-      if (attempts > maxAttempts) {
+    // FIX (Bug #7): Use lock for thread-safe nonce operations
+    return await _nonceLock.synchronized(() async {
+      // Check nonce counter
+      if (_nonceCount >= _maxNoncesPerKey) {
         throw EncryptionException(
-            'Failed to generate unique nonce after $maxAttempts attempts');
+            'Nonce limit reached. Generate new key pair for security.');
       }
-    } while (_usedNonces.contains(nonceHex));
 
-    // Add to set for collision detection
-    _usedNonces.add(nonceHex);
-    _nonceCount++;
+      // Generate unique nonce using Set for O(1) collision detection
+      List<int> nonce;
+      String nonceHex;
+      int attempts = 0;
+      const maxAttempts = 10;
 
-    // Encrypt with authentication
-    final secretBox = await _aesGcm.encrypt(
-      plaintext,
-      secretKey: secretKey,
-      nonce: nonce,
-    );
+      do {
+        nonce = _aesGcm.newNonce();
+        nonceHex = _bytesToHex(Uint8List.fromList(nonce));
+        attempts++;
 
-    // Combine: nonce + ciphertext + mac
-    final result = Uint8List(12 + secretBox.cipherText.length + 16);
-    int offset = 0;
+        if (attempts > maxAttempts) {
+          throw EncryptionException(
+              'Failed to generate unique nonce after $maxAttempts attempts');
+        }
+      } while (_usedNonces.contains(nonceHex));
 
-    // Nonce (12 bytes)
-    result.setRange(offset, offset + 12, nonce);
-    offset += 12;
+      // Add to set for collision detection
+      _usedNonces.add(nonceHex);
+      _nonceCount++;
 
-    // Ciphertext
-    result.setRange(
-        offset, offset + secretBox.cipherText.length, secretBox.cipherText);
-    offset += secretBox.cipherText.length;
+      // Encrypt with authentication
+      final secretBox = await _aesGcm.encrypt(
+        plaintext,
+        secretKey: secretKey,
+        nonce: nonce,
+      );
 
-    // MAC (16 bytes)
-    result.setRange(offset, offset + 16, secretBox.mac.bytes);
+      // Combine: nonce + ciphertext + mac
+      final result = Uint8List(12 + secretBox.cipherText.length + 16);
+      int offset = 0;
 
-    return result;
+      // Nonce (12 bytes)
+      result.setRange(offset, offset + 12, nonce);
+      offset += 12;
+
+      // Ciphertext
+      result.setRange(
+          offset, offset + secretBox.cipherText.length, secretBox.cipherText);
+      offset += secretBox.cipherText.length;
+
+      // MAC (16 bytes)
+      result.setRange(offset, offset + 16, secretBox.mac.bytes);
+
+      return result;
+    });
   }
 
   /// Decrypt a single chunk of data
@@ -453,5 +458,26 @@ class EncryptionException implements Exception {
       return 'EncryptionException: $message (caused by: $originalError)';
     }
     return 'EncryptionException: $message';
+  }
+}
+
+/// FIX (Bug #7): Simple lock for thread-safe nonce operations
+class _EncryptionLock {
+  Future<void>? _lock;
+
+  Future<T> synchronized<T>(FutureOr<T> Function() action) async {
+    while (_lock != null) {
+      await _lock;
+    }
+
+    final completer = Completer<void>();
+    _lock = completer.future;
+
+    try {
+      return await action();
+    } finally {
+      _lock = null;
+      completer.complete();
+    }
   }
 }

@@ -77,8 +77,21 @@ class FileService {
           code: 'EMPTY_FILENAME');
     }
 
-    // FIX: Use single backslash in regex (the original had escaped backslashes)
-    String sanitized = filename
+    // FIX (Bug #9): Normalize Unicode to prevent homograph attacks
+    // Characters like U+2044 (⁄) and U+2215 (∕) look like slashes
+    String sanitized = filename;
+    
+    // Normalize Unicode to NFC form (canonical decomposition followed by composition)
+    sanitized = sanitized.normalize();
+    
+    // Replace Unicode characters that look like path separators
+    sanitized = sanitized.replaceAll('⁄', '_');  // U+2044 (fraction slash)
+    sanitized = sanitized.replaceAll('∕', '_');  // U+2215 (division slash)
+    sanitized = sanitized.replaceAll('＼', '_');  // U+FF3C (fullwidth reverse solidus)
+    sanitized = sanitized.replaceAll('／', '_');  // U+FF0F (fullwidth solidus)
+    
+    // Replace actual path separators and parent directory references
+    sanitized = sanitized
         .replaceAll('/', '_')
         .replaceAll('\\', '_')
         .replaceAll('..', '_')
@@ -521,7 +534,9 @@ class FileService {
       if (sink != null) {
         try {
           await sink.close();
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (closeError) {
+          debugPrint('Error closing sink during cleanup: $closeError');
+        }
       }
 
       try {
@@ -529,7 +544,9 @@ class FileService {
         if (await tempFile.exists()) {
           await tempFile.delete();
         }
-      } catch (e) { debugPrint("Error: $e"); }
+      } catch (deleteError) {
+        debugPrint('Error deleting temp file during cleanup: $deleteError');
+      }
 
       debugPrint('Error saving file from stream: $e');
       throw FileServiceException('Failed to save file', originalError: e);
@@ -589,7 +606,9 @@ class FileService {
       if (sink != null) {
         try {
           await sink.close();
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (closeError) {
+          debugPrint('Error closing sink during copy cleanup: $closeError');
+        }
       }
 
       try {
@@ -597,7 +616,9 @@ class FileService {
         if (await tempFile.exists()) {
           await tempFile.delete();
         }
-      } catch (e) { debugPrint("Error: $e"); }
+      } catch (deleteError) {
+        debugPrint('Error deleting temp file during copy cleanup: $deleteError');
+      }
 
       debugPrint('Error copying file: $e');
       throw FileServiceException('Failed to copy file', originalError: e);
@@ -702,7 +723,9 @@ class FileService {
       if (sink != null) {
         try {
           await sink.close();
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (closeError) {
+          debugPrint('Error closing sink during save cleanup: $closeError');
+        }
       }
 
       try {
@@ -710,7 +733,9 @@ class FileService {
         if (await tempFile.exists()) {
           await tempFile.delete();
         }
-      } catch (e) { debugPrint("Error: $e"); }
+      } catch (deleteError) {
+        debugPrint('Error deleting temp file during save cleanup: $deleteError');
+      }
 
       if (e is FileServiceException) rethrow;
       debugPrint('Error saving file from stream: $e');

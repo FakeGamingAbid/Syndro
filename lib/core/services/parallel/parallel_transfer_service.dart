@@ -661,14 +661,29 @@ class ParallelProgress {
 class _SimpleLock {
   Future<void>? _lock;
   bool _isDisposed = false;
+  Completer<void>? _disposeCompleter;
 
   Future<T> synchronized<T>(FutureOr<T> Function() action) async {
     if (_isDisposed) {
       throw StateError('Lock has been disposed');
     }
 
-    while (_lock != null) {
-      await _lock;
+    // Wait for any existing lock to be released, checking for disposal
+    while (_lock != null && !_isDisposed) {
+      try {
+        await _lock;
+      } catch (e) {
+        // If the lock future throws (e.g., due to disposal), re-throw
+        if (_isDisposed) {
+          throw StateError('Lock has been disposed');
+        }
+        rethrow;
+      }
+    }
+
+    // Check again after waiting
+    if (_isDisposed) {
+      throw StateError('Lock has been disposed');
     }
 
     final completer = Completer<void>();
@@ -678,12 +693,18 @@ class _SimpleLock {
       return await action();
     } finally {
       _lock = null;
-      completer.complete();
+      if (!completer.isCompleted) {
+        completer.complete();
+      }
     }
   }
   
   void dispose() {
     _isDisposed = true;
+    // Complete any pending lock to release waiters
+    if (_lock != null && _disposeCompleter != null && !_disposeCompleter!.isCompleted) {
+      _disposeCompleter!.complete();
+    }
   }
 }
 

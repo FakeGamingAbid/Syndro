@@ -108,7 +108,9 @@ class TransferService {
   static const int maxRetries = 3;
   static const int initialRetryDelaySeconds = 2;
   static const int _maxCompletedTransfers = 10;
-  static const int _maxFileSizeBytes = 16 * 1024 * 1024 * 1024; // 16GB limit (increased from 4GB)
+  // OPTIMIZED: Support files up to 100GB for low-end devices
+  // Using streaming transfer, only one chunk is loaded in memory at a time
+  static const int _maxFileSizeBytes = 100 * 1024 * 1024 * 1024; // 100GB limit
 
   static const Duration _sessionMaxAge = Duration(hours: 1);
   Timer? _sessionCleanupTimer;
@@ -590,17 +592,18 @@ class TransferService {
     return base64Url.encode(values);
   }
 
+  /// Generate a unique checkpoint key using SHA-256 for better collision resistance
   String _generateCheckpointKey(
       String senderId, String receiverId, List<TransferItem> items) {
     final itemsSignature =
         items.map((item) => '${item.name}:${item.size}').join('|');
     final keySource = '$senderId->$receiverId:$itemsSignature';
+    
+    // Use SHA-256 for cryptographic hash instead of weak custom hash
     final bytes = utf8.encode(keySource);
-    int hash = 0;
-    for (final byte in bytes) {
-      hash = ((hash << 5) - hash + byte) & 0xFFFFFFFF;
-    }
-    return 'ckpt_${hash.toRadixString(16).padLeft(8, '0')}';
+    final digest = crypto_hash.sha256.convert(bytes);
+    final hashHex = digest.toString().substring(0, 16); // Use first 16 chars (64 bits)
+    return 'ckpt_$hashHex';
   }
 
   Future<void> startServer(int port) async {
@@ -1460,7 +1463,9 @@ class TransferService {
       if (fileSink != null) {
         try {
           await fileSink.close();
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (closeError) {
+          debugPrint('Error closing file sink: $closeError');
+        }
       }
 
       if (tempFilePath != null) {
@@ -1469,7 +1474,9 @@ class TransferService {
           if (await tempFile.exists()) {
             await tempFile.delete();
           }
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (deleteError) {
+          debugPrint('Error deleting temp file: $deleteError');
+        }
       }
 
       await BackgroundTransferService.stopBackgroundTransfer();
@@ -1669,7 +1676,9 @@ class TransferService {
       if (fileSink != null) {
         try {
           await fileSink.close();
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (closeError) {
+          debugPrint('Error closing file sink: $closeError');
+        }
       }
 
       if (tempFilePath != null) {
@@ -1678,7 +1687,9 @@ class TransferService {
           if (await tempFile.exists()) {
             await tempFile.delete();
           }
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (deleteError) {
+          debugPrint('Error deleting temp file: $deleteError');
+        }
       }
 
       await BackgroundTransferService.stopBackgroundTransfer();
@@ -1748,7 +1759,9 @@ class TransferService {
 
     final useParallel = _parallelConfig?.shouldUseParallel(totalSize) ?? false;
 
-    if (useParallel && items.length == 1 && _parallelSender != null) {
+    // Store in local variable to avoid force unwrap and ensure thread safety
+    final parallelSender = _parallelSender;
+    if (useParallel && items.length == 1 && parallelSender != null) {
       debugPrint(
           '⚡ Using parallel transfer for large file (${totalSize ~/ (1024 * 1024)}MB)');
 
@@ -1815,7 +1828,7 @@ class TransferService {
       _transferController.add(parallelTransfer);
 
       try {
-        await _parallelSender!.sendFileParallel(
+        await parallelSender.sendFileParallel(
           transferId: transferId,
           file: file,
           receiver: receiver,
