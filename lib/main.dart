@@ -15,6 +15,7 @@ import 'core/providers/incoming_files_provider.dart';
 import 'core/services/system_tray_service.dart';
 import 'core/services/share_intent_service.dart';
 import 'core/services/desktop_notification_service.dart';
+import 'core/services/window_settings_service.dart';
 import 'ui/screens/main_navigation_screen.dart';
 import 'ui/screens/onboarding_screen.dart';
 import 'ui/screens/quick_send_screen.dart';
@@ -59,10 +60,15 @@ void main(List<String> args) async {
     try {
       await windowManager.ensureInitialized();
 
-      const windowOptions = WindowOptions(
-        size: Size(1200, 800),
-        minimumSize: Size(800, 600),
-        center: true,
+      // Load saved window settings
+      await WindowSettingsService.initialize();
+      final savedBounds = await WindowSettingsService.loadWindowBounds();
+
+      // Configure window options
+      final windowOptions = WindowOptions(
+        size: savedBounds ?? WindowSettingsService.getDefaultSize(),
+        minimumSize: WindowSettingsService.getMinimumSize(),
+        center: savedBounds == null || savedBounds.x == null || savedBounds.y == null,
         backgroundColor: Colors.transparent,
         skipTaskbar: false,
         titleBarStyle: TitleBarStyle.normal,
@@ -70,9 +76,22 @@ void main(List<String> args) async {
       );
 
       await windowManager.waitUntilReadyToShow(windowOptions, () async {
+        // Apply saved maximized state
+        if (savedBounds?.maximized == true) {
+          await windowManager.maximize();
+        }
+        
+        // If we have saved position and not centered, apply it
+        if (savedBounds?.x != null && savedBounds?.y != null) {
+          await windowManager.setPosition(Offset(savedBounds!.x!, savedBounds.y!));
+        }
+        
         await windowManager.show();
         await windowManager.focus();
       });
+
+      // Listen for window events to save settings
+      windowManager.addListener(_WindowEventListener());
 
       // Initialize desktop notification service
       await DesktopNotificationService.initialize();
@@ -645,4 +664,69 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       _browserShareFiles = files;
     });
   }
+}
+
+/// Window event listener for saving window bounds on close/resize
+class _WindowEventListener with WindowListener {
+  @override
+  void onWindowClose() async {
+    // Save window bounds before closing
+    try {
+      final size = await windowManager.getSize();
+      final position = await windowManager.getPosition();
+      final maximized = await windowManager.isMaximized();
+      
+      await WindowSettingsService.saveWindowBounds(
+        size: size,
+        position: position,
+        maximized: maximized,
+      );
+    } catch (e) {
+      debugPrint('❌ Error saving window bounds on close: $e');
+    }
+  }
+
+  @override
+  void onWindowResize() async {
+    // Debounce is handled by saving only on close for simplicity
+    // For real-time saving, you'd use a timer to debounce
+  }
+
+  @override
+  void onWindowMove() async {
+    // Debounce is handled by saving only on close for simplicity
+  }
+
+  @override
+  void onWindowFocus() {}
+
+  @override
+  void onWindowBlur() {}
+
+  @override
+  void onWindowMaximize() {}
+
+  @override
+  void onWindowUnmaximize() {}
+
+  @override
+  void onWindowMinimize() {}
+
+  @override
+  void onWindowRestore() {}
+
+  @override
+  void onWindowEnterFullScreen() {}
+
+  @override
+  void onWindowLeaveFullScreen() {}
+
+  @override
+  void onWindowEvent(String eventName) {}
+
+  @override
+  void onWindowMoved() {}
+
+  @override
+  void onWindowResized() {}
 }

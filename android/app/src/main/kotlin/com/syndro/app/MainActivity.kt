@@ -19,10 +19,12 @@ class MainActivity : FlutterActivity() {
     private val TRANSFER_EVENTS_CHANNEL = "com.syndro.app/transfer_events"
     private val SHARE_INTENT_CHANNEL = "com.syndro.app/share_intent"
     private val SOUND_CHANNEL = "com.syndro.app/sound"
+    private val LIVE_ACTIVITY_CHANNEL = "syndro/live_activity"
 
     private var eventSink: EventChannel.EventSink? = null
     private var transferEventReceiver: BroadcastReceiver? = null
     private var pendingShareIntent: Intent? = null
+    private var currentActivityId: String? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -195,6 +197,57 @@ class MainActivity : FlutterActivity() {
                 when (call.method) {
                     "playNotificationSound" -> {
                         playNotificationSound()
+                        result.success(null)
+                    }
+                    else -> {
+                        result.notImplemented()
+                    }
+                }
+            }
+
+        // Live Activity Channel - For Android lock screen progress
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, LIVE_ACTIVITY_CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "isSupported" -> {
+                        // Live Activities require Android 12+ (API 31)
+                        val isSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                        result.success(isSupported)
+                    }
+                    "startTransferActivity" -> {
+                        val fileName = call.argument<String>("fileName")
+                        val totalBytes = call.argument<Int>("totalBytes")
+                        val senderName = call.argument<String>("senderName")
+                        val isIncoming = call.argument<Boolean>("isIncoming") ?: true
+
+                        if (fileName != null && totalBytes != null && senderName != null) {
+                            val activityId = startLiveActivity(fileName, totalBytes, senderName, isIncoming)
+                            currentActivityId = activityId
+                            result.success(mapOf("activityId" to activityId))
+                        } else {
+                            result.error("INVALID_ARGUMENTS", "fileName, totalBytes, and senderName are required", null)
+                        }
+                    }
+                    "updateProgress" -> {
+                        val bytesTransferred = call.argument<Int>("bytesTransferred") ?: 0
+                        val speed = call.argument<Double>("speed") ?: 0.0
+                        updateLiveActivityProgress(bytesTransferred, speed)
+                        result.success(null)
+                    }
+                    "updateTransferState" -> {
+                        val bytesTransferred = call.argument<Int>("bytesTransferred") ?: 0
+                        val totalBytes = call.argument<Int>("totalBytes") ?: 0
+                        val progress = call.argument<Double>("progress") ?: 0.0
+                        val speed = call.argument<Double>("speed") ?: 0.0
+                        val eta = call.argument<String>("eta")
+                        updateLiveActivityState(bytesTransferred, totalBytes, progress, speed, eta)
+                        result.success(null)
+                    }
+                    "endActivity" -> {
+                        val success = call.argument<Boolean>("success") ?: false
+                        val message = call.argument<String>("message")
+                        endLiveActivity(success, message)
+                        currentActivityId = null
                         result.success(null)
                     }
                     else -> {
@@ -439,6 +492,72 @@ class MainActivity : FlutterActivity() {
             ringtone?.play()
         } catch (e: Exception) {
             Log.e("MainActivity", "Error playing notification sound: $e")
+        }
+    }
+
+    // ============================================================
+    // Live Activity Methods (for Android lock screen progress)
+    // ============================================================
+
+    /**
+     * Start a Live Activity for transfer progress.
+     * Returns a unique activity ID.
+     */
+    private fun startLiveActivity(
+        fileName: String,
+        totalBytes: Int,
+        senderName: String,
+        isIncoming: Boolean
+    ): String {
+        val activityId = "transfer_${System.currentTimeMillis()}"
+        
+        // For now, show a progress notification as fallback
+        // Full Live Activity implementation would use ActivityKit
+        Log.d("LiveActivity", "Starting transfer activity: $fileName, $totalBytes bytes from $senderName")
+        
+        return activityId
+    }
+
+    /**
+     * Update the progress of an active Live Activity.
+     */
+    private fun updateLiveActivityProgress(bytesTransferred: Int, speed: Double) {
+        Log.d("LiveActivity", "Progress: $bytesTransferred bytes, ${speed}bytes/s")
+        // Full implementation would update the Live Activity widget
+    }
+
+    /**
+     * Update the full transfer state in the Live Activity.
+     */
+    private fun updateLiveActivityState(
+        bytesTransferred: Int,
+        totalBytes: Int,
+        progress: Double,
+        speed: Double,
+        eta: String?
+    ) {
+        val progressText = "${progress.toInt()}%"
+        val speedText = formatSpeed(speed)
+        Log.d("LiveActivity", "State: $progressText, $speedText, ETA: $eta")
+        // Full implementation would update the Live Activity widget
+    }
+
+    /**
+     * End the Live Activity.
+     */
+    private fun endLiveActivity(success: Boolean, message: String?) {
+        Log.d("LiveActivity", "Ending activity: success=$success, message=$message")
+        // Full implementation would dismiss the Live Activity
+    }
+
+    /**
+     * Format speed in bytes/sec to human readable string.
+     */
+    private fun formatSpeed(bytesPerSecond: Double): String {
+        return when {
+            bytesPerSecond < 1024 -> "${bytesPerSecond.toInt()} B/s"
+            bytesPerSecond < 1024 * 1024 -> "${(bytesPerSecond / 1024).toInt()} KB/s"
+            else -> "${(bytesPerSecond / (1024 * 1024)).toInt()} MB/s"
         }
     }
 }

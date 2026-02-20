@@ -27,6 +27,7 @@ import 'models.dart';
 import '../parallel/parallel_config.dart';
 import '../parallel/parallel_receiver_handler.dart';
 import '../parallel/parallel_transfer_service.dart';
+import '../live_activity_service.dart';
 
 /// Core transfer service for peer-to-peer file transfers.
 ///
@@ -1177,6 +1178,17 @@ class TransferService {
     _activeTransfers[transfer.id] = transfer;
     _transferController.add(transfer);
 
+    // Start Live Activity for Android lock screen progress
+    if (items.isNotEmpty) {
+      final totalBytes = items.fold<int>(0, (sum, item) => sum + item.size);
+      LiveActivityService.startTransferActivity(
+        fileName: items.length == 1 ? items.first.name : '${items.length} files',
+        totalBytes: totalBytes,
+        senderName: senderName,
+        isIncoming: true,
+      );
+    }
+
     BackgroundTransferService.startBackgroundTransfer(
       title: 'Receiving from $senderName',
       fileName: items.length == 1 ? items.first.name : '${items.length} files',
@@ -1418,6 +1430,9 @@ class TransferService {
       _activeTransfers[transferId] = completedTransfer;
       _transferController.add(completedTransfer);
 
+      // End Live Activity on completion
+      LiveActivityService.endActivity(success: true, message: 'Transfer complete');
+
       await BackgroundTransferService.showTransferComplete(
         fileName: sanitizedFileName,
         filePath: finalFilePath,
@@ -1627,6 +1642,9 @@ class TransferService {
 
       _activeTransfers[transferId] = completedTransfer;
       _transferController.add(completedTransfer);
+
+      // End Live Activity on completion
+      LiveActivityService.endActivity(success: true, message: 'Transfer complete');
 
       await BackgroundTransferService.showTransferComplete(
         fileName: sanitizedFileName,
@@ -2048,6 +2066,9 @@ class TransferService {
 
       _activeTransfers[transferId] = completedTransfer;
       _transferController.add(completedTransfer);
+
+      // End Live Activity on completion
+      LiveActivityService.endActivity(success: true, message: 'Transfer complete');
 
       await BackgroundTransferService.showTransferComplete(
         fileName:
