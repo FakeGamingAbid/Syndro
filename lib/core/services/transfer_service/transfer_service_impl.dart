@@ -1238,14 +1238,9 @@ class TransferService {
       
       // Parse metadata timestamps
       DateTime? fileModified;
-      DateTime? fileCreated;
       if (modifiedHeader != null) {
         final ms = int.tryParse(modifiedHeader);
         if (ms != null) fileModified = DateTime.fromMillisecondsSinceEpoch(ms);
-      }
-      if (createdHeader != null) {
-        final ms = int.tryParse(createdHeader);
-        if (ms != null) fileCreated = DateTime.fromMillisecondsSinceEpoch(ms);
       }
 
       if (transferId == null || transferId.isEmpty) {
@@ -1487,14 +1482,9 @@ class TransferService {
       
       // Parse metadata timestamps
       DateTime? fileModified;
-      DateTime? fileCreated;
       if (modifiedHeader != null) {
         final ms = int.tryParse(modifiedHeader);
         if (ms != null) fileModified = DateTime.fromMillisecondsSinceEpoch(ms);
-      }
-      if (createdHeader != null) {
-        final ms = int.tryParse(createdHeader);
-        if (ms != null) fileCreated = DateTime.fromMillisecondsSinceEpoch(ms);
       }
 
       if (transferId == null || transferId.isEmpty) {

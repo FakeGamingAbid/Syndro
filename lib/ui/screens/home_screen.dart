@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 
 import '../theme/app_theme.dart';
 import '../widgets/device_card.dart';
+import '../../core/models/device.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/providers/transfer_provider.dart';
 import '../../core/services/transfer_service.dart';

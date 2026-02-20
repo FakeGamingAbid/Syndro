@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -498,6 +497,8 @@ class _TransferProgressCard extends StatelessWidget {
     
     switch (transfer!.status) {
       case TransferStatus.pending:
+        return TransferItemStatus.pending;
+      case TransferStatus.connecting:
         return TransferItemStatus.pending;
       case TransferStatus.transferring:
         return TransferItemStatus.transferring;

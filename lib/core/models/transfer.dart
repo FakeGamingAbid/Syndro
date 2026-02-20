@@ -80,6 +80,25 @@ class TransferProgress extends Equatable {
     return math.max(0, math.min(1, bytesTransferred / totalBytes));
   }
 
+  // Format bytes transferred as human-readable string
+  String get bytesTransferredFormatted => _formatBytes(bytesTransferred);
+
+  // Format total bytes as human-readable string
+  String get totalBytesFormatted => _formatBytes(totalBytes);
+
+  // Helper function to format bytes
+  String _formatBytes(int bytes) {
+    if (bytes <= 0) return '0 B';
+    const suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var i = 0;
+    double size = bytes.toDouble();
+    while (size >= 1024 && i < suffixes.length - 1) {
+      size /= 1024;
+      i++;
+    }
+    return '${size.toStringAsFixed(size >= 10 ? 1 : 2)} ${suffixes[i]}';
+  }
+
   String get speedFormatted {
     if (speed <= 0) return '0 B/s';
 

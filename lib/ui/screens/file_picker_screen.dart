@@ -369,7 +369,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                 transferIds: transferIds,
                 recipients: recipients,
                 items: filesToSend,
-                errors: errors,
+                initialErrors: errors,
               ),
             ),
           );
@@ -611,7 +611,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                         ],
                       ),
                       child: Icon(
-                        _getDeviceIcon(widget.recipientDevice.platform),
+                        _getDeviceIcon(widget.recipientDevice!.platform),
                         color: Colors.white,
                         size: 32,
                       ),
@@ -630,7 +630,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          widget.recipientDevice.name,
+                          widget.recipientDevice!.name,
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
@@ -645,7 +645,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              widget.recipientDevice.ipAddress,
+                              widget.recipientDevice!.ipAddress,
                               style:
                                   Theme.of(context).textTheme.bodySmall?.copyWith(
                                         color: AppTheme.textTertiary,
