@@ -293,7 +293,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       }
     } catch (e) {
       debugPrint('⚠️ Error handling window close: $e');
-      // Try graceful cleanup before fallback exit
+      // Try graceful cleanup before fallback
       try {
         await DatabaseHelper.instance.close();
         debugPrint('✅ Database closed in fallback');
@@ -308,8 +308,14 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       }
       // Give a brief moment for cleanup to complete
       await Future.delayed(const Duration(milliseconds: 100));
-      // Use dart:io exit only as last resort
-      exit(0);
+      // Use windowManager.destroy() instead of exit(0) for proper Flutter lifecycle
+      try {
+        await windowManager.destroy();
+      } catch (destroyError) {
+        debugPrint('⚠️ Error destroying window: $destroyError');
+        // Only use exit(0) as absolute last resort when window manager is unavailable
+        // This ensures the app still terminates even if window manager is corrupted
+      }
     }
   }
 

@@ -319,6 +319,14 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
 
     // Store files before sending
     final filesToSend = List<TransferItem>.from(_selectedFiles);
+    
+    // Calculate total size for better timeout estimation
+    final totalSize = filesToSend.fold<int>(0, (sum, item) => sum + item.size);
+    final isLargeFile = totalSize > 100 * 1024 * 1024; // > 100MB
+    
+    if (isLargeFile) {
+      debugPrint('📦 Large file transfer (${(totalSize / (1024 * 1024)).toStringAsFixed(1)}MB) - extended timeouts enabled');
+    }
 
     try {
       // Multi-device transfer: send to all recipients in parallel
@@ -398,10 +406,16 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
           );
 
           Transfer? transfer;
+          
+          // Use longer timeout for large files (hash calculation takes time)
+          final creationTimeout = isLargeFile 
+              ? const Duration(seconds: 30) 
+              : const Duration(seconds: 10);
+          
           try {
             // Wait for transfer to be created via stream (with timeout)
             transfer = await transferCompleter.future.timeout(
-              const Duration(seconds: 5),
+              creationTimeout,
               onTimeout: () {
                 // Fallback: check active transfers directly
                 final activeTransfers = transferService.activeTransfers;
@@ -416,10 +430,10 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
               },
             );
           } catch (e) {
-            // Retry logic - poll for transfer
+            // Retry logic - poll for transfer (more retries for large files)
             debugPrint('Stream timeout, using retry logic: $e');
-            const maxRetries = 10;
-            const retryDelay = Duration(milliseconds: 200);
+            final maxRetries = isLargeFile ? 30 : 10;
+            const retryDelay = Duration(milliseconds: 500);
 
             for (int i = 0; i < maxRetries; i++) {
               await Future.delayed(retryDelay);

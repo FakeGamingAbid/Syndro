@@ -10,30 +10,31 @@ import '../models/device.dart';
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
-
-  // FIX (Bug #20): Use a Completer for true mutual exclusion during init
-  static Completer<Database>? _initCompleter;
+  static Future<Database>? _initFuture;
 
   DatabaseHelper._internal();
 
+  /// Get the database instance, initializing if necessary.
+  /// Uses a simple future-based lock to prevent concurrent initialization.
   Future<Database> get database async {
     if (_database != null) return _database!;
 
-    // If already initializing, wait for the same future
-    if (_initCompleter != null) {
-      return _initCompleter!.future;
+    // If already initializing, wait for the existing future
+    if (_initFuture != null) {
+      return _initFuture!;
     }
 
-    _initCompleter = Completer<Database>();
-    try {
-      _database = await _initDatabase();
-      _initCompleter!.complete(_database!);
-      return _database!;
-    } catch (e) {
-      _initCompleter!.completeError(e);
-      _initCompleter = null; // Allow retry on failure
-      rethrow;
-    }
+    // Start initialization and cache the future
+    _initFuture = _initDatabase().then((db) {
+      _database = db;
+      return db;
+    }).catchError((e) {
+      // Reset on error to allow retry
+      _initFuture = null;
+      throw e;
+    });
+
+    return _initFuture!;
   }
 
   Future<Database> _initDatabase() async {
@@ -412,7 +413,7 @@ class DatabaseHelper {
     if (db != null) {
       await db.close();
       _database = null;
-      _initCompleter = null; // FIX: Reset completer to allow re-initialization
+      _initFuture = null; // Reset to allow re-initialization
     }
   }
 }

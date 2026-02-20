@@ -90,19 +90,27 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
     }
     
     // Clear FilePicker cache to free storage
-    // FIX (Bug #8): Use unawaited to explicitly mark fire-and-forget as intentional
-    // This is acceptable for cache cleanup - if it fails, it's not critical
-    _clearFilePickerCache().ignore();
+    // Fire-and-forget is acceptable for cache cleanup - if it fails, it's not critical
+    // Using then/catchError instead of ignore() for proper error handling
+    _clearFilePickerCache().then((_) {
+      debugPrint('✅ FilePicker cache cleanup completed');
+    }).catchError((e) {
+      debugPrint('⚠️ FilePicker cache cleanup failed (non-critical): $e');
+    });
     super.dispose();
   }
 
   /// Clear FilePicker cache completely
   Future<void> _clearFilePickerCache() async {
+    // Method 1: Use FilePicker's built-in clear
     try {
-      // Method 1: Use FilePicker's built-in clear
       await FilePicker.platform.clearTemporaryFiles();
+    } catch (e) {
+      debugPrint('FilePicker.clearTemporaryFiles failed: $e');
+    }
 
-      // Method 2: Manually delete cache directory (more reliable on Android)
+    // Method 2: Manually delete cache directory (more reliable on Android)
+    try {
       final cacheDir = await getTemporaryDirectory();
       final filePickerDir = Directory('${cacheDir.path}/file_picker');
 
@@ -115,12 +123,16 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       final cacheContents = cacheDir.listSync();
       for (final entity in cacheContents) {
         if (entity is Directory && entity.path.contains('file_picker')) {
-          await entity.delete(recursive: true);
-          debugPrint('✅ Cleared: ${entity.path}');
+          try {
+            await entity.delete(recursive: true);
+            debugPrint('✅ Cleared: ${entity.path}');
+          } catch (e) {
+            debugPrint('Failed to clear ${entity.path}: $e');
+          }
         }
       }
     } catch (e) {
-      debugPrint('Error clearing FilePicker cache: $e');
+      debugPrint('Error in manual cache cleanup: $e');
     }
   }
 

@@ -70,9 +70,24 @@ class ParallelTransferService {
     debugPrint(
         '   Connections: ${config.connections}, Chunk size: ${_formatBytes(config.chunkSize)}');
 
+    // Calculate file hash with progress reporting for large files
     debugPrint('📝 Calculating file hash (streaming)...');
-    final fileHash = await StreamingHashService.calculateFileHash(file);
-    debugPrint('   Hash: ${fileHash.substring(0, 16)}...');
+    String fileHash;
+    try {
+      fileHash = await StreamingHashService.calculateFileHashWithProgress(
+        file,
+        timeout: const Duration(minutes: 10), // Allow up to 10 minutes for very large files
+        onProgress: (bytesProcessed, totalBytes) {
+          if (bytesProcessed % (100 * 1024 * 1024) == 0) { // Log every 100MB
+            debugPrint('   Hash progress: ${_formatBytes(bytesProcessed)}/${_formatBytes(totalBytes)}');
+          }
+        },
+      );
+      debugPrint('   Hash: ${fileHash.substring(0, 16)}...');
+    } catch (e) {
+      debugPrint('❌ Hash calculation failed: $e');
+      rethrow;
+    }
 
     final chunks = config.getAllChunks(fileSize);
     debugPrint('   Total chunks: ${chunks.length}');
@@ -349,6 +364,8 @@ class ParallelTransferService {
     final url = Uri.parse(
         'http://${receiver.ipAddress}:${receiver.port}/transfer/parallel/initiate');
 
+    debugPrint('📤 Initiating parallel transfer to ${receiver.ipAddress}:${receiver.port}');
+
     try {
       final response = await http
           .post(
@@ -368,20 +385,24 @@ class ParallelTransferService {
             }),
           )
           .timeout(
-            const Duration(seconds: 10),
+            const Duration(seconds: 30), // Increased from 10s for large file preparation
             onTimeout: () {
-              throw TimeoutException('Initiation timed out after 10 seconds');
+              throw TimeoutException('Initiation timed out after 30 seconds');
             },
           );
 
+      debugPrint('📥 Initiation response: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
         return {'success': true, ...jsonDecode(response.body)};
       } else {
         return {'success': false, 'error': response.body};
       }
     } on SocketException catch (e) {
+      debugPrint('❌ Socket error during initiation: $e');
       return {'success': false, 'error': 'Network error: $e'};
     } on TimeoutException catch (e) {
+      debugPrint('❌ Timeout during initiation: $e');
       return {'success': false, 'error': 'Request timeout: $e'};
     } on FormatException catch (e) {
       return {'success': false, 'error': 'Invalid response format: $e'};

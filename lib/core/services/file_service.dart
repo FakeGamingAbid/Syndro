@@ -100,12 +100,17 @@ class FileService {
     if (sanitized.length > 200) {
       final ext = path.extension(sanitized);
       final nameWithoutExt = path.basenameWithoutExtension(sanitized);
-      // FIX: Safe UTF-8 truncation - use runes to avoid cutting multi-byte characters
+      // Safe UTF-8 truncation - use runes to avoid cutting multi-byte characters
       final maxNameLength = 200 - ext.length;
-      final runes = nameWithoutExt.runes.toList();
-      // FIX: Use String.fromCharCodes correctly with runes (code points)
-      final truncatedRunes = runes.take(maxNameLength).toList();
-      sanitized = '${String.fromCharCodes(truncatedRunes)}$ext';
+      if (maxNameLength > 0) {
+        final runes = nameWithoutExt.runes.toList();
+        final truncatedRunes = runes.take(maxNameLength).toList();
+        sanitized = '${String.fromCharCodes(truncatedRunes)}$ext';
+      } else {
+        // Extension too long, just truncate the whole string
+        final runes = sanitized.runes.toList();
+        sanitized = String.fromCharCodes(runes.take(200));
+      }
     }
 
     return sanitized;
@@ -216,6 +221,8 @@ class FileService {
             path: file.path!,
             size: stat.size,
             isDirectory: false,
+            createdAt: stat.accessed, // Best approximation for creation time
+            modifiedAt: stat.modified,
           ));
         }
       }
@@ -249,6 +256,8 @@ class FileService {
             path: file.path!,
             size: stat.size,
             isDirectory: false,
+            createdAt: stat.accessed, // Best approximation for creation time
+            modifiedAt: stat.modified,
           ));
         }
       }
@@ -324,6 +333,8 @@ class FileService {
             size: stat.size,
             isDirectory: false,
             parentPath: relativePath,
+            createdAt: stat.accessed,
+            modifiedAt: stat.modified,
           ));
 
           children.add(entityRelativePath);

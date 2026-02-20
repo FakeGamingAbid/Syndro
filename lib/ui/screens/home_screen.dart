@@ -70,32 +70,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   void _listenForIncomingRequests() {
-    // FIXED (Bug #1): Add try-catch to prevent subscription leak
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-
-      try {
-        _pendingRequestsSubscription =
-            ref.listenManual<AsyncValue<List<PendingTransferRequest>>>(
-          pendingTransferRequestsProvider,
-          (previous, next) {
-            // Check mounted state synchronously before any async operations
-            if (!mounted || _isShowingRequestSheet) return;
-            
-            next.whenData((requests) {
-              // Capture mounted state in closure
-              final isMounted = mounted;
-              // Check again after async operation
-              if (requests.isNotEmpty && isMounted && !_isShowingRequestSheet) {
-                _showTransferRequestSheet(requests.first);
-              }
-            });
-          },
-        );
-      } catch (e) {
-        debugPrint('⚠️ Error creating pending requests subscription: $e');
-      }
-    });
+    // Create subscription directly in initState to avoid race condition
+    // with addPostFrameCallback and fast dispose scenarios
+    try {
+      _pendingRequestsSubscription =
+          ref.listenManual<AsyncValue<List<PendingTransferRequest>>>(
+        pendingTransferRequestsProvider,
+        (previous, next) {
+          // Check mounted state synchronously before any async operations
+          if (!mounted || _isShowingRequestSheet) return;
+          
+          next.whenData((requests) {
+            // Check again inside whenData callback
+            if (requests.isNotEmpty && mounted && !_isShowingRequestSheet) {
+              _showTransferRequestSheet(requests.first);
+            }
+          });
+        },
+      );
+    } catch (e) {
+      debugPrint('⚠️ Error creating pending requests subscription: $e');
+    }
   }
 
   void _showTransferRequestSheet(PendingTransferRequest request) {

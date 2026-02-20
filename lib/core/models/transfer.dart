@@ -192,6 +192,8 @@ class TransferItem extends Equatable {
   final bool isDirectory;
   final String? parentPath; // Relative path from transfer root
   final int itemCount; // Number of files in folder (if directory)
+  final DateTime? createdAt; // File creation time (metadata preservation)
+  final DateTime? modifiedAt; // File modification time (metadata preservation)
 
   const TransferItem({
     required this.name,
@@ -200,6 +202,8 @@ class TransferItem extends Equatable {
     this.isDirectory = false,
     this.parentPath,
     this.itemCount = 0,
+    this.createdAt,
+    this.modifiedAt,
   });
 
   // Get relative path for folder reconstruction
@@ -240,6 +244,8 @@ class TransferItem extends Equatable {
       'isDirectory': isDirectory,
       'parentPath': parentPath,
       'itemCount': itemCount,
+      'createdAt': createdAt?.toIso8601String(),
+      'modifiedAt': modifiedAt?.toIso8601String(),
     };
   }
 
@@ -253,6 +259,21 @@ class TransferItem extends Equatable {
       throw const FormatException('TransferItem name cannot be empty');
     }
 
+    DateTime? createdAt;
+    DateTime? modifiedAt;
+    
+    if (json['createdAt'] != null) {
+      try {
+        createdAt = DateTime.parse(json['createdAt'] as String);
+      } catch (_) {}
+    }
+    
+    if (json['modifiedAt'] != null) {
+      try {
+        modifiedAt = DateTime.parse(json['modifiedAt'] as String);
+      } catch (_) {}
+    }
+
     return TransferItem(
       name: name,
       path: path,
@@ -260,12 +281,14 @@ class TransferItem extends Equatable {
       isDirectory: json['isDirectory'] as bool? ?? false,
       parentPath: json['parentPath'] as String?,
       itemCount: math.max(0, json['itemCount'] as int? ?? 0),
+      createdAt: createdAt,
+      modifiedAt: modifiedAt,
     );
   }
 
   @override
   List<Object?> get props =>
-      [name, path, size, isDirectory, parentPath, itemCount];
+      [name, path, size, isDirectory, parentPath, itemCount, createdAt, modifiedAt];
 }
 
 class Transfer extends Equatable {

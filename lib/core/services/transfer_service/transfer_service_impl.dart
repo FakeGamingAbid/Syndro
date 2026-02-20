@@ -107,7 +107,7 @@ class TransferService {
   static const int maxRetries = 3;
   static const int initialRetryDelaySeconds = 2;
   static const int _maxCompletedTransfers = 10;
-  static const int _maxFileSizeBytes = 4 * 1024 * 1024 * 1024; // 4GB limit
+  static const int _maxFileSizeBytes = 16 * 1024 * 1024 * 1024; // 16GB limit (increased from 4GB)
 
   static const Duration _sessionMaxAge = Duration(hours: 1);
   Timer? _sessionCleanupTimer;
@@ -688,21 +688,28 @@ class TransferService {
   Future<void> _serve() async {
     if (_server == null) return;
 
-    await for (final request in _server!) {
-      if (_isDisposed) break;
-      try {
-        await _handleRequest(request);
-      } catch (e, stackTrace) {
-        debugPrint('Error handling request: $e');
-        debugPrint('Stack trace: $stackTrace');
+    try {
+      await for (final request in _server!) {
+        if (_isDisposed) break;
         try {
-          request.response.statusCode = HttpStatus.internalServerError;
-          request.response.write('Internal server error');
-          await request.response.close();
-        } catch (closeError) { 
-          // Response may already be closed or in error state
-          debugPrint("Error closing response: $closeError"); 
+          await _handleRequest(request);
+        } catch (e, stackTrace) {
+          debugPrint('Error handling request: $e');
+          debugPrint('Stack trace: $stackTrace');
+          try {
+            request.response.statusCode = HttpStatus.internalServerError;
+            request.response.write('Internal server error');
+            await request.response.close();
+          } catch (closeError) { 
+            // Response may already be closed or in error state
+            debugPrint("Error closing response: $closeError"); 
+          }
         }
+      }
+    } catch (e) {
+      // Server was closed or socket error - this is expected during dispose
+      if (!_isDisposed) {
+        debugPrint('Server error: $e');
       }
     }
   }
@@ -1009,15 +1016,14 @@ class TransferService {
         senderPublicKey: senderPublicKey,
       );
 
-      // FIX: Notify UI first (this will show the modal sheet if app is in foreground)
+      // Notify UI via stream (this will show the modal sheet if app is in foreground)
       if (!_pendingRequestsController.isClosed) {
         _pendingRequestsController.add(_pendingRequests.values.toList());
       }
 
-      // FIX: Don't show system notification - UI modal handles all requests
-      // This prevents double-showing of transfer requests
-
-      onTransferRequest?.call(senderId, senderName, items);
+      // NOTE: onTransferRequest callback is NOT called here to avoid double-showing
+      // The UI listens to pendingRequestsStream via pendingTransferRequestsProvider
+      // Calling both would result in duplicate transfer request dialogs
 
       await _sendResponse(request, HttpStatus.ok, {
         'status': 'pending_approval',
@@ -1222,10 +1228,25 @@ class TransferService {
       final originalSizeHeader = request.headers.value('x-original-size');
       final senderId = request.headers.value('x-sender-id');
       final fileHash = request.headers.value('x-file-hash');
+      // Read file metadata timestamps
+      final modifiedHeader = request.headers.value('x-file-modified');
+      final createdHeader = request.headers.value('x-file-created');
 
       final originalSize = originalSizeHeader != null
           ? int.tryParse(originalSizeHeader) ?? 0
           : 0;
+      
+      // Parse metadata timestamps
+      DateTime? fileModified;
+      DateTime? fileCreated;
+      if (modifiedHeader != null) {
+        final ms = int.tryParse(modifiedHeader);
+        if (ms != null) fileModified = DateTime.fromMillisecondsSinceEpoch(ms);
+      }
+      if (createdHeader != null) {
+        final ms = int.tryParse(createdHeader);
+        if (ms != null) fileCreated = DateTime.fromMillisecondsSinceEpoch(ms);
+      }
 
       if (transferId == null || transferId.isEmpty) {
         await _sendBadRequest(request, 'Missing transfer ID');
@@ -1381,6 +1402,16 @@ class TransferService {
       await tempFileRef.rename(finalFilePath);
       tempFilePath = null;
 
+      // Apply file metadata (modification time)
+      if (fileModified != null) {
+        try {
+          await finalFile.setLastModified(fileModified);
+          debugPrint('📅 Applied file modification time: $fileModified');
+        } catch (e) {
+          debugPrint('⚠️ Could not set file modification time: $e');
+        }
+      }
+
       final completedTransfer = _activeTransfers[transferId]!.copyWith(
         status: TransferStatus.completed,
         progress: TransferProgress(
@@ -1447,9 +1478,24 @@ class TransferService {
       final fileSizeHeader = request.headers.value('x-file-size');
       final senderId = request.headers.value('x-sender-id');
       final senderToken = request.headers.value('x-sender-token');
+      // Read file metadata timestamps
+      final modifiedHeader = request.headers.value('x-file-modified');
+      final createdHeader = request.headers.value('x-file-created');
 
       final fileSize =
           fileSizeHeader != null ? int.tryParse(fileSizeHeader) ?? 0 : 0;
+      
+      // Parse metadata timestamps
+      DateTime? fileModified;
+      DateTime? fileCreated;
+      if (modifiedHeader != null) {
+        final ms = int.tryParse(modifiedHeader);
+        if (ms != null) fileModified = DateTime.fromMillisecondsSinceEpoch(ms);
+      }
+      if (createdHeader != null) {
+        final ms = int.tryParse(createdHeader);
+        if (ms != null) fileCreated = DateTime.fromMillisecondsSinceEpoch(ms);
+      }
 
       if (transferId == null || transferId.isEmpty) {
         await _sendBadRequest(request, 'Missing transfer ID header');
@@ -1474,7 +1520,7 @@ class TransferService {
       // Validate file size limit
       if (fileSize > _maxFileSizeBytes) {
         debugPrint('Security: File size $fileSize exceeds maximum $_maxFileSizeBytes');
-        await _sendBadRequest(request, 'File size exceeds maximum allowed size (4GB)');
+        await _sendBadRequest(request, 'File size exceeds maximum allowed size (16GB)');
         return;
       }
 
@@ -1570,6 +1616,16 @@ class TransferService {
       }
       await tempFileRef.rename(finalFilePath);
       tempFilePath = null;
+
+      // Apply file metadata (modification time)
+      if (fileModified != null) {
+        try {
+          await finalFile.setLastModified(fileModified);
+          debugPrint('📅 Applied file modification time: $fileModified');
+        } catch (e) {
+          debugPrint('⚠️ Could not set file modification time: $e');
+        }
+      }
 
       final completedTransfer = _activeTransfers[transferId]!.copyWith(
         status: TransferStatus.completed,
@@ -2069,6 +2125,13 @@ class TransferService {
     request.headers['x-file-name'] = item.name;
     request.headers['x-original-size'] = fileSize.toString();
     request.headers['x-file-hash'] = fileHash;
+    // Add file metadata timestamps
+    if (item.modifiedAt != null) {
+      request.headers['x-file-modified'] = item.modifiedAt!.millisecondsSinceEpoch.toString();
+    }
+    if (item.createdAt != null) {
+      request.headers['x-file-created'] = item.createdAt!.millisecondsSinceEpoch.toString();
+    }
     request.headers['Content-Type'] = 'application/octet-stream';
 
     int bytesSent = 0;

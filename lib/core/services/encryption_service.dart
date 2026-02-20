@@ -55,15 +55,11 @@ class EncryptionService {
   // Chunk size for streaming encryption (1MB)
   static const int chunkSize = 1024 * 1024;
 
-  // FIX (Bug #2): Use bounded circular buffer for nonce tracking to prevent memory leak
-  final List<String> _usedNonces = [];
-  static const int _maxNonceCache = 10000; // Keep only recent 10k nonces
-  int _nonceInsertIndex = 0;
+  // Simplified nonce tracking: Use Set only for O(1) collision detection in current session
+  // The Set is cleared when a new shared secret is derived, so memory is bounded
+  final Set<String> _usedNonces = {};
 
-  // Active nonces set for O(1) lookup
-  final Set<String> _activeNonces = {};
-
-  // FIX: Maximum nonces before requiring new key (2^32 for safety margin)
+  // Maximum nonces before requiring new key (2^32 for safety margin)
   static const int _maxNoncesPerKey = 0xFFFFFFFF;
   int _nonceCount = 0;
 
@@ -126,7 +122,7 @@ class EncryptionService {
     // FIX: Reset nonce counter for new shared secret
     _nonceCount = 0;
     _usedNonces.clear();
-    _activeNonces.clear();
+    _usedNonces.clear();
 
     return sharedSecret;
   }
@@ -147,16 +143,14 @@ class EncryptionService {
   /// Throws [EncryptionException] if nonce limit is reached.
   Future<Uint8List> encryptChunk(
       Uint8List plaintext, SecretKey secretKey) async {
-    // FIX: Check nonce counter
+    // Check nonce counter
     if (_nonceCount >= _maxNoncesPerKey) {
       throw EncryptionException(
           'Nonce limit reached. Generate new key pair for security.');
     }
 
-    // FIX (Bug #2): Generate nonce with bounded circular buffer to prevent memory leak
+    // Generate unique nonce using Set for O(1) collision detection
     List<int> nonce;
-    
-    // Use a Set for O(1) lookup to track active nonces in current session
     String nonceHex;
     int attempts = 0;
     const maxAttempts = 10;
@@ -170,26 +164,10 @@ class EncryptionService {
         throw EncryptionException(
             'Failed to generate unique nonce after $maxAttempts attempts');
       }
-    } while (_activeNonces.contains(nonceHex));
+    } while (_usedNonces.contains(nonceHex));
 
-    // Add to active set for collision detection
-    _activeNonces.add(nonceHex);
-
-    // FIX (Bug #9): Properly manage circular buffer with activeNonces sync
-    // Use circular buffer to prevent unbounded memory growth
-    if (_usedNonces.length < _maxNonceCache) {
-      _usedNonces.add(nonceHex);
-    } else {
-      // Remove old nonce from active set before overwriting
-      if (_nonceInsertIndex < _usedNonces.length) {
-        final oldNonce = _usedNonces[_nonceInsertIndex];
-        _activeNonces.remove(oldNonce);
-      }
-      // Overwrite oldest nonce in circular fashion
-      _usedNonces[_nonceInsertIndex] = nonceHex;
-      _nonceInsertIndex = (_nonceInsertIndex + 1) % _maxNonceCache;
-    }
-
+    // Add to set for collision detection
+    _usedNonces.add(nonceHex);
     _nonceCount++;
 
     // Encrypt with authentication
@@ -425,7 +403,6 @@ class EncryptionService {
   /// called by [deriveSharedSecret] when establishing a new session.
   void reset() {
     _usedNonces.clear();
-    _activeNonces.clear();
     _nonceCount = 0;
   }
 

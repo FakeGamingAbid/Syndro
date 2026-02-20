@@ -448,10 +448,11 @@ class DeviceDiscoveryService {
   }
 
   /// Scan network for Syndro devices
+  /// OPTIMIZED: Limit scan scope and prioritize common IP ranges
   Future<void> _scanNetwork() async {
     if (_isDisposed) return;
 
-    // IMPROVEMENT: Handle empty subnets gracefully
+    // Handle empty subnets gracefully
     if (_subnets.isEmpty) {
       debugPrint('⚠️ No subnets available for scanning');
       return;
@@ -471,20 +472,41 @@ class DeviceDiscoveryService {
           ? int.tryParse(myIpInSubnet.split('.').last) ?? 0
           : 0;
 
+      // OPTIMIZATION: Prioritize IPs near our own (common in home networks)
+      // Scan nearby IPs first (within ±20 of our IP), then scan the rest
+      final nearbyIps = <String>[];
+      final remainingIps = <String>[];
+      
       for (int i = 1; i <= 254; i++) {
         if (i != myHostPart) {
-          ipsToScan.add('$subnet.$i');
+          final ip = '$subnet.$i';
+          // Prioritize IPs within ±20 of our own IP
+          if ((i - myHostPart).abs() <= 20) {
+            nearbyIps.add(ip);
+          } else {
+            remainingIps.add(ip);
+          }
         }
       }
+      
+      // Add nearby IPs first for faster discovery on home networks
+      ipsToScan.addAll(nearbyIps);
+      ipsToScan.addAll(remainingIps);
+    }
+
+    // OPTIMIZATION: Limit total IPs to scan per cycle to prevent overwhelming the network
+    const maxIpsPerScan = 500;
+    if (ipsToScan.length > maxIpsPerScan) {
+      // Take first maxIpsPerScan (prioritized nearby IPs)
+      ipsToScan.removeRange(maxIpsPerScan, ipsToScan.length);
     }
 
     if (ipsToScan.isEmpty) return;
 
     debugPrint(
-        '🔍 Scanning ${ipsToScan.length} IPs across ${subnetsToScan.length} subnets...');
+        '🔍 Scanning ${ipsToScan.length} IPs across ${subnetsToScan.length} subnet(s)...');
 
-    // FIX: Increased batch size from 100 to 200 for faster scanning
-    // With reduced timeouts, we can handle more concurrent connections
+    // Increased batch size for faster scanning with reduced timeouts
     const batchSize = 200;
 
     for (int i = 0; i < ipsToScan.length; i += batchSize) {
@@ -497,7 +519,7 @@ class DeviceDiscoveryService {
         eagerError: false,
       );
       
-      // FIX: Emit progress after each batch for faster UI updates
+      // Emit progress after each batch for faster UI updates
       if (!_isDisposed && !_deviceController.isClosed && _discoveredDevices.isNotEmpty) {
         _deviceController.add(_discoveredDevices.values.toList());
       }
