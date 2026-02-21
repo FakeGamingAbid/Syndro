@@ -44,6 +44,9 @@ class ParallelTransferService {
   }
 
   /// Send a file using parallel chunks
+  /// 
+  /// FIX: Initiates transfer BEFORE hash calculation to notify receiver immediately.
+  /// Hash is calculated in parallel with chunk uploads and verified at completion.
   Future<void> sendFileParallel({
     required String transferId,
     required File file,
@@ -69,25 +72,8 @@ class ParallelTransferService {
         '🚀 Starting parallel transfer: $fileName (${_formatBytes(fileSize)})');
     debugPrint(
         '   Connections: ${config.connections}, Chunk size: ${_formatBytes(config.chunkSize)}');
-
-    // Calculate file hash with progress reporting for large files
-    debugPrint('📝 Calculating file hash (streaming)...');
-    String fileHash;
-    try {
-      fileHash = await StreamingHashService.calculateFileHashWithProgress(
-        file,
-        timeout: const Duration(minutes: 10), // Allow up to 10 minutes for very large files
-        onProgress: (bytesProcessed, totalBytes) {
-          if (bytesProcessed % (100 * 1024 * 1024) == 0) { // Log every 100MB
-            debugPrint('   Hash progress: ${_formatBytes(bytesProcessed)}/${_formatBytes(totalBytes)}');
-          }
-        },
-      );
-      debugPrint('   Hash: ${fileHash.substring(0, 16)}...');
-    } catch (e) {
-      debugPrint('❌ Hash calculation failed: $e');
-      rethrow;
-    }
+    debugPrint(
+        '   Receiver: ${receiver.ipAddress}:${receiver.port}');
 
     final chunks = config.getAllChunks(fileSize);
     debugPrint('   Total chunks: ${chunks.length}');
@@ -104,12 +90,15 @@ class ParallelTransferService {
     });
 
     try {
+      // FIX: Initiate transfer FIRST with placeholder hash
+      // This notifies the receiver immediately so they can show the transfer request
+      debugPrint('📤 Initiating transfer with receiver (hash will be calculated in parallel)...');
       final initResponse = await _initiateParallelTransfer(
         receiver: receiver,
         transferId: transferId,
         fileName: fileName,
         fileSize: fileSize,
-        fileHash: fileHash,
+        fileHash: 'pending', // Placeholder - actual hash sent at completion
         totalChunks: chunks.length,
         chunkSize: config.chunkSize,
         sender: sender,
@@ -121,6 +110,34 @@ class ParallelTransferService {
         throw Exception(
             'Failed to initiate parallel transfer: ${initResponse['error']}');
       }
+
+      debugPrint('✅ Receiver notified! Now calculating hash and uploading chunks in parallel...');
+
+      // FIX: Calculate hash in parallel with chunk uploads
+      final hashCompleter = Completer<String>();
+      String? calculatedHash;
+      
+      // Start hash calculation in background
+      final hashFuture = _calculateHashInBackground(
+        file: file,
+        onProgress: (bytesProcessed, totalBytes) {
+          if (bytesProcessed % (100 * 1024 * 1024) == 0) {
+            debugPrint('   Hash progress: ${_formatBytes(bytesProcessed)}/${_formatBytes(totalBytes)}');
+          }
+        },
+      ).then((hash) {
+        calculatedHash = hash;
+        if (!hashCompleter.isCompleted) {
+          hashCompleter.complete(hash);
+        }
+        return hash;
+      }).catchError((e) {
+        debugPrint('❌ Hash calculation failed: $e');
+        if (!hashCompleter.isCompleted) {
+          hashCompleter.completeError(e);
+        }
+        throw e;
+      });
 
       final chunkQueues = _distributeChunks(chunks, config.connections);
 
@@ -144,7 +161,13 @@ class ParallelTransferService {
         ));
       }
 
+      // Wait for all chunks to be uploaded
       await Future.wait(futures);
+
+      // Wait for hash calculation to complete (should be done by now)
+      debugPrint('⏳ Waiting for hash calculation to complete...');
+      final fileHash = await hashFuture;
+      debugPrint('✅ Hash calculated: ${fileHash.substring(0, 16)}...');
 
       await _notifyTransferComplete(
         receiver: receiver,
@@ -168,6 +191,25 @@ class ParallelTransferService {
         _activeTransfers.remove(transferId);
       });
     }
+  }
+
+  /// Calculate file hash in background
+  Future<String> _calculateHashInBackground({
+    required File file,
+    void Function(int bytesProcessed, int totalBytes)? onProgress,
+  }) async {
+    final hashStartTime = DateTime.now();
+    debugPrint('📝 Starting background hash calculation...');
+    
+    final hash = await StreamingHashService.calculateFileHashWithProgress(
+      file,
+      timeout: const Duration(minutes: 10),
+      onProgress: onProgress,
+    );
+    
+    final hashDuration = DateTime.now().difference(hashStartTime);
+    debugPrint('📝 Hash calculated in ${hashDuration.inSeconds}s');
+    return hash;
   }
 
   List<List<ChunkInfo>> _distributeChunks(
@@ -405,8 +447,10 @@ class ParallelTransferService {
       debugPrint('❌ Timeout during initiation: $e');
       return {'success': false, 'error': 'Request timeout: $e'};
     } on FormatException catch (e) {
+      debugPrint('❌ Invalid response format: $e');
       return {'success': false, 'error': 'Invalid response format: $e'};
     } catch (e) {
+      debugPrint('❌ Unexpected error during initiation: $e');
       return {'success': false, 'error': e.toString()};
     }
   }

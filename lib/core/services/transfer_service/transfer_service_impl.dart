@@ -1772,6 +1772,7 @@ class TransferService {
       final shouldEncrypt = encrypted ?? encryptionEnabled;
 
       if (shouldEncrypt && encryptionEnabled) {
+        debugPrint('🔐 Starting key exchange with receiver...');
         final myPublicKey = await getPublicKey();
 
         final keyExchangeUrl =
@@ -1804,6 +1805,7 @@ class TransferService {
                 sharedSecret: encryptionKey,
                 createdAt: DateTime.now(),
               );
+              debugPrint('🔐 Key exchange successful');
             }
           }
         } catch (e) {
@@ -1811,6 +1813,8 @@ class TransferService {
         }
       }
 
+      // Create transfer with "transferring" status
+      // FIX: Receiver is now notified immediately (hash calculated in parallel with upload)
       final parallelTransfer = Transfer(
         id: transferId,
         senderId: sender.id,
