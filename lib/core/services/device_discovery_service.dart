@@ -571,7 +571,9 @@ class DeviceDiscoveryService {
       } finally {
         try {
           socket?.destroy();
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (e) {
+          debugPrint('Error destroying socket: $e');
+        }
       }
     });
 
@@ -726,7 +728,9 @@ class DeviceDiscoveryService {
           try {
             tempSocket?.close();
             tempSocket = null;
-          } catch (e) { debugPrint("Error: $e"); }
+          } catch (e) {
+            debugPrint('Error closing temporary socket: $e');
+          }
           
           if (i == maxRetries) {
             debugPrint('⚠️ UDP discovery: could not bind any port ($baseUdpPort–${baseUdpPort + maxRetries})');
@@ -796,7 +800,9 @@ class DeviceDiscoveryService {
       for (final subnet in _subnets) {
         try {
           _udpSocket?.send(data, InternetAddress('$subnet.255'), _udpPort);
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (e) {
+          debugPrint('Error sending UDP broadcast to subnet $subnet: $e');
+        }
       }
     } catch (e) {
       debugPrint('UDP Broadcast error: $e');
@@ -823,7 +829,8 @@ class DeviceDiscoveryService {
       // Verify via HTTP
       _checkDeviceOnSpecificPort(ip, port);
     } catch (e) {
-      // Invalid packet - ignore
+      // Invalid packet - ignore (expected for non-Syndro broadcasts)
+      debugPrint('Received invalid UDP packet: $e');
     }
   }
 
@@ -841,7 +848,9 @@ class DeviceDiscoveryService {
           _deviceController.add(_discoveredDevices.values.toList());
         }
       }
-    } catch (e) { debugPrint("Error: $e"); }
+    } catch (e) {
+      debugPrint('Error checking device at $ip:$port: $e');
+    }
   }
 
   // FIX (Bug #4, #9, #28): Proper disposal with try-finally to ensure all resources are cleaned

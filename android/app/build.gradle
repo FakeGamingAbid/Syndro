@@ -43,9 +43,28 @@ android {
         versionName flutterVersionName
     }
 
+    signingConfigs {
+        release {
+            // CI/CD environment: use keystore decoded from KEYSTORE_BASE64 secret
+            // The workflow decodes it to android/app/keystore.jks
+            if (System.getenv("KEYSTORE_PASSWORD") != null && file("keystore.jks").exists()) {
+                storeFile file("keystore.jks")
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+                keyAlias System.getenv("KEY_ALIAS") ?: "syndro"
+                keyPassword System.getenv("KEY_PASSWORD") ?: System.getenv("KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            // Use release signing if configured, otherwise fall back to debug
+            signingConfig signingConfigs.release.hasProperty("storeFile") 
+                ? signingConfigs.release 
+                : signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

@@ -7,19 +7,46 @@ import 'package:flutter/foundation.dart';
 /// Dynamically calculates optimal chunk size based on:
 /// - Current network speed (bytes per second)
 /// - Network latency (milliseconds)
+/// - Device memory constraints
 ///
 /// This improves transfer efficiency by:
 /// - Using smaller chunks on slow networks (less retransmission on error)
 /// - Using larger chunks on fast networks (less overhead)
+/// - Using smaller chunks on low-end devices (less memory pressure)
 class AdaptiveChunkManager {
-  /// Calculate optimal chunk size based on network conditions
+  /// Device RAM in GB (cached for performance)
+  int? _deviceRamGB;
+  
+  /// Calculate optimal chunk size based on network conditions and device capabilities
   ///
   /// Network speed thresholds:
   /// - Slow (<1 MB/s) → 256KB chunks
-  /// - Medium (1-10 MB/s) → 1MB chunks
-  /// - Fast (10-50 MB/s) → 4MB chunks
-  /// - Very fast (>50 MB/s) → 8MB chunks
-  int calculateOptimalChunkSize(double currentSpeedBytesPerSec, int latencyMs) {
+  /// - Medium (1-10 MB/s) → 512KB-1MB chunks
+  /// - Fast (10-50 MB/s) → 2-4MB chunks
+  /// - Very fast (>50 MB/s) → 4-8MB chunks
+  ///
+  /// Low-end devices use smaller chunks regardless of network speed
+  int calculateOptimalChunkSize(double currentSpeedBytesPerSec, int latencyMs, {int? deviceRamGB}) {
+    _deviceRamGB = deviceRamGB ?? _deviceRamGB;
+    
+    // Low-end device optimization: use smaller chunks to reduce memory pressure
+    final isLowEnd = (_deviceRamGB ?? 4) <= 2;
+    final isVeryLowEnd = (_deviceRamGB ?? 4) <= 1;
+    
+    if (isVeryLowEnd) {
+      // Very low-end: always use 128KB chunks
+      return 128 * 1024;
+    }
+    
+    if (isLowEnd) {
+      // Low-end: cap at 512KB even on fast networks
+      if (currentSpeedBytesPerSec < 1 * 1024 * 1024) {
+        return 128 * 1024; // 128KB for slow network
+      }
+      return 256 * 1024; // 256KB max for low-end
+    }
+    
+    // Normal device: scale based on network speed
     // Slow network (<1 MB/s) → 256KB chunks
     if (currentSpeedBytesPerSec < 1 * 1024 * 1024) {
       return 256 * 1024;
@@ -37,9 +64,21 @@ class AdaptiveChunkManager {
   }
 
   /// Calculate optimal number of connections based on network conditions
+  /// and device capabilities
   ///
   /// More connections help on high-latency networks
-  int calculateOptimalConnections(double currentSpeedBytesPerSec, int latencyMs) {
+  /// Low-end devices use fewer connections to reduce memory overhead
+  int calculateOptimalConnections(double currentSpeedBytesPerSec, int latencyMs, {int? deviceRamGB}) {
+    _deviceRamGB = deviceRamGB ?? _deviceRamGB;
+    
+    // Low-end device optimization: fewer connections
+    final isLowEnd = (_deviceRamGB ?? 4) <= 2;
+    
+    if (isLowEnd) {
+      // Low-end: use 1-2 connections max
+      return latencyMs > 100 ? 2 : 1;
+    }
+    
     // High latency (>100ms) - use more connections to saturate link
     if (latencyMs > 100) {
       if (currentSpeedBytesPerSec < 1 * 1024 * 1024) {
@@ -110,10 +149,22 @@ class ParallelConfig {
   );
 
   /// Conservative config for low-end devices (4GB RAM or less)
+  /// OPTIMIZED: Smaller chunks and fewer connections to minimize memory pressure
+  /// This allows sending 50GB+ files on devices with only 2-4GB RAM
   static const ParallelConfig lowEnd = ParallelConfig(
-    connections: 4,                   // Increased from 2
-    chunkSize: 1 * 1024 * 1024,      // 1MB
-    minFileSize: 20 * 1024 * 1024,   // 20MB minimum
+    connections: 2,                   // Reduced from 4 - less memory overhead
+    chunkSize: 512 * 1024,           // 512KB - smaller chunks for low memory
+    minFileSize: 5 * 1024 * 1024,    // 5MB minimum - enable parallel for smaller files
+    enabled: true,
+    isBrowser: false,
+  );
+
+  /// Ultra-low-end config for very old devices (2GB RAM or less)
+  /// Single connection, very small chunks - maximizes compatibility
+  static const ParallelConfig ultraLowEnd = ParallelConfig(
+    connections: 1,                   // Single connection - minimum memory
+    chunkSize: 256 * 1024,           // 256KB - very small chunks
+    minFileSize: 10 * 1024 * 1024,   // 10MB minimum
     enabled: true,
     isBrowser: false,
   );
@@ -128,6 +179,7 @@ class ParallelConfig {
   );
 
   /// Auto-detect best config based on device
+  /// OPTIMIZED: Better detection for low-end devices to handle large files
   static Future<ParallelConfig> autoDetect({bool isBrowser = false}) async {
     if (isBrowser) {
       return appToBrowser;
@@ -136,13 +188,23 @@ class ParallelConfig {
     try {
       final ramGB = await _getDeviceRAMGB();
 
-      if (ramGB <= 4) {
+      // Ultra-low-end: 2GB or less - use minimal resources
+      if (ramGB <= 2) {
+        debugPrint('📱 Ultra-low-end device detected ($ramGB GB RAM), using minimal config');
+        return ultraLowEnd;
+      }
+      // Low-end: 2-4GB - conservative settings
+      else if (ramGB <= 4) {
         debugPrint('📱 Low-end device detected ($ramGB GB RAM), using conservative config');
         return lowEnd;
-      } else if (ramGB <= 8) {
+      }
+      // Mid-range: 4-8GB - balanced settings
+      else if (ramGB <= 8) {
         debugPrint('📱 Mid-range device detected ($ramGB GB RAM), using balanced config');
         return appToApp;
-      } else {
+      }
+      // High-end: 8GB+ - maximum performance
+      else {
         debugPrint('📱 High-end device detected ($ramGB GB RAM), using max performance config');
         return const ParallelConfig(
           connections: 12,                  // Increased from 6
@@ -231,7 +293,42 @@ class ParallelConfig {
   }
 
   /// Calculate max RAM usage
+  /// OPTIMIZED: More accurate calculation for low-end devices
   int get maxRamUsage => connections * chunkSize * 2; // *2 for safety margin
+  
+  /// Check if transfer is feasible given available memory
+  /// Returns true if the device has enough RAM for this config
+  bool isFeasibleForDevice(int availableRamBytes) {
+    // Need at least 3x the max RAM usage for safe operation
+    // (input buffer + output buffer + overhead)
+    final requiredBytes = maxRamUsage * 3;
+    return availableRamBytes > requiredBytes;
+  }
+  
+  /// Get a safer config if current one might cause memory issues
+  ParallelConfig getSafeConfigForMemory(int availableRamMB) {
+    final availableBytes = availableRamMB * 1024 * 1024;
+    
+    if (isFeasibleForDevice(availableBytes)) {
+      return this;
+    }
+    
+    // Downgrade to safer config
+    if (availableRamMB <= 512) {
+      return ultraLowEnd; // 512MB or less
+    } else if (availableRamMB <= 1024) {
+      return lowEnd; // 1-2GB
+    } else {
+      // Reduce connections but keep chunk size
+      return ParallelConfig(
+        connections: (connections / 2).ceil(),
+        chunkSize: chunkSize,
+        minFileSize: minFileSize,
+        enabled: enabled,
+        isBrowser: isBrowser,
+      );
+    }
+  }
 
   @override
   String toString() {

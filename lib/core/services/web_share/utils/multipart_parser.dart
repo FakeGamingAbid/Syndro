@@ -88,7 +88,10 @@ class MultipartParser {
       // Decode URL-encoded filename
       try {
         filename = Uri.decodeComponent(filename!);
-      } catch (e) { debugPrint("Error: $e"); }
+      } catch (e) {
+        debugPrint('Error decoding filename: $e');
+        // Keep original filename if decoding fails
+      }
     }
 
     return MultipartPart(filename: filename, data: bodyBytes);

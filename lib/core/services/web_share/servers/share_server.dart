@@ -299,7 +299,9 @@ class ShareServer {
         try {
           request.response.statusCode = HttpStatus.internalServerError;
           await request.response.close();
-        } catch (e) { debugPrint("Error: $e"); }
+        } catch (closeError) {
+          debugPrint('Error closing error response: $closeError');
+        }
       }
     }
   }
@@ -567,7 +569,9 @@ class ShareServer {
       // Don't try to send error response if headers already sent
       try {
         await request.response.close();
-      } catch (e) { debugPrint("Error: $e"); }
+      } catch (closeError) {
+        debugPrint('Error closing response after stream error: $closeError');
+      }
     }
   }
 
