@@ -340,7 +340,6 @@ class TransferService {
       final senderId = data['senderId'] as String? ?? '';
       final senderName = data['senderName'] as String? ?? '';
       final senderToken = data['senderToken'] as String? ?? '';
-      final encrypted = data['encrypted'] as bool? ?? false;
 
       if (transferId.isEmpty || fileName.isEmpty || fileSize <= 0) {
         await _sendBadRequest(request, 'Missing required fields');
@@ -369,7 +368,6 @@ class TransferService {
         name: fileName,
         path: '', // Path not known yet on receiver side
         size: fileSize,
-        type: _getFileType(fileName),
       );
 
       _pendingRequests[transferId] = PendingTransferRequest(
