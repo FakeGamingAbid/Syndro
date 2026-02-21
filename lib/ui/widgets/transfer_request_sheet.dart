@@ -64,12 +64,53 @@ class TransferRequestSheet extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
 
-          // Sender info
-          Text(
-            '${request.senderName} ${TransferRequestStrings.senderWantsToSend}',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textSecondary,
+          // Sender info with trusted badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: Text(
+                  '${request.senderName} ${TransferRequestStrings.senderWantsToSend}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                  overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              if (request.isTrusted) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.successColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.successColor.withOpacity(0.5),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.verified_user,
+                        size: 12,
+                        color: AppTheme.successColor,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'Trusted',
+                        style: TextStyle(
+                          color: AppTheme.successColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 16),
 

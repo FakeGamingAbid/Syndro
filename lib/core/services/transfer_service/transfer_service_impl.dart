@@ -380,6 +380,7 @@ class TransferService {
         senderPublicKey: null,
         isParallelTransfer: true,
         parallelData: data,
+        isTrusted: trustedDevice != null,
       );
 
       // Notify UI via stream (this will show the transfer request dialog)
@@ -1075,6 +1076,7 @@ class TransferService {
         items: items,
         timestamp: DateTime.now(),
         senderPublicKey: senderPublicKey,
+        isTrusted: trustedDevice != null,
       );
 
       // Notify UI via stream (this will show the modal sheet if app is in foreground)

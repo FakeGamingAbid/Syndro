@@ -32,6 +32,9 @@ class PendingTransferRequest {
   
   /// Original parallel transfer data (used when approving parallel transfer)
   final Map<String, dynamic>? parallelData;
+  
+  /// Whether the sender is a trusted device
+  final bool isTrusted;
 
   PendingTransferRequest({
     required this.requestId,
@@ -43,6 +46,7 @@ class PendingTransferRequest {
     this.senderPublicKey,
     this.isParallelTransfer = false,
     this.parallelData,
+    this.isTrusted = false,
   });
 
   int get fileCount => items.length;
