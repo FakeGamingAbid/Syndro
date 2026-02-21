@@ -115,7 +115,6 @@ class ParallelTransferService {
 
       // FIX: Calculate hash in parallel with chunk uploads
       final hashCompleter = Completer<String>();
-      String? calculatedHash;
       
       // Start hash calculation in background
       final hashFuture = _calculateHashInBackground(
@@ -126,7 +125,6 @@ class ParallelTransferService {
           }
         },
       ).then((hash) {
-        calculatedHash = hash;
         if (!hashCompleter.isCompleted) {
           hashCompleter.complete(hash);
         }

@@ -77,12 +77,9 @@ class FileService {
           code: 'EMPTY_FILENAME');
     }
 
-    // FIX (Bug #9): Normalize Unicode to prevent homograph attacks
+    // FIX (Bug #9): Handle Unicode characters that look like path separators
     // Characters like U+2044 (⁄) and U+2215 (∕) look like slashes
     String sanitized = filename;
-    
-    // Normalize Unicode to NFC form (canonical decomposition followed by composition)
-    sanitized = sanitized.normalize();
     
     // Replace Unicode characters that look like path separators
     sanitized = sanitized.replaceAll('⁄', '_');  // U+2044 (fraction slash)
