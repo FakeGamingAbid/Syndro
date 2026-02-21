@@ -106,12 +106,32 @@ class ParallelTransferService {
         encrypted: encryptionKey != null,
       );
 
-      if (initResponse['success'] != true) {
+      // FIX: Handle pending_approval status - wait for receiver to approve
+      final status = initResponse['status'] as String?;
+      if (status == 'pending_approval') {
+        debugPrint('⏳ Transfer pending approval. Waiting for receiver to accept...');
+        
+        // Wait for approval by polling the receiver
+        final requestId = initResponse['requestId'] as String? ?? transferId;
+        final approved = await _waitForApproval(
+          receiver: receiver,
+          requestId: requestId,
+          timeout: const Duration(minutes: 5),
+        );
+        
+        if (!approved) {
+          throw Exception('Transfer rejected or timed out');
+        }
+        
+        debugPrint('✅ Transfer approved! Starting upload...');
+      } else if (initResponse['success'] != true) {
         throw Exception(
             'Failed to initiate parallel transfer: ${initResponse['error']}');
+      } else {
+        debugPrint('✅ Receiver auto-accepted! Starting upload...');
       }
 
-      debugPrint('✅ Receiver notified! Now calculating hash and uploading chunks in parallel...');
+      debugPrint('📤 Now calculating hash and uploading chunks in parallel...');
 
       // FIX: Calculate hash in parallel with chunk uploads
       final hashCompleter = Completer<String>();
@@ -481,6 +501,46 @@ class ParallelTransferService {
       debugPrint('⚠️ Failed to notify transfer completion: $e');
       // Don't rethrow - transfer is already complete, notification is optional
     }
+  }
+
+  /// Wait for receiver to approve the transfer
+  Future<bool> _waitForApproval({
+    required Device receiver,
+    required String requestId,
+    required Duration timeout,
+  }) async {
+    final startTime = DateTime.now();
+    final approvalUrl = 'http://${receiver.ipAddress}:${receiver.port}/transfer/approval/$requestId';
+    
+    while (DateTime.now().difference(startTime) < timeout) {
+      try {
+        final response = await http
+            .get(Uri.parse(approvalUrl))
+            .timeout(const Duration(seconds: 5));
+        
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body) as Map<String, dynamic>;
+          final status = data['status'] as String?;
+          
+          if (status == 'approved') {
+            debugPrint('✅ Transfer approved by receiver');
+            return true;
+          } else if (status == 'rejected' || status == 'expired') {
+            debugPrint('❌ Transfer $status by receiver');
+            return false;
+          }
+          // status == 'pending' - continue waiting
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error checking approval status: $e');
+      }
+      
+      // Wait before polling again
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+    
+    debugPrint('⏰ Transfer approval timed out');
+    return false;
   }
 
   Future<Uint8List> _encryptChunk(

@@ -26,6 +26,12 @@ class PendingTransferRequest {
   final List<TransferItem> items;
   final DateTime timestamp;
   final Uint8List? senderPublicKey;
+  
+  /// Whether this is a parallel transfer request (for large files)
+  final bool isParallelTransfer;
+  
+  /// Original parallel transfer data (used when approving parallel transfer)
+  final Map<String, dynamic>? parallelData;
 
   PendingTransferRequest({
     required this.requestId,
@@ -35,6 +41,8 @@ class PendingTransferRequest {
     required this.items,
     required this.timestamp,
     this.senderPublicKey,
+    this.isParallelTransfer = false,
+    this.parallelData,
   });
 
   int get fileCount => items.length;

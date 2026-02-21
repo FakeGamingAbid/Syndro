@@ -334,10 +334,69 @@ class TransferService {
       final body = await utf8.decoder.bind(request).join();
       final data = jsonDecode(body) as Map<String, dynamic>;
 
-      final result = await _parallelReceiver.handleInitiate(data);
+      final transferId = data['transferId'] as String? ?? '';
+      final fileName = data['fileName'] as String? ?? '';
+      final fileSize = data['fileSize'] as int? ?? 0;
+      final senderId = data['senderId'] as String? ?? '';
+      final senderName = data['senderName'] as String? ?? '';
+      final senderToken = data['senderToken'] as String? ?? '';
+      final encrypted = data['encrypted'] as bool? ?? false;
 
-      await _sendResponse(request,
-          result['success'] == true ? HttpStatus.ok : HttpStatus.badRequest, result);
+      if (transferId.isEmpty || fileName.isEmpty || fileSize <= 0) {
+        await _sendBadRequest(request, 'Missing required fields');
+        return;
+      }
+
+      // Check if auto-accept is enabled for trusted devices
+      final trustedDevice = _trustedDevices[senderId];
+      final autoAcceptTrusted = await _settingsService.getAutoAcceptTrusted();
+
+      if (trustedDevice != null &&
+          _secureTokenCompare(trustedDevice.token, senderToken) &&
+          autoAcceptTrusted) {
+        // Auto-accept: proceed with transfer immediately
+        debugPrint('✅ Auto-accepting parallel transfer from trusted device: $senderName');
+        
+        final result = await _parallelReceiver.handleInitiate(data);
+        await _sendResponse(request,
+            result['success'] == true ? HttpStatus.ok : HttpStatus.badRequest, result);
+        return;
+      }
+
+      // FIX: Create pending request for UI approval
+      // This ensures the transfer request dialog is shown before transfer starts
+      final item = TransferItem(
+        name: fileName,
+        path: '', // Path not known yet on receiver side
+        size: fileSize,
+        type: _getFileType(fileName),
+      );
+
+      _pendingRequests[transferId] = PendingTransferRequest(
+        requestId: transferId,
+        senderId: senderId,
+        senderName: senderName,
+        senderToken: senderToken,
+        items: [item],
+        timestamp: DateTime.now(),
+        senderPublicKey: null,
+        isParallelTransfer: true,
+        parallelData: data,
+      );
+
+      // Notify UI via stream (this will show the transfer request dialog)
+      if (!_pendingRequestsController.isClosed) {
+        _pendingRequestsController.add(_pendingRequests.values.toList());
+      }
+
+      debugPrint('📥 Parallel transfer pending approval: $fileName from $senderName');
+
+      // Return pending_approval status so sender waits for approval
+      await _sendResponse(request, HttpStatus.ok, {
+        'status': 'pending_approval',
+        'requestId': transferId,
+        'message': 'Waiting for receiver approval',
+      });
     } catch (e) {
       await _sendError(request, 'Error initiating parallel transfer: $e');
     }
@@ -1131,13 +1190,24 @@ class TransferService {
       }
     }
 
-    _approveTransferRequest(
-      requestId,
-      pending.senderId,
-      pending.senderName,
-      pending.senderToken,
-      pending.items,
-    );
+    // FIX: Handle parallel transfer approval differently
+    if (pending.isParallelTransfer && pending.parallelData != null) {
+      // For parallel transfers, initialize the receiver session
+      debugPrint('✅ Approving parallel transfer: ${pending.requestId}');
+      final result = await _parallelReceiver.handleInitiate(pending.parallelData!);
+      if (result['success'] != true) {
+        debugPrint('❌ Failed to initialize parallel receiver: ${result['error']}');
+      }
+      // The sender will check approval status and start uploading chunks
+    } else {
+      _approveTransferRequest(
+        requestId,
+        pending.senderId,
+        pending.senderName,
+        pending.senderToken,
+        pending.items,
+      );
+    }
   }
 
   void rejectTransfer(String requestId) {
