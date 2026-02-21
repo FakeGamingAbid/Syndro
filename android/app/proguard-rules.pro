@@ -2,6 +2,11 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
+# Play Core (for deferred components - not used but referenced by Flutter)
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
+-keep interface com.google.android.play.core.** { *; }
+
 # Keep native methods
 -keepclasseswithmembernames class * {
     native <methods>;
