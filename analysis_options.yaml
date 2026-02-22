@@ -1,5 +1,10 @@
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  errors:
+    unused_field: ignore
+    unused_element: ignore
+
 linter:
   rules:
     prefer_const_constructors: true
