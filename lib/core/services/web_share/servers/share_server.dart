@@ -9,6 +9,25 @@ import '../utils/network_utils.dart';
 import '../utils/file_type_utils.dart';
 import '../templates/share_page_template.dart';
 
+/// Pending connection confirmation request
+class PendingConfirmation {
+  final String ipAddress;
+  final String userAgent;
+  final DateTime requestedAt;
+  bool confirmed;
+  bool denied;
+
+  PendingConfirmation({
+    required this.ipAddress,
+    required this.userAgent,
+    DateTime? requestedAt,
+  })  : requestedAt = requestedAt ?? DateTime.now(),
+        confirmed = false,
+        denied = false;
+
+  bool get isPending => !confirmed && !denied;
+}
+
 /// Connection event types
 enum ConnectionEventType {
   connected,
@@ -85,6 +104,18 @@ class ShareServer {
   final StreamController<int> _activeConnectionCountController =
       StreamController<int>.broadcast();
 
+  // User confirmation tracking - require user confirmation before allowing downloads
+  bool _requireConfirmation = true; // Default to requiring confirmation
+  final Map<String, PendingConfirmation> _pendingConfirmations = {};
+  final StreamController<PendingConfirmation> _confirmationRequestController =
+      StreamController<PendingConfirmation>.broadcast();
+  static const Duration _confirmationTimeout = Duration(minutes: 1);
+
+  // Rate limiting - track requests per IP
+  static const int _maxRequestsPerMinute = 60;
+  final Map<String, List<DateTime>> _requestTimestamps = {};
+  static const Duration _rateLimitWindow = Duration(minutes: 1);
+
   /// Stream of connection events (connect, download start/complete)
   Stream<ConnectionEvent> get connectionEventStream =>
       _connectionEventController.stream;
@@ -104,6 +135,81 @@ class ShareServer {
 
   /// Check if currently sharing
   bool get isSharing => _server != null;
+
+  /// Stream of pending confirmation requests - UI should listen to this
+  /// and show confirmation dialog to user
+  Stream<PendingConfirmation> get confirmationRequestStream =>
+      _confirmationRequestController.stream;
+
+  /// Get list of pending confirmation requests
+  List<PendingConfirmation> get pendingConfirmations =>
+      _pendingConfirmations.values.where((c) => c.isPending).toList();
+
+  /// Enable or disable requiring user confirmation before allowing downloads
+  void setRequireConfirmation(bool require) {
+    _requireConfirmation = require;
+  }
+
+  /// Confirm a pending connection by IP address
+  bool confirmConnection(String ipAddress) {
+    final confirmation = _pendingConfirmations[ipAddress];
+    if (confirmation != null && confirmation.isPending) {
+      confirmation.confirmed = true;
+      // Activate the connection after confirmation
+      _activateConnection(ipAddress, confirmation.userAgent);
+      debugPrint('✅ Connection confirmed for $ipAddress');
+      return true;
+    }
+    return false;
+  }
+
+  /// Deny a pending connection by IP address
+  bool denyConnection(String ipAddress) {
+    final confirmation = _pendingConfirmations[ipAddress];
+    if (confirmation != null && confirmation.isPending) {
+      confirmation.denied = true;
+      debugPrint('❌ Connection denied for $ipAddress');
+      return true;
+    }
+    return false;
+  }
+
+  /// Check if an IP address is allowed to download
+  bool isConnectionAllowed(String ipAddress) {
+    if (!_requireConfirmation) return true;
+    
+    final confirmation = _pendingConfirmations[ipAddress];
+    if (confirmation == null) {
+      // No confirmation request - treat as allowed for backward compatibility
+      return true;
+    }
+    return confirmation.confirmed;
+  }
+
+  /// Check if request is allowed based on rate limits
+  /// Returns true if allowed, false if rate limited
+  bool _checkRateLimit(String ipAddress) {
+    final now = DateTime.now();
+    final windowStart = now.subtract(_rateLimitWindow);
+    
+    // Get or create timestamp list for this IP
+    final timestamps = _requestTimestamps[ipAddress] ?? [];
+    
+    // Remove old timestamps outside the window
+    timestamps.removeWhere((t) => t.isBefore(windowStart));
+    
+    // Check if over limit
+    if (timestamps.length >= _maxRequestsPerMinute) {
+      debugPrint('⚠️ Rate limit exceeded for $ipAddress: ${timestamps.length} requests in last minute');
+      _requestTimestamps[ipAddress] = timestamps;
+      return false;
+    }
+    
+    // Add current request timestamp
+    timestamps.add(now);
+    _requestTimestamps[ipAddress] = timestamps;
+    return true;
+  }
 
   /// Start sharing files via HTTP server
   Future<String?> startSharing(List<File> files) async {
@@ -240,30 +346,78 @@ class ShareServer {
     _activeConnectionCountController.add(_activeConnections.length);
   }
 
-  // Connection tracking methods - MODIFIED to include userAgent
+  // Connection tracking methods - MODIFIED to require user confirmation
   void _onClientConnected(String ipAddress, String userAgent) {
-    if (!_activeConnections.contains(ipAddress)) {
-      // FIX (Bug #11): Evict oldest entries if map grows too large
-      if (_connectedClients.length >= _maxConnectedClients) {
-        final oldestKey = _connectedClients.keys.first;
-        _connectedClients.remove(oldestKey);
-        _activeConnections.remove(oldestKey);
+    // Check if already connected
+    if (_activeConnections.contains(ipAddress)) {
+      return;
+    }
+
+    // FIX (Bug #11): Evict oldest entries if map grows too large
+    if (_connectedClients.length >= _maxConnectedClients) {
+      final oldestKey = _connectedClients.keys.first;
+      _connectedClients.remove(oldestKey);
+      _activeConnections.remove(oldestKey);
+      _pendingConfirmations.remove(oldestKey);
+    }
+
+    // If confirmation is required, create a pending confirmation
+    if (_requireConfirmation) {
+      // Check if there's already a pending confirmation
+      final existing = _pendingConfirmations[ipAddress];
+      if (existing != null && existing.isPending) {
+        // Already pending - don't create duplicate
+        return;
       }
 
-      _activeConnections.add(ipAddress);
-      _connectedClients[ipAddress] = ConnectedClient(
+      // Create new pending confirmation
+      final confirmation = PendingConfirmation(
         ipAddress: ipAddress,
         userAgent: userAgent,
-        connectedAt: DateTime.now(),
       );
-      _activeConnectionCountController.add(_activeConnections.length);
-      _connectionEventController.add(ConnectionEvent(
-        type: ConnectionEventType.connected,
-        ipAddress: ipAddress,
-        userAgent: userAgent,
-      ));
-      debugPrint(
-          'Client connected: $ipAddress (Total: ${_activeConnections.length})');
+      _pendingConfirmations[ipAddress] = confirmation;
+
+      // Emit event for UI to show confirmation dialog
+      _confirmationRequestController.add(confirmation);
+      debugPrint('⏳ Connection confirmation requested for $ipAddress');
+
+      // Set timeout to auto-deny after 1 minute
+      Timer(_confirmationTimeout, () {
+        final conf = _pendingConfirmations[ipAddress];
+        if (conf != null && conf.isPending) {
+          conf.denied = true;
+          debugPrint('⏱️ Connection confirmation timed out for $ipAddress');
+        }
+      });
+
+      return; // Don't add to active connections until confirmed
+    }
+
+    // No confirmation required - allow immediately
+    _addActiveConnection(ipAddress, userAgent);
+  }
+
+  /// Add an active connection after confirmation
+  void _addActiveConnection(String ipAddress, String userAgent) {
+    _activeConnections.add(ipAddress);
+    _connectedClients[ipAddress] = ConnectedClient(
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+      connectedAt: DateTime.now(),
+    );
+    _activeConnectionCountController.add(_activeConnections.length);
+    _connectionEventController.add(ConnectionEvent(
+      type: ConnectionEventType.connected,
+      ipAddress: ipAddress,
+      userAgent: userAgent,
+    ));
+    debugPrint('✅ Client connected: $ipAddress (Total: ${_activeConnections.length})');
+  }
+
+  /// Called when confirmation is granted - activates the connection
+  void _activateConnection(String ipAddress, String userAgent) {
+    if (!_activeConnections.contains(ipAddress)) {
+      _addActiveConnection(ipAddress, userAgent);
     }
   }
 
@@ -313,6 +467,15 @@ class ShareServer {
     final clientIp =
         request.connectionInfo?.remoteAddress.address ?? 'unknown';
     final userAgent = request.headers.value('user-agent') ?? 'Unknown'; // NEW
+
+    // Rate limiting check - reject if too many requests
+    if (!_checkRateLimit(clientIp)) {
+      request.response.statusCode = HttpStatus.tooManyRequests;
+      request.response.write('Rate limit exceeded. Please try again later.');
+      await request.response.close();
+      debugPrint('⚠️ Rate limit blocked request from $clientIp');
+      return;
+    }
 
     // CORS headers
     request.response.headers.add('Access-Control-Allow-Origin', '*');
@@ -476,9 +639,18 @@ class ShareServer {
     }
   }
 
-  /// Serve file download - with connection tracking
+  /// Serve file download - with connection tracking and confirmation check
   Future<void> _serveFile(
       HttpRequest request, String requestPath, String clientIp) async {
+    // SECURITY: Check if connection is confirmed before allowing download
+    if (!isConnectionAllowed(clientIp)) {
+      request.response.statusCode = HttpStatus.forbidden;
+      request.response.write('Connection not confirmed. Please wait for user approval.');
+      await request.response.close();
+      debugPrint('❌ Download denied for unconfirmed connection: $clientIp');
+      return;
+    }
+
     if (_sharedFiles == null) {
       request.response.statusCode = HttpStatus.notFound;
       request.response.write('No files shared');

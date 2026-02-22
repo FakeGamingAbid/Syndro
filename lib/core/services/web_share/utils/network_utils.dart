@@ -116,4 +116,25 @@ class NetworkUtils {
     }
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
+
+  /// Validate IP address format
+  static bool isValidIPAddress(String ip) {
+    if (ip.isEmpty) return false;
+    
+    final parts = ip.split('.');
+    if (parts.length != 4) return false;
+    
+    for (final part in parts) {
+      final num = int.tryParse(part);
+      if (num == null || num < 0 || num > 255) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /// Validate port number
+  static bool isValidPort(int port) {
+    return port > 0 && port <= 65535;
+  }
 }

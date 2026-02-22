@@ -12,6 +12,27 @@ import '../utils/network_utils.dart';
 import '../utils/multipart_parser.dart';
 import '../templates/receive_page_template.dart';
 
+/// Pending upload confirmation request
+class UploadPendingConfirmation {
+  final String ipAddress;
+  final String fileName;
+  final int fileSize;
+  final DateTime requestedAt;
+  bool confirmed;
+  bool denied;
+
+  UploadPendingConfirmation({
+    required this.ipAddress,
+    required this.fileName,
+    required this.fileSize,
+    DateTime? requestedAt,
+  })  : requestedAt = requestedAt ?? DateTime.now(),
+        confirmed = false,
+        denied = false;
+
+  bool get isPending => !confirmed && !denied;
+}
+
 /// HTTP server for receiving files (upload mode)
 /// Files are stored in temp location until user decides to save/discard
 class ReceiveServer {
@@ -36,6 +57,18 @@ class ReceiveServer {
   // Maximum single file size (5GB)
   static const int _maxFileSizeBytes = 5 * 1024 * 1024 * 1024;
 
+  // User confirmation tracking - require user confirmation before accepting uploads
+  bool _requireConfirmation = true;
+  final Map<String, UploadPendingConfirmation> _pendingConfirmations = {};
+  final StreamController<UploadPendingConfirmation> _confirmationRequestController =
+      StreamController<UploadPendingConfirmation>.broadcast();
+  static const Duration _confirmationTimeout = Duration(minutes: 1);
+
+  // Rate limiting - track requests per IP
+  static const int _maxRequestsPerMinute = 60;
+  final Map<String, List<DateTime>> _requestTimestamps = {};
+  static const Duration _rateLimitWindow = Duration(minutes: 1);
+
   /// Stream of received files
   Stream<ReceivedFile> get receivedFilesStream => _receivedFilesController.stream;
 
@@ -54,6 +87,72 @@ class ReceiveServer {
 
   /// Get final directory path
   String? get finalDirectory => _finalDirectory;
+
+  /// Stream of pending upload confirmation requests
+  Stream<UploadPendingConfirmation> get uploadConfirmationRequestStream =>
+      _confirmationRequestController.stream;
+
+  /// Get list of pending upload confirmations
+  List<UploadPendingConfirmation> get pendingUploadConfirmations =>
+      _pendingConfirmations.values.where((c) => c.isPending).toList();
+
+  /// Enable or disable requiring user confirmation before accepting uploads
+  void setRequireConfirmation(bool require) {
+    _requireConfirmation = require;
+  }
+
+  /// Confirm an upload by its ID
+  bool confirmUpload(String uploadId) {
+    final confirmation = _pendingConfirmations[uploadId];
+    if (confirmation != null && confirmation.isPending) {
+      confirmation.confirmed = true;
+      debugPrint('✅ Upload confirmed for $uploadId');
+      return true;
+    }
+    return false;
+  }
+
+  /// Deny an upload by its ID
+  bool denyUpload(String uploadId) {
+    final confirmation = _pendingConfirmations[uploadId];
+    if (confirmation != null && confirmation.isPending) {
+      confirmation.denied = true;
+      debugPrint('❌ Upload denied for $uploadId');
+      return true;
+    }
+    return false;
+  }
+
+  /// Check if an upload is allowed
+  bool isUploadAllowed(String uploadId) {
+    if (!_requireConfirmation) return true;
+    
+    final confirmation = _pendingConfirmations[uploadId];
+    if (confirmation == null) {
+      // No confirmation request - treat as allowed for backward compatibility
+      return true;
+    }
+    return confirmation.confirmed;
+  }
+
+  /// Check if request is allowed based on rate limits
+  bool _checkRateLimit(String ipAddress) {
+    final now = DateTime.now();
+    final windowStart = now.subtract(_rateLimitWindow);
+    
+    final timestamps = _requestTimestamps[ipAddress] ?? [];
+    timestamps.removeWhere((t) => t.isBefore(windowStart));
+    
+    if (timestamps.length >= _maxRequestsPerMinute) {
+      debugPrint('⚠️ Rate limit exceeded for $ipAddress');
+      _requestTimestamps[ipAddress] = timestamps;
+      return false;
+    }
+    
+    timestamps.add(now);
+    _requestTimestamps[ipAddress] = timestamps;
+    return true;
+  }
 
   /// Start receiving files via HTTP server
   Future<String?> startReceiving(String downloadDirectory) async {
@@ -248,6 +347,16 @@ class ReceiveServer {
   Future<void> _handleRequest(HttpRequest request) async {
     final uri = request.requestedUri;
     final requestPath = uri.path;
+    final clientIp = request.connectionInfo?.remoteAddress.address ?? 'unknown';
+
+    // Rate limiting check
+    if (!_checkRateLimit(clientIp)) {
+      request.response.statusCode = HttpStatus.tooManyRequests;
+      request.response.write('Rate limit exceeded. Please try again later.');
+      await request.response.close();
+      debugPrint('⚠️ Rate limit blocked request from $clientIp');
+      return;
+    }
 
     // CORS headers
     request.response.headers.add('Access-Control-Allow-Origin', '*');

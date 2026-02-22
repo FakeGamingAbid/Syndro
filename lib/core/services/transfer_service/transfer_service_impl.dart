@@ -137,6 +137,7 @@ class TransferService {
     _listenToNotificationEvents();
     _initializeParallelTransfer();
     _startSessionCleanup();
+    _startTrustedDevicesCleanup();
   }
 
   /// Must be awaited before using the service for transfers.
@@ -281,6 +282,39 @@ class TransferService {
     if (expiredIds.isNotEmpty) {
       debugPrint(
           '🧹 Cleaned up ${expiredIds.length} expired encryption sessions');
+    }
+  }
+
+  // Trusted devices cleanup - remove old entries to prevent unbounded growth
+  static const Duration _trustedDevicesMaxAge = Duration(days: 90);
+  Timer? _trustedDevicesCleanupTimer;
+
+  void _startTrustedDevicesCleanup() {
+    _trustedDevicesCleanupTimer = Timer.periodic(
+      const Duration(hours: 24),
+      (_) => _cleanupOldTrustedDevices(),
+    );
+  }
+
+  void _cleanupOldTrustedDevices() {
+    if (_trustedDevices.isEmpty) return;
+
+    final now = DateTime.now();
+    final expiredIds = <String>[];
+
+    for (final entry in _trustedDevices.entries) {
+      if (now.difference(entry.value.trustedAt) > _trustedDevicesMaxAge) {
+        expiredIds.add(entry.key);
+      }
+    }
+
+    for (final id in expiredIds) {
+      _trustedDevices.remove(id);
+    }
+
+    if (expiredIds.isNotEmpty) {
+      debugPrint('🧹 Cleaned up ${expiredIds.length} old trusted devices');
+      _saveTrustedDevices();
     }
   }
 
