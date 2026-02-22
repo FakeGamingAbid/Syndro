@@ -31,10 +31,7 @@
     <!-- Custom permission for internal broadcast receiver protection -->
     <permission
         android:name="com.syndro.app.TRANSFER_EVENTS"
-        android:label="Transfer Events Permission"
-        android:description="Permission to receive transfer event broadcasts"
         android:protectionLevel="signature"/>
-    <uses-permission android:name="com.syndro.app.TRANSFER_EVENTS"/>
 
     <application
         android:label="Syndro"
