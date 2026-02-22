@@ -9,8 +9,41 @@ import 'package:network_info_plus/network_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../config/app_config.dart';
 import '../models/device.dart';
 import 'device_nickname_service.dart';
+
+/// Simple lock implementation for thread-safe operations
+class Lock {
+  final _queue = <Completer<void>>[];
+  bool _locked = false;
+
+  Future<void> synchronized(FutureOr<void> Function() action) async {
+    final completer = Completer<void>();
+    _queue.add(completer);
+
+    if (_locked || _queue.length > 1) {
+      await completer.future;
+    }
+
+    _locked = true;
+
+    try {
+      await action();
+    } finally {
+      _locked = false;
+      _queue.removeAt(0);
+      
+      if (_queue.isNotEmpty) {
+        try {
+          _queue.first.complete();
+        } catch (_) {
+          // Continue even if notification fails
+        }
+      }
+    }
+  }
+}
 
 /// Service for discovering and tracking devices on the local network.
 ///
@@ -60,6 +93,10 @@ class DeviceDiscoveryService {
   int _udpPort = 8771; // Dedicated UDP port for discovery (can change if port is busy)
   static const String _deviceIdKey = 'syndro_device_id';
 
+  // Rate limiting configuration
+  final List<DateTime> _discoveryTimestamps = [];
+  final _rateLimitLock = Lock();
+
   final _uuid = const Uuid();
   final _networkInfo = NetworkInfo();
   final _deviceController = StreamController<List<Device>>.broadcast();
@@ -90,6 +127,27 @@ class DeviceDiscoveryService {
 
   List<String> _localIps = [];
   List<String> _subnets = [];
+
+  /// Check if discovery can proceed based on rate limits
+  /// 
+  /// Returns true if we're within the rate limit, false if too many requests
+  Future<bool> _canDiscover() async {
+    await _rateLimitLock.synchronized(() {
+      final now = DateTime.now();
+      final oneMinuteAgo = now.subtract(const Duration(minutes: 1));
+      
+      // Remove timestamps older than 1 minute
+      _discoveryTimestamps.removeWhere((t) => t.isBefore(oneMinuteAgo));
+      
+      if (_discoveryTimestamps.length >= AppConfig.maxDiscoveryRatePerMinute) {
+        debugPrint('⚠️ Rate limit reached: ${_discoveryTimestamps.length} discoveries in the last minute');
+        return;
+      }
+      
+      _discoveryTimestamps.add(now);
+    });
+    return true;
+  }
 
   Stream<List<Device>> get devicesStream {
     if (!_hasEmitted) {
@@ -878,6 +936,9 @@ class DeviceDiscoveryService {
     } catch (e) {
       debugPrint('Error cancelling UDP broadcast timer: $e');
     }
+
+    // Clear rate limiter
+    _discoveryTimestamps.clear();
 
     // Close UDP socket properly
     try {

@@ -282,10 +282,14 @@ class MainActivity : FlutterActivity() {
             addAction("com.syndro.app.TRANSFER_REJECTED")
         }
 
+        // Security: Use RECEIVER_NOT_EXPORTED on Android 13+ (API 33+)
+        // For older versions, the receiver is protected by a custom permission defined in AndroidManifest
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(transferEventReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
-            registerReceiver(transferEventReceiver, filter)
+            // On older Android versions, use RECEIVER_REPLACEABLE with a local permission
+            // This limits exposure while maintaining functionality
+            registerReceiver(transferEventReceiver, filter, "com.syndro.app.TRANSFER_EVENTS", null)
         }
     }
 

@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
+
+import '../config/app_config.dart';
 
 /// Core encryption service using AES-256-GCM
 ///
@@ -14,6 +17,7 @@ import 'package:flutter/foundation.dart';
 /// - Streaming encryption/decryption for large files
 /// - Nonce tracking to prevent replay attacks
 /// - Automatic key rotation recommendations
+/// - Bounded nonce cache for memory efficiency
 ///
 /// ## Performance:
 /// - Speed: ~3-5 GB/s on modern devices (hardware accelerated)
@@ -55,16 +59,18 @@ class EncryptionService {
   // Chunk size for streaming encryption (1MB)
   static const int chunkSize = 1024 * 1024;
 
-  // Simplified nonce tracking: Use Set only for O(1) collision detection in current session
-  // The Set is cleared when a new shared secret is derived, so memory is bounded
+  // Bounded nonce cache using LRU-like eviction
+  // This prevents unbounded memory growth during long sessions
+  // We keep the most recent nonces for collision detection
+  final Queue<String> _nonceOrder = Queue<String>();
   final Set<String> _usedNonces = {};
 
   // Maximum nonces before requiring new key (2^32 for safety margin)
   static const int _maxNoncesPerKey = 0xFFFFFFFF;
   int _nonceCount = 0;
   
-  // FIX (Bug #7): Lock for thread-safe nonce operations
-  final _nonceLock = _EncryptionLock();
+  // Thread-safe lock for nonce operations using proper mutex pattern
+  final _nonceLock = _MutexLock();
 
   /// Generate a new key pair for key exchange
   ///
@@ -145,7 +151,7 @@ class EncryptionService {
   /// Throws [EncryptionException] if nonce limit is reached.
   Future<Uint8List> encryptChunk(
       Uint8List plaintext, SecretKey secretKey) async {
-    // FIX (Bug #7): Use lock for thread-safe nonce operations
+    // Use lock for thread-safe nonce operations
     return await _nonceLock.synchronized(() async {
       // Check nonce counter
       if (_nonceCount >= _maxNoncesPerKey) {
@@ -170,9 +176,16 @@ class EncryptionService {
         }
       } while (_usedNonces.contains(nonceHex));
 
-      // Add to set for collision detection
+      // Add to bounded cache for collision detection
       _usedNonces.add(nonceHex);
+      _nonceOrder.addLast(nonceHex);
       _nonceCount++;
+
+      // Evict oldest nonce if cache is full (LRU-like behavior)
+      if (_usedNonces.length > AppConfig.maxCachedNonces) {
+        final oldest = _nonceOrder.removeFirst();
+        _usedNonces.remove(oldest);
+      }
 
       // Encrypt with authentication
       final secretBox = await _aesGcm.encrypt(
@@ -408,6 +421,7 @@ class EncryptionService {
   /// called by [deriveSharedSecret] when establishing a new session.
   void reset() {
     _usedNonces.clear();
+    _nonceOrder.clear();
     _nonceCount = 0;
   }
 
@@ -461,23 +475,40 @@ class EncryptionException implements Exception {
   }
 }
 
-/// FIX (Bug #7): Simple lock for thread-safe nonce operations
-class _EncryptionLock {
-  Future<void>? _lock;
+/// Thread-safe mutex lock for nonce operations
+/// 
+/// Uses a queue-based approach to prevent race conditions.
+/// Each operation waits for its turn in the queue.
+class _MutexLock {
+  final _queue = <Completer<void>>[];
+  bool _locked = false;
 
   Future<T> synchronized<T>(FutureOr<T> Function() action) async {
-    while (_lock != null) {
-      await _lock;
+    // Add ourselves to the queue
+    final completer = Completer<void>();
+    _queue.add(completer);
+
+    // Wait for our turn
+    if (_locked || _queue.length > 1) {
+      await completer.future;
     }
 
-    final completer = Completer<void>();
-    _lock = completer.future;
+    _locked = true;
 
     try {
       return await action();
     } finally {
-      _lock = null;
-      completer.complete();
+      _locked = false;
+      _queue.removeAt(0);
+      
+      // Notify next in queue - wrap in try-catch to prevent stranding
+      if (_queue.isNotEmpty) {
+        try {
+          _queue.first.complete();
+        } catch (_) {
+          // Continue even if notification fails - next operation will handle timeout
+        }
+      }
     }
   }
 }

@@ -186,9 +186,19 @@ class FileService {
   /// Throws [FileServiceException] if:
   /// - Download directory is not available
   /// - The filename would result in path traversal
+  /// - The filename contains null bytes (security risk)
   Future<String> getSafeFilePath(String filename) async {
     if (filename.isEmpty) {
       throw FileServiceException('Filename cannot be empty', code: 'EMPTY_FILENAME');
+    }
+    
+    // Security check: Null bytes can be used to truncate strings unexpectedly
+    // This is a common attack vector in C-based file systems
+    if (filename.contains('\x00')) {
+      throw FileServiceException(
+        'Invalid filename: contains null bytes',
+        code: 'NULL_BYTE_IN_FILENAME',
+      );
     }
     
     final sanitizedName = sanitizeFilename(filename);
