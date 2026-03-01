@@ -27,8 +27,7 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Create macOS platform (first time only)
-        run: flutter create --platforms=macos --project-name=syndro .
+      # macOS platform files are already committed - skip flutter create
 
       - name: Build macOS
         run: flutter build macos --release
