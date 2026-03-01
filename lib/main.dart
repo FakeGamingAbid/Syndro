@@ -94,7 +94,7 @@ void main(List<String> args) async {
       });
 
       // Listen for window events to save settings
-      windowManager.addListener(_WindowEventListener());
+      // Window bounds are now saved in _SyndroAppState.onWindowClose()
 
       // Initialize desktop notification service
       await DesktopNotificationService.initialize();
@@ -287,6 +287,21 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
 
   @override
   void onWindowClose() async {
+    // Save window bounds before closing
+    try {
+      final size = await windowManager.getSize();
+      final position = await windowManager.getPosition();
+      final maximized = await windowManager.isMaximized();
+      
+      await WindowSettingsService.saveWindowBounds(
+        size: size,
+        position: position,
+        maximized: maximized,
+      );
+    } catch (e) {
+      debugPrint('❌ Error saving window bounds on close: $e');
+    }
+
     try {
       final isPreventClose = await windowManager.isPreventClose();
 
@@ -669,67 +684,3 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   }
 }
 
-/// Window event listener for saving window bounds on close/resize
-class _WindowEventListener with WindowListener {
-  @override
-  void onWindowClose() async {
-    // Save window bounds before closing
-    try {
-      final size = await windowManager.getSize();
-      final position = await windowManager.getPosition();
-      final maximized = await windowManager.isMaximized();
-      
-      await WindowSettingsService.saveWindowBounds(
-        size: size,
-        position: position,
-        maximized: maximized,
-      );
-    } catch (e) {
-      debugPrint('❌ Error saving window bounds on close: $e');
-    }
-  }
-
-  @override
-  void onWindowResize() async {
-    // Debounce is handled by saving only on close for simplicity
-    // For real-time saving, you'd use a timer to debounce
-  }
-
-  @override
-  void onWindowMove() async {
-    // Debounce is handled by saving only on close for simplicity
-  }
-
-  @override
-  void onWindowFocus() {}
-
-  @override
-  void onWindowBlur() {}
-
-  @override
-  void onWindowMaximize() {}
-
-  @override
-  void onWindowUnmaximize() {}
-
-  @override
-  void onWindowMinimize() {}
-
-  @override
-  void onWindowRestore() {}
-
-  @override
-  void onWindowEnterFullScreen() {}
-
-  @override
-  void onWindowLeaveFullScreen() {}
-
-  @override
-  void onWindowEvent(String eventName) {}
-
-  @override
-  void onWindowMoved() {}
-
-  @override
-  void onWindowResized() {}
-}

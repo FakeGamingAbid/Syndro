@@ -30,7 +30,7 @@ class EncryptedTransferService {
   })  : _transferService = transferService,
         _fileService = fileService,
         _encryptionService = enc.EncryptionService(),
-        _keyExchangeService = KeyExchangeService(enc.EncryptionService());
+        _keyExchangeService = KeyExchangeService(_encryptionService);
 
   /// Initialize encryption services
   Future<void> initialize() async {

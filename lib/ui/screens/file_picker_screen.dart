@@ -864,8 +864,8 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
     if (isDesktop) {
       body = DropTarget(
         onDragDone: _handleDroppedFiles,
-        onDragEntered: (_) => setState(() => _isDragging = true),
-        onDragExited: (_) => setState(() => _isDragging = false),
+        onDragEntered: _onDragEntered,
+        onDragExited: _onDragExited,
         child: Stack(
           children: [
             body,

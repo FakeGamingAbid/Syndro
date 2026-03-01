@@ -126,6 +126,42 @@ class FileService {
     return sanitized;
   }
 
+  /// Generate a unique filename by appending a counter suffix if the file exists
+  ///
+  /// Example: file.pdf -> file (1).pdf -> file (2).pdf
+  ///
+  /// Parameters:
+  /// - [filename]: The desired filename
+  /// - [directory]: The directory to check for existing files
+  ///
+  /// Returns a unique filename that doesn't conflict with existing files
+  Future<String> getUniqueFilename(String filename, String directory) async {
+    final dir = Directory(directory);
+    if (!await dir.exists()) {
+      return filename;
+    }
+
+    // Check if the original filename already exists
+    final originalPath = path.join(directory, filename);
+    if (!await File(originalPath).exists()) {
+      return filename;
+    }
+
+    // Extract name and extension
+    final nameWithoutExt = path.basenameWithoutExtension(filename);
+    final extension = path.extension(filename);
+
+    // Try incrementing counter until we find a unique name
+    int counter = 1;
+    String newFilename;
+    do {
+      newFilename = '$nameWithoutExt ($counter)$extension';
+      counter++;
+    } while (await File(path.join(directory, newFilename)).exists());
+
+    return newFilename;
+  }
+
   /// Validate that a path is within an allowed directory
   ///
   /// Resolves symlinks to prevent symlink attacks (TOCTOU mitigation).
@@ -883,7 +919,10 @@ class FileService {
     try {
       final sanitizedName = sanitizeFilename(fileName);
       final downloadDir = await getDownloadDirectory();
-      final filePath = '$downloadDir${Platform.pathSeparator}$sanitizedName';
+      
+      // F-03: Get unique filename to prevent silent file overwrite
+      final uniqueName = await getUniqueFilename(sanitizedName, downloadDir);
+      final filePath = '$downloadDir${Platform.pathSeparator}$uniqueName';
 
       if (!isPathWithinDirectory(filePath, downloadDir)) {
         throw FileServiceException(

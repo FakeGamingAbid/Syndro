@@ -438,7 +438,10 @@ class ReceiveServer {
             await tempSink.close();
             try {
               await tempBodyFile.delete();
-            } catch (_) {}
+            } catch (e) {
+              // Log but don't fail - temp file will be cleaned up eventually
+              debugPrint('Warning: Failed to delete temp file: $e');
+            }
             request.response.statusCode = HttpStatus.requestEntityTooLarge;
             request.response.write('Upload exceeds maximum size limit (${_maxUploadSizeBytes ~/ (1024 * 1024 * 1024)}GB)');
             await request.response.close();
