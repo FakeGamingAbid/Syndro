@@ -27,11 +27,8 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Create macOS platform if needed
-        run: |
-          if [ ! -d "macos/Runner.xcodeproj" ]; then
-            flutter create --platforms=macos --project-name=syndro .
-          fi
+      - name: Create macOS platform
+        run: flutter create --platforms=macos --project-name=syndro .
 
       - name: Build macOS
         run: flutter build macos --release
