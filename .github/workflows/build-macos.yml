@@ -32,6 +32,9 @@ jobs:
           rm -rf macos
           flutter create --platforms=macos --project-name=syndro .
 
+      - name: Update deployment target
+        run: sed -i '' 's/platform :osx, .10.14./platform :osx, "11.0"/' macos/Podfile
+
       - name: Update CocoaPods
         run: cd macos && pod repo update && pod install --repo-update
 
