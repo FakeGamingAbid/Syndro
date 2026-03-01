@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +13,7 @@ import 'core/models/transfer.dart';
 import 'core/providers/device_provider.dart';
 import 'core/providers/transfer_provider.dart';
 import 'core/providers/incoming_files_provider.dart';
+import 'core/providers/locale_provider.dart';
 import 'core/services/system_tray_service.dart';
 import 'core/services/share_intent_service.dart';
 import 'core/services/desktop_notification_service.dart';
@@ -398,11 +400,19 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   @override
   Widget build(BuildContext context) {
     final incomingFilesState = ref.watch(incomingFilesProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp(
       title: 'Syndro',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      locale: locale,
+      supportedLocales: supportedLocales.map((l) => l.locale),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: _buildHome(incomingFilesState),
     );
   }

@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../../core/database/database_helper.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/providers/transfer_provider.dart';
+import '../../core/providers/locale_provider.dart';
 import '../../core/services/app_settings_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -296,6 +297,78 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: Column(
                 children: [
+                  // Language selector
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final currentLocale = ref.watch(localeProvider);
+                      final currentAppLocale = currentLocale == null 
+                          ? null 
+                          : supportedLocales.firstWhere(
+                              (l) => l.code == currentLocale.languageCode,
+                              orElse: () => supportedLocales.first,
+                            );
+                      
+                      return ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppTheme.infoColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.language,
+                            color: AppTheme.infoColor,
+                            size: 24,
+                          ),
+                        ),
+                        title: const Text('Language'),
+                        subtitle: Text(
+                          currentAppLocale?.name ?? 'System Default',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: DropdownButton<String>(
+                          value: currentAppLocale?.code ?? 'system',
+                          underline: const SizedBox(),
+                          dropdownColor: AppTheme.cardColor,
+                          items: [
+                            const DropdownMenuItem(
+                              value: 'system',
+                              child: Text('System Default'),
+                            ),
+                            ...supportedLocales.map((locale) => DropdownMenuItem(
+                              value: locale.code,
+                              child: Text(locale.name),
+                            )),
+                          ],
+                          onChanged: (value) async {
+                            if (value == null) return;
+                            
+                            final localeNotifier = ref.read(localeProvider.notifier);
+                            if (value == 'system') {
+                              await localeNotifier.setLocale(null);
+                            } else {
+                              final selectedLocale = supportedLocales.firstWhere(
+                                (l) => l.code == value,
+                              );
+                              await localeNotifier.setLocale(selectedLocale);
+                            }
+                            
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Language changed. Restart app to fully apply.',
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 1, indent: 60),
                   _buildSettingsTile(
                     icon: Icons.devices_rounded,
                     iconColor: AppTheme.primaryColor,

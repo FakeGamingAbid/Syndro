@@ -1,0 +1,147 @@
+{
+  "@@locale": "en",
+  "appTitle": "Syndro",
+  "@appTitle": {
+    "description": "The application title"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language setting"
+  },
+  "autoDeleteHistory": "Auto-delete history",
+  "@autoDeleteHistory": {
+    "description": "Auto-delete transfer history setting"
+  },
+  "autoDeleteDisabled": "Disabled",
+  "@autoDeleteDisabled": {
+    "description": "Auto-delete disabled option"
+  },
+  "autoDeleteDays": "{days} days",
+  "@autoDeleteDays": {
+    "description": "Auto-delete after N days",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "trustedDevices": "Trusted Devices",
+  "@trustedDevices": {
+    "description": "Trusted devices section title"
+  },
+  "noTrustedDevices": "No trusted devices",
+  "@noTrustedDevices": {
+    "description": "Empty state for trusted devices"
+  },
+  "trustedSince": "Trusted since {date}",
+  "@trustedSince": {
+    "description": "Shows when device was trusted",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "revokeTrust": "Revoke Trust",
+  "@revokeTrust": {
+    "description": "Revoke trust button"
+  },
+  "revokeTrustConfirm": "Are you sure you want to remove \"{deviceName}\" from trusted devices?",
+  "@revokeTrustConfirm": {
+    "description": "Confirm revoke trust dialog",
+    "placeholders": {
+      "deviceName": {
+        "type": "String"
+      }
+    }
+  },
+  "clearAllTrusted": "Clear All Trusted Devices",
+  "@clearAllTrusted": {
+    "description": "Clear all trusted devices button"
+  },
+  "clearAllTrustedConfirm": "This will remove all devices from your trusted list. You will need to re-accept transfers from them.",
+  "@clearAllTrustedConfirm": {
+    "description": "Confirm clear all dialog"
+  },
+  "deviceRemoved": "Device removed from trusted list",
+  "@deviceRemoved": {
+    "description": "Snackbar message when device is removed"
+  },
+  "allTrustedCleared": "All trusted devices cleared",
+  "@allTrustedCleared": {
+    "description": "Snackbar message when all trusted devices are cleared"
+  },
+  "autoAcceptTrusted": "Auto-accept from trusted devices",
+  "@autoAcceptTrusted": {
+    "description": "Auto-accept setting title"
+  },
+  "autoAcceptTrustedDesc": "Automatically accept transfers from devices you trust",
+  "@autoAcceptTrustedDesc": {
+    "description": "Auto-accept setting description"
+  },
+  "autoAcceptEnabled": "Auto-accept enabled for trusted devices",
+  "@autoAcceptEnabled": {
+    "description": "Snackbar when auto-accept is enabled"
+  },
+  "willAlwaysAsk": "Will always ask for approval",
+  "@willAlwaysAsk": {
+    "description": "Snackbar when auto-accept is disabled"
+  },
+  "device": "Device",
+  "@device": {
+    "description": "Device section title"
+  },
+  "editDeviceName": "Edit Device Name",
+  "@editDeviceName": {
+    "description": "Edit device name dialog title"
+  },
+  "deviceNameHint": "This name will be visible to other devices on the network.",
+  "@deviceNameHint": {
+    "description": "Edit device name hint text"
+  },
+  "about": "About",
+  "@about": {
+    "description": "About section title"
+  },
+  "version": "Version",
+  "@version": {
+    "description": "Version label"
+  },
+  "fastSecureSharing": "Fast & secure file sharing",
+  "@fastSecureSharing": {
+    "description": "App tagline"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button"
+  },
+  "remove": "Remove",
+  "@remove": {
+    "description": "Remove button"
+  },
+  "clearAll": "Clear All",
+  "@clearAll": {
+    "description": "Clear all button"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Save button"
+  },
+  "acceptTransfers": "Accept transfers to add trusted devices",
+  "@acceptTransfers": {
+    "description": "Hint for adding trusted devices"
+  },
+  "historyOlderThan": "History older than {days} days will be deleted",
+  "@historyOlderThan": {
+    "description": "Snackbar when auto-delete is set",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  }
+}
