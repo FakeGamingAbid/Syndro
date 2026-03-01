@@ -176,6 +176,20 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
     }
   }
 
+  // Handle drag entered event
+  void _onDragEntered() {
+    setState(() {
+      _isDragging = true;
+    });
+  }
+
+  // Handle drag exited event
+  void _onDragExited() {
+    setState(() {
+      _isDragging = false;
+    });
+  }
+
   Future<void> _pickFiles() async {
     setState(() {
       _isLoading = true;

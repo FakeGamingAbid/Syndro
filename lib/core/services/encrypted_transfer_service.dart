@@ -28,9 +28,12 @@ class EncryptedTransferService {
     required TransferService transferService,
     required FileService fileService,
   })  : _transferService = transferService,
-        _fileService = fileService,
-        _encryptionService = enc.EncryptionService(),
-        _keyExchangeService = KeyExchangeService(_encryptionService);
+        _fileService = fileService {
+    // Create encryption service and reuse for key exchange
+    final encryptionService = enc.EncryptionService();
+    _encryptionService = encryptionService;
+    _keyExchangeService = KeyExchangeService(encryptionService);
+  }
 
   /// Initialize encryption services
   Future<void> initialize() async {
