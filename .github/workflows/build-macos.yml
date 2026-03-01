@@ -2,10 +2,12 @@ name: Build macOS
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - master
+    inputs:
+      flutter_version:
+        description: 'Flutter version'
+        required: false
+        default: '3.24.0'
+        type: string
 
 jobs:
   build:
@@ -16,7 +18,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: stable
+          flutter-version: ${{ github.event.inputs.flutter_version || '3.24.0' }}
           channel: stable
 
       - name: Enable macOS desktop

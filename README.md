@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  Share files between Android, Windows, and Linux — no internet required, no cloud storage, complete privacy.
+  Share files between Android, Windows, Linux, and macOS — no internet required, no cloud storage, complete privacy.
 </p>
 
 <p align="center">
@@ -22,7 +22,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Flutter-3.16+-02569B?logo=flutter" alt="Flutter">
-  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20Linux-green" alt="Platforms">
+  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20Windows%20%7C%20Linux%20%7C%20macOS-green" alt="Platforms">
   <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
   <img src="https://img.shields.io/badge/Encryption-AES--256--GCM-red" alt="Encryption">
 </p>
@@ -60,7 +60,7 @@
 
 | Feature | Description |
 |---------|-------------|
-| **Cross-Platform Transfer** | Share files between Android, Windows, and Linux devices |
+| **Cross-Platform Transfer** | Share files between Android, Windows, Linux, and macOS devices |
 | **Peer-to-Peer (P2P)** | Direct device-to-device transfer over local network |
 | **Multiple Files & Folders** | Send multiple files and entire folders at once |
 | **Large File Support** | Transfer files of any size (tested with 7GB+ files) |
@@ -91,12 +91,23 @@
 | **Notification Actions** | Accept/Reject transfers from notification |
 | **Android 13+ Support** | Proper handling of new media permissions |
 
-### Desktop Features (Windows & Linux)
+### Desktop Features (Windows, Linux & macOS)
 
 | Feature | Description |
 |---------|-------------|
 | **Right-Click Context Menu** | Send files directly from file manager |
 | **System Tray** | App runs in tray for quick access |
+| **Desktop Notifications** | Rich notifications with file thumbnails |
+| **Drag & Drop** | Drag files onto app window to select |
+| **Launch at Startup** | Option to start automatically on boot |
+
+### macOS Features
+
+| Feature | Description |
+|---------|-------------|
+| **Share Menu Integration** | Share files directly from macOS share menu |
+| **Finder Integration** | Send files via right-click context menu |
+| **System Tray** | App runs in menu bar for quick access |
 | **Desktop Notifications** | Rich notifications with file thumbnails |
 | **Drag & Drop** | Drag files onto app window to select |
 | **Launch at Startup** | Option to start automatically on boot |
@@ -178,6 +189,9 @@ flutter build windows
 
 # Linux
 flutter build linux
+
+# macOS
+flutter build macos
 ```
 
 ### GitHub Actions CI/CD
@@ -189,6 +203,7 @@ Automated builds are available via GitHub Actions:
 | `build-android.yml` | Android APK artifact |
 | `build-windows.yml` | Windows EXE artifact |
 | `build-linux.yml` | Linux bundle artifact |
+| `build-macos.yml` | macOS app artifact |
 
 ---
 
