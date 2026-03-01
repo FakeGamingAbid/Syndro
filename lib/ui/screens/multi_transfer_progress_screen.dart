@@ -502,6 +502,8 @@ class _TransferProgressCard extends StatelessWidget {
         return TransferItemStatus.pending;
       case TransferStatus.transferring:
         return TransferItemStatus.transferring;
+      case TransferStatus.paused:
+        return TransferItemStatus.pending;
       case TransferStatus.completed:
         return TransferItemStatus.completed;
       case TransferStatus.failed:

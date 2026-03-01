@@ -222,6 +222,8 @@ class TransferProgressWidget extends StatelessWidget {
         return 'Connecting...';
       case TransferStatus.transferring:
         return 'Transferring';
+      case TransferStatus.paused:
+        return 'Paused';
       case TransferStatus.completed:
         return 'Completed';
       case TransferStatus.failed:

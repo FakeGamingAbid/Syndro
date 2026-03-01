@@ -410,6 +410,10 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         color = AppTheme.primaryColor;
         text = 'Transferring';
         break;
+      case TransferStatus.paused:
+        color = AppTheme.warningColor;
+        text = 'Paused';
+        break;
       case TransferStatus.completed:
         color = AppTheme.successColor;
         text = 'Completed';
@@ -450,6 +454,8 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         return _buildWaitingState();
       case TransferStatus.transferring:
         return _buildTransferringState();
+      case TransferStatus.paused:
+        return _buildWaitingState();
       case TransferStatus.completed:
         return _buildCompletedState();
       case TransferStatus.failed:

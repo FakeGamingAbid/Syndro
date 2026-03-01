@@ -37,7 +37,7 @@ class ParallelStatsOverlay extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                Icons.parallel_pipeline,
+                Icons.stream,
                 color: Colors.cyan,
                 size: 16,
               ),
@@ -163,7 +163,7 @@ class ParallelStatsCompact extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          Icons.parallel_pipeline,
+          Icons.stream,
           color: Colors.cyan.shade400,
           size: 14,
         ),
