@@ -6,8 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../theme/app_theme.dart';
+import '../../core/database/database_helper.dart';
 import '../../core/providers/device_provider.dart';
+import '../../core/providers/transfer_provider.dart';
 import '../../core/services/app_settings_service.dart';
+import '../../core/services/transfer_service/models.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -19,6 +22,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _version = 'Loading...';
   bool _autoAcceptTrusted = false;
+  int _autoDeleteDays = 30;
   final AppSettingsService _settingsService = AppSettingsService();
 
   @override
@@ -30,9 +34,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final autoAccept = await _settingsService.getAutoAcceptTrusted();
+    final autoDeleteDays = await _settingsService.getAutoDeleteHistoryDays();
     if (mounted) {
       setState(() {
         _autoAcceptTrusted = autoAccept;
+        _autoDeleteDays = autoDeleteDays;
       });
     }
   }
@@ -448,7 +454,283 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       }
                     },
                   ),
+                  const Divider(height: 1, indent: 60),
+                  // Auto-delete history setting
+                  ListTile(
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.warningColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.auto_delete_outlined,
+                        color: AppTheme.warningColor,
+                        size: 24,
+                      ),
+                    ),
+                    title: const Text('Auto-delete history'),
+                    subtitle: Text(
+                      _autoDeleteDays == 0
+                          ? 'Disabled'
+                          : 'Delete transfers older than $_autoDeleteDays days',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: DropdownButton<int>(
+                      value: _autoDeleteDays,
+                      underline: const SizedBox(),
+                      dropdownColor: AppTheme.cardColor,
+                      items: const [
+                        DropdownMenuItem(value: 0, child: Text('Disabled')),
+                        DropdownMenuItem(value: 7, child: Text('7 days')),
+                        DropdownMenuItem(value: 30, child: Text('30 days')),
+                        DropdownMenuItem(value: 90, child: Text('90 days')),
+                        DropdownMenuItem(value: 365, child: Text('1 year')),
+                      ],
+                      onChanged: (value) async {
+                        if (value != null) {
+                          final messenger = ScaffoldMessenger.of(context);
+                          
+                          await _settingsService.setAutoDeleteHistoryDays(value);
+                          
+                          // Also delete old transfers now
+                          if (value > 0) {
+                            await DatabaseHelper.instance.deleteOldTransfers(value);
+                          }
+                          
+                          if (mounted) {
+                            setState(() {
+                              _autoDeleteDays = value;
+                            });
+                            
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  value == 0
+                                      ? 'Auto-delete disabled'
+                                      : 'History older than $value days will be deleted',
+                                ),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                  ),
                 ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // ============================================
+            // TRUSTED DEVICES SECTION
+            // ============================================
+            _buildSectionHeader('Trusted Devices'),
+            const SizedBox(height: 12),
+
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.cardColor.withOpacity(0.8),
+                    AppTheme.surfaceColor.withOpacity(0.6),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: AppTheme.primaryColor.withOpacity(0.15),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withOpacity(0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final trustedDevices = ref.watch(trustedDevicesProvider);
+                  
+                  if (trustedDevices.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.verified_user_outlined,
+                            size: 48,
+                            color: AppTheme.textTertiary.withOpacity(0.5),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No trusted devices',
+                            style: TextStyle(
+                              color: AppTheme.textTertiary,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Accept transfers to add trusted devices',
+                            style: TextStyle(
+                              color: AppTheme.textTertiary.withOpacity(0.7),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  
+                  return Column(
+                    children: [
+                      ...trustedDevices.map((device) => ListTile(
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.successColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.verified_user,
+                            color: AppTheme.successColor,
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          device.senderName.isNotEmpty 
+                              ? device.senderName 
+                              : 'Unknown Device',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        subtitle: Text(
+                          'Trusted since ${_formatDate(device.trustedAt)}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red),
+                              tooltip: 'Revoke trust',
+                              onPressed: () async {
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    backgroundColor: AppTheme.surfaceColor,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    title: const Text('Revoke Trust?'),
+                                    content: Text(
+                                      'Are you sure you want to remove "${device.senderName.isNotEmpty ? device.senderName : 'this device'}" from trusted devices?',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx, false),
+                                        child: const Text('Cancel'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx, true),
+                                        style: TextButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                        ),
+                                        child: const Text('Remove'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                                
+                                if (confirm == true) {
+                                  final service = ref.read(transferServiceProvider);
+                                  await service.revokeTrust(device.senderId);
+                                  
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Device removed from trusted list'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  }
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      )),
+                      if (trustedDevices.isNotEmpty) ...[
+                        const Divider(height: 1, indent: 60),
+                        ListTile(
+                          leading: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.delete_sweep,
+                              color: Colors.red,
+                              size: 20,
+                            ),
+                          ),
+                          title: const Text(
+                            'Clear All Trusted Devices',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                          onTap: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: AppTheme.surfaceColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                title: const Text('Clear All Trusted Devices?'),
+                                content: const Text(
+                                  'This will remove all devices from your trusted list. You will need to re-accept transfers from them.',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                    ),
+                                    child: const Text('Clear All'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            
+                            if (confirm == true) {
+                              final service = ref.read(transferServiceProvider);
+                              await service.clearTrustedSenders();
+                              
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('All trusted devices cleared'),
+                                    duration: Duration(seconds: 2),
+                                  ),
+                                );
+                              }
+                            }
+                          },
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
             ),
 
@@ -650,5 +932,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    
+    if (diff.inDays == 0) {
+      return 'Today';
+    } else if (diff.inDays == 1) {
+      return 'Yesterday';
+    } else if (diff.inDays < 7) {
+      return '${diff.inDays} days ago';
+    } else if (diff.inDays < 30) {
+      final weeks = (diff.inDays / 7).floor();
+      return '$weeks week${weeks > 1 ? 's' : ''} ago';
+    } else if (diff.inDays < 365) {
+      final months = (diff.inDays / 30).floor();
+      return '$months month${months > 1 ? 's' : ''} ago';
+    } else {
+      final years = (diff.inDays / 365).floor();
+      return '$years year${years > 1 ? 's' : ''} ago';
+    }
   }
 } 
