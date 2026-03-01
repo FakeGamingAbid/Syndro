@@ -27,7 +27,11 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      # macOS platform files are already committed - skip flutter create
+      - name: Create macOS platform if needed
+        run: |
+          if [ ! -d "macos/Runner.xcodeproj" ]; then
+            flutter create --platforms=macos --project-name=syndro .
+          fi
 
       - name: Build macOS
         run: flutter build macos --release
