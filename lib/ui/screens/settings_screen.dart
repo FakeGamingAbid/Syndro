@@ -297,77 +297,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: Column(
                 children: [
-                  // Language selector
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final currentLocale = ref.watch(localeProvider);
-                      final currentAppLocale = currentLocale == null 
-                          ? null 
-                          : supportedLocales.firstWhere(
-                              (l) => l.code == currentLocale.languageCode,
-                              orElse: () => supportedLocales.first,
-                            );
-                      
-                      return ListTile(
-                        leading: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppTheme.infoColor.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.language,
-                            color: AppTheme.infoColor,
-                            size: 24,
-                          ),
-                        ),
-                        title: const Text('Language'),
-                        subtitle: Text(
-                          currentAppLocale?.name ?? 'System Default',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                        trailing: DropdownButton<String>(
-                          value: currentAppLocale?.code ?? 'system',
-                          underline: const SizedBox(),
-                          dropdownColor: AppTheme.cardColor,
-                          items: [
-                            const DropdownMenuItem(
-                              value: 'system',
-                              child: Text('System Default'),
-                            ),
-                            ...supportedLocales.map((locale) => DropdownMenuItem(
-                              value: locale.code,
-                              child: Text(locale.name),
-                            )),
-                          ],
-                          onChanged: (value) async {
-                            if (value == null) return;
-                            
-                            final localeNotifier = ref.read(localeProvider.notifier);
-                            if (value == 'system') {
-                              await localeNotifier.setLocale(null);
-                            } else {
-                              final selectedLocale = supportedLocales.firstWhere(
-                                (l) => l.code == value,
-                              );
-                              await localeNotifier.setLocale(selectedLocale);
-                            }
-                            
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Language changed. Restart app to fully apply.',
-                                  ),
-                                  duration: const Duration(seconds: 2),
-                                ),
-                              );
-                            }
-                          },
-                        ),
-                      );
-                    },
-                  ),
+                  // Language selector - use select to avoid full rebuilds
+                  _LanguageSelector(),
+                  const Divider(height: 1, indent: 60),
+                  _buildSettingsTile(
+                    icon: Icons.devices_rounded,
+                    iconColor: AppTheme.primaryColor,
+                    iconBgColor: AppTheme.primaryColor.withOpacity(0.15),
+                    title: Row(
+                      children: [
+                        const Text('Device Name'),
                   const Divider(height: 1, indent: 60),
                   _buildSettingsTile(
                     icon: Icons.devices_rounded,
@@ -627,7 +566,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               child: Consumer(
                 builder: (context, ref, child) {
-                  final trustedDevices = ref.watch(trustedDevicesProvider);
+                  // Use select to avoid rebuilds on unrelated changes
+                  final trustedDevices = ref.watch(
+                    trustedDevicesProvider.select((devices) => devices),
+                  );
                   
                   if (trustedDevices.isEmpty) {
                     return Padding(
@@ -1032,5 +974,100 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       final years = (diff.inDays / 365).floor();
       return '$years year${years > 1 ? 's' : ''} ago';
     }
+  }
+}
+
+/// Optimized language selector widget - uses select() to avoid full rebuilds
+class _LanguageSelector extends ConsumerWidget {
+  const _LanguageSelector();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Use select() to only rebuild when locale changes
+    final currentLocale = ref.watch(localeProvider.select((locale) => locale?.languageCode));
+    
+    final currentAppLocale = currentLocale == null 
+        ? null 
+        : supportedLocales.firstWhere(
+            (l) => l.code == currentLocale,
+            orElse: () => supportedLocales.first,
+          );
+    
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppTheme.infoColor.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(
+          Icons.language,
+          color: AppTheme.infoColor,
+          size: 24,
+        ),
+      ),
+      title: const Text('Language'),
+      subtitle: Text(
+        currentAppLocale?.name ?? 'System Default',
+        style: const TextStyle(fontSize: 12),
+      ),
+      trailing: DropdownButton<String>(
+        value: currentAppLocale?.code ?? 'system',
+        underline: const SizedBox(),
+        dropdownColor: AppTheme.cardColor,
+        items: const [
+          DropdownMenuItem(
+            value: 'system',
+            child: Text('System Default'),
+          ),
+          DropdownMenuItem(
+            value: 'en',
+            child: Text('English'),
+          ),
+          DropdownMenuItem(
+            value: 'es',
+            child: Text('Español'),
+          ),
+          DropdownMenuItem(
+            value: 'fr',
+            child: Text('Français'),
+          ),
+          DropdownMenuItem(
+            value: 'de',
+            child: Text('Deutsch'),
+          ),
+          DropdownMenuItem(
+            value: 'zh',
+            child: Text('中文'),
+          ),
+          DropdownMenuItem(
+            value: 'ja',
+            child: Text('日本語'),
+          ),
+        ],
+        onChanged: (value) async {
+          if (value == null) return;
+          
+          final localeNotifier = ref.read(localeProvider.notifier);
+          if (value == 'system') {
+            await localeNotifier.setLocale(null);
+          } else {
+            final selectedLocale = supportedLocales.firstWhere(
+              (l) => l.code == value,
+            );
+            await localeNotifier.setLocale(selectedLocale);
+          }
+          
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Language changed. Restart app to fully apply.'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        },
+      ),
+    );
   }
 } 
