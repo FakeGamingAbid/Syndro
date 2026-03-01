@@ -33,7 +33,9 @@ jobs:
           flutter create --platforms=macos --project-name=syndro .
 
       - name: Update deployment target
-        run: sed -i '' 's/platform :osx, .10.14./platform :osx, "11.0"/' macos/Podfile
+        run: |
+          sed -i '' 's/platform :osx, .10.14./platform :osx, "11.0"/' macos/Podfile
+          sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 10.14/MACOSX_DEPLOYMENT_TARGET = 11.0/g' macos/Runner.xcodeproj/project.pbxproj
 
       - name: Update CocoaPods
         run: cd macos && pod repo update && pod install --repo-update
