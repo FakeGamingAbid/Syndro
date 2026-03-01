@@ -2536,6 +2536,36 @@ class TransferService {
     }
   }
 
+  /// Pause an active transfer
+  void pauseTransfer(String transferId) {
+    final transfer = _activeTransfers[transferId];
+    if (transfer != null && transfer.status == TransferStatus.transferring) {
+      _activeTransfers[transferId] = transfer.copyWith(
+        status: TransferStatus.paused,
+      );
+      _transferController.add(_activeTransfers[transferId]!);
+      debugPrint('⏸️ Transfer paused: $transferId');
+    } else {
+      debugPrint(
+          'Warning: Cannot pause transfer $transferId - not in transferring state');
+    }
+  }
+
+  /// Resume a paused transfer
+  void resumeTransfer(String transferId) {
+    final transfer = _activeTransfers[transferId];
+    if (transfer != null && transfer.status == TransferStatus.paused) {
+      _activeTransfers[transferId] = transfer.copyWith(
+        status: TransferStatus.transferring,
+      );
+      _transferController.add(_activeTransfers[transferId]!);
+      debugPrint('▶️ Transfer resumed: $transferId');
+    } else {
+      debugPrint(
+          'Warning: Cannot resume transfer $transferId - not in paused state');
+    }
+  }
+
   Future<void> revokeTrust(String senderId) async {
     final removed = _trustedDevices.remove(senderId);
     if (removed != null) {
@@ -2556,6 +2586,44 @@ class TransferService {
           StreamController<TransferProgress>.broadcast();
     }
     return _progressControllers[transferId]!.stream;
+  }
+
+  /// Get parallel transfer statistics for a transfer
+  ParallelTransferStats getParallelTransferStats(String transferId) {
+    final transfer = _activeTransfers[transferId];
+    if (transfer == null) {
+      return const ParallelTransferStats();
+    }
+
+    // Check if this is a parallel transfer
+    if (_parallelSender != null) {
+      // For parallel transfers, estimate stats based on transfer progress
+      final progress = transfer.progress;
+      final totalBytes = progress.totalBytes;
+      final bytesTransferred = progress.bytesTransferred;
+      
+      // Calculate estimated chunk info based on file size
+      final config = _parallelConfig ?? ParallelConfig.appToApp;
+      final totalChunks = config.getAllChunks(totalBytes).length;
+      final completedChunks = (totalChunks * bytesTransferred / totalBytes).round();
+      
+      // Estimate bytes per connection (assuming 6 connections)
+      final connections = config.connections;
+      final bytesPerConnection = List.generate(
+        connections,
+        (i) => bytesTransferred ~/ connections,
+      );
+      
+      return ParallelTransferStats(
+        totalChunks: totalChunks,
+        completedChunks: completedChunks.clamp(0, totalChunks),
+        bytesPerConnection: bytesPerConnection,
+        activeConnections: bytesTransferred < totalBytes ? connections : 0,
+        isParallel: true,
+      );
+    }
+    
+    return const ParallelTransferStats(isParallel: false);
   }
 
   // FIX (Bug #32): Proper disposal with try-catch for all resources

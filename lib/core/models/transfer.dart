@@ -7,6 +7,7 @@ enum TransferStatus {
   pending,
   connecting,
   transferring,
+  paused,
   completed,
   failed,
   cancelled;
@@ -19,6 +20,8 @@ enum TransferStatus {
         return 'Connecting';
       case TransferStatus.transferring:
         return 'Transferring';
+      case TransferStatus.paused:
+        return 'Paused';
       case TransferStatus.completed:
         return 'Completed';
       case TransferStatus.failed:
@@ -35,10 +38,11 @@ enum TransferStatus {
         this == TransferStatus.cancelled;
   }
 
-  /// Check if transfer is active
+  /// Check if transfer is active (including paused)
   bool get isActive {
     return this == TransferStatus.connecting ||
-        this == TransferStatus.transferring;
+        this == TransferStatus.transferring ||
+        this == TransferStatus.paused;
   }
 }
 
@@ -422,5 +426,57 @@ class Transfer extends Equatable {
         progress,
         createdAt,
         errorMessage,
+      ];
+}
+
+/// Statistics for parallel transfer - shows chunk count and bytes per connection
+class ParallelTransferStats extends Equatable {
+  /// Total number of chunks the file is divided into
+  final int totalChunks;
+
+  /// Number of chunks already completed
+  final int completedChunks;
+
+  /// Bytes transferred per connection (index = connection id)
+  final List<int> bytesPerConnection;
+
+  /// Number of active connections currently transferring
+  final int activeConnections;
+
+  /// Whether parallel transfer is being used
+  final bool isParallel;
+
+  const ParallelTransferStats({
+    this.totalChunks = 0,
+    this.completedChunks = 0,
+    this.bytesPerConnection = const [],
+    this.activeConnections = 0,
+    this.isParallel = false,
+  });
+
+  /// Progress ratio (0.0 to 1.0)
+  double get chunkProgress {
+    if (totalChunks == 0) return 0;
+    return completedChunks / totalChunks;
+  }
+
+  /// Total bytes across all connections
+  int get totalBytesTransferred {
+    return bytesPerConnection.fold(0, (sum, bytes) => sum + bytes);
+  }
+
+  /// Average bytes per connection
+  double get averageBytesPerConnection {
+    if (bytesPerConnection.isEmpty) return 0;
+    return totalBytesTransferred / bytesPerConnection.length;
+  }
+
+  @override
+  List<Object?> get props => [
+        totalChunks,
+        completedChunks,
+        bytesPerConnection,
+        activeConnections,
+        isParallel,
       ];
 }
