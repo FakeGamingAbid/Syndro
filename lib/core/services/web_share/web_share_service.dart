@@ -93,15 +93,20 @@ class WebShareService {
   /// Creates an HTTP server that serves the provided files for download.
   /// Returns the URL that others can use to download the files.
   ///
+  /// [expiryDuration] - Optional custom expiry duration (defaults to 1 hour)
+  /// 
   /// Example:
   /// ```dart
   /// final url = await webShareService.startSharing([file1, file2]);
   /// print('Share URL: $url'); // http://192.168.1.100:8766
+  /// 
+  /// // With custom 30 minute expiry:
+  /// final url = await webShareService.startSharing([file1], expiryDuration: Duration(minutes: 30));
   /// ```
-  Future<String?> startSharing(List<File> files) async {
+  Future<String?> startSharing(List<File> files, {Duration? expiryDuration}) async {
     // Stop any existing sharing/receiving
     await stopSharing();
-    return _shareServer.startSharing(files);
+    return _shareServer.startSharing(files, expiryDuration: expiryDuration);
   }
 
   /// Start receiving files via HTTP server
@@ -110,15 +115,17 @@ class WebShareService {
   /// Files are stored in a temp location until saved/discarded.
   /// Returns the URL that others can use to upload files.
   ///
+  /// [expiryDuration] - Optional custom expiry duration (defaults to 1 hour)
+  ///
   /// Example:
   /// ```dart
   /// final url = await webShareService.startReceiving('/path/to/downloads');
   /// print('Receive URL: $url'); // http://192.168.1.100:8767
   /// ```
-  Future<String?> startReceiving(String downloadDirectory) async {
+  Future<String?> startReceiving(String downloadDirectory, {Duration? expiryDuration}) async {
     // Stop any existing sharing/receiving
     await stopSharing();
-    return _receiveServer.startReceiving(downloadDirectory);
+    return _receiveServer.startReceiving(downloadDirectory, expiryDuration: expiryDuration);
   }
 
   /// Save a single pending file to final destination

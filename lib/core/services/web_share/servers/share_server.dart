@@ -213,12 +213,17 @@ class ShareServer {
   }
 
   /// Start sharing files via HTTP server
-  Future<String?> startSharing(List<File> files) async {
+  /// 
+  /// [expiryDuration] - Optional custom expiry duration (defaults to 1 hour)
+  Future<String?> startSharing(List<File> files, {Duration? expiryDuration}) async {
     if (files.isEmpty) return null;
 
     await stop();
 
     _sharedFiles = files;
+    
+    // Use custom expiry or default to 1 hour
+    final expiration = expiryDuration ?? _shareExpiration;
     
     // Pre-cache file stats to avoid repeated disk I/O during file list requests
     // This is especially important for large files where stat() can be slow
@@ -254,7 +259,7 @@ class ShareServer {
       final localIp = await NetworkUtils.getLocalIp();
       _shareUrl = 'http://$localIp:${_server!.port}';
 
-      debugPrint('Web share server running at $_shareUrl');
+      debugPrint('Web share server running at $_shareUrl (expires in ${expiration.inMinutes} minutes)');
 
       _serve();
 
@@ -262,7 +267,7 @@ class ShareServer {
       _cleanupTimer = Timer.periodic(const Duration(minutes: 5), (_) => _cleanupStaleClients());
 
       // Auto-expire after duration
-      _expirationTimer = Timer(_shareExpiration, () {
+      _expirationTimer = Timer(expiration, () {
         debugPrint('Share expired, stopping server');
         stop();
       });

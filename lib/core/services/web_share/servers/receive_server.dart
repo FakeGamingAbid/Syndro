@@ -155,10 +155,15 @@ class ReceiveServer {
   }
 
   /// Start receiving files via HTTP server
-  Future<String?> startReceiving(String downloadDirectory) async {
+  /// 
+  /// [expiryDuration] - Optional custom expiry duration (defaults to 1 hour)
+  Future<String?> startReceiving(String downloadDirectory, {Duration? expiryDuration}) async {
     await stop();
 
     _finalDirectory = downloadDirectory;
+    
+    // Use custom expiry or default to 1 hour
+    final expiration = expiryDuration ?? _shareExpiration;
 
     // Create temp directory for pending files
     _tempDirectory = await _createTempDirectory();
@@ -202,12 +207,12 @@ class ReceiveServer {
       final localIp = await NetworkUtils.getLocalIp();
       _shareUrl = 'http://$localIp:${_server!.port}';
 
-      debugPrint('Web receive server running at $_shareUrl');
+      debugPrint('Web receive server running at $_shareUrl (expires in ${expiration.inMinutes} minutes)');
 
       _serve();
 
       // Auto-expire after duration
-      _expirationTimer = Timer(_shareExpiration, () {
+      _expirationTimer = Timer(expiration, () {
         debugPrint('Receive session expired');
         stop();
       });
