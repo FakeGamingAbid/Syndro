@@ -27,8 +27,13 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
 
-      - name: Create macOS platform
-        run: flutter create --platforms=macos --project-name=syndro .
+      - name: Setup macOS platform
+        run: |
+          rm -rf macos
+          flutter create --platforms=macos --project-name=syndro .
+
+      - name: Update CocoaPods
+        run: cd macos && pod repo update && pod install --repo-update
 
       - name: Build macOS
         run: flutter build macos --release
