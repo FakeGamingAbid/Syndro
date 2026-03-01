@@ -307,14 +307,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: Row(
                       children: [
                         const Text('Device Name'),
-                  const Divider(height: 1, indent: 60),
-                  _buildSettingsTile(
-                    icon: Icons.devices_rounded,
-                    iconColor: AppTheme.primaryColor,
-                    iconBgColor: AppTheme.primaryColor.withOpacity(0.15),
-                    title: Row(
-                      children: [
-                        const Text('Device Name'),
                         if (hasCustomNickname) ...[
                           const SizedBox(width: 8),
                           Container(
@@ -997,12 +989,12 @@ class _LanguageSelector extends ConsumerWidget {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: AppTheme.infoColor.withOpacity(0.15),
+          color: AppTheme.secondaryColor.withOpacity(0.15),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.language,
-          color: AppTheme.infoColor,
+          color: AppTheme.secondaryColor,
           size: 24,
         ),
       ),
