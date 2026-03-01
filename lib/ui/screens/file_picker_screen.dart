@@ -177,14 +177,14 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
   }
 
   // Handle drag entered event
-  void _onDragEntered() {
+  void _onDragEntered(DropEventDetails details) {
     setState(() {
       _isDragging = true;
     });
   }
 
   // Handle drag exited event
-  void _onDragExited() {
+  void _onDragExited(DropEventDetails details) {
     setState(() {
       _isDragging = false;
     });

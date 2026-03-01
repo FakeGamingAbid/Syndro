@@ -18,8 +18,8 @@ import 'file_service.dart';
 class EncryptedTransferService {
   final TransferService _transferService;
   final FileService _fileService;
-  final enc.EncryptionService _encryptionService;
-  final KeyExchangeService _keyExchangeService;
+  late final enc.EncryptionService _encryptionService;
+  late final KeyExchangeService _keyExchangeService;
 
   // Encryption enabled by default
   bool encryptionEnabled = true;
