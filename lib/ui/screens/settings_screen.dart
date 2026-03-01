@@ -10,7 +10,6 @@ import '../../core/database/database_helper.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/providers/transfer_provider.dart';
 import '../../core/services/app_settings_service.dart';
-import '../../core/services/transfer_service/models.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -495,7 +494,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           
                           // Also delete old transfers now
                           if (value > 0) {
-                            await DatabaseHelper.instance.deleteOldTransfers(value);
+                            await DatabaseHelper.instance.deleteOldTransfers(olderThanDays: value);
                           }
                           
                           if (mounted) {
@@ -620,6 +619,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               icon: const Icon(Icons.delete_outline, color: Colors.red),
                               tooltip: 'Revoke trust',
                               onPressed: () async {
+                                // FIXED: Capture ScaffoldMessenger before async gap
+                                final messenger = ScaffoldMessenger.of(context);
+                                
                                 final confirm = await showDialog<bool>(
                                   context: context,
                                   builder: (ctx) => AlertDialog(
@@ -652,7 +654,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   await service.revokeTrust(device.senderId);
                                   
                                   if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    messenger.showSnackBar(
                                       const SnackBar(
                                         content: Text('Device removed from trusted list'),
                                         duration: Duration(seconds: 2),
@@ -685,6 +687,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             style: TextStyle(color: Colors.red),
                           ),
                           onTap: () async {
+                            // FIXED: Capture ScaffoldMessenger before async gap
+                            final messenger = ScaffoldMessenger.of(context);
+                            
                             final confirm = await showDialog<bool>(
                               context: context,
                               builder: (ctx) => AlertDialog(
@@ -717,7 +722,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               await service.clearTrustedSenders();
                               
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.showSnackBar(
                                   const SnackBar(
                                     content: Text('All trusted devices cleared'),
                                     duration: Duration(seconds: 2),
