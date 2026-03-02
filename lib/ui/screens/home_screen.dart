@@ -1162,7 +1162,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     dynamic selectedDevice,
   ) {
     if (!isInitialized) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -1228,7 +1228,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           OutlinedButton.icon(
                             onPressed: _isRefreshing ? null : _refreshDevices,
                             icon: const Icon(Icons.refresh),
-                            label: const Text(HomeScreenStrings.scanAgain),
+                            label: Text(HomeScreenStrings.scanAgain),
                           ),
                         ],
                       ),
@@ -1335,7 +1335,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ElevatedButton.icon(
               onPressed: _refreshDevices,
               icon: const Icon(Icons.refresh),
-              label: const Text(HomeScreenStrings.retry),
+              label: Text(HomeScreenStrings.retry),
             ),
           ],
         ),
