@@ -122,8 +122,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
                 if (!mounted) return;
                 scaffoldMessenger.showSnackBar(
-                  const SnackBar(
-                    content: Text(HomeScreenStrings.transferAccepted),
+                  SnackBar(
+                    content: Text(HomeScreenStrings.getLocalized('transferAccepted', ref)),
                     backgroundColor: AppTheme.successColor,
                   ),
                 );
@@ -132,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 if (!mounted) return;
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
-                    content: Text(HomeScreenStrings.failedToAccept(e.toString())),
+                    content: Text(HomeScreenStrings.getLocalized('failedToAccept', ref) + ': ' + e.toString()),
                     backgroundColor: AppTheme.errorColor,
                   ),
                 );
@@ -151,8 +151,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
                 if (!mounted) return;
                 scaffoldMessenger.showSnackBar(
-                  const SnackBar(
-                    content: Text(HomeScreenStrings.transferRejected),
+                  SnackBar(
+                    content: Text(HomeScreenStrings.getLocalized('transferRejected', ref)),
                     backgroundColor: AppTheme.warningColor,
                   ),
                 );
