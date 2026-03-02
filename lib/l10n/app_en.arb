@@ -1,147 +1,219 @@
 {
   "@@locale": "en",
   "appTitle": "Syndro",
-  "@appTitle": {
-    "description": "The application title"
-  },
+  
+  // Navigation
+  "devices": "Devices",
+  "history": "History",
   "settings": "Settings",
-  "@settings": {
-    "description": "Settings screen title"
+  
+  // Home screen
+  "initializing": "Initializing...",
+  "scanningForDevices": "Scanning for devices...",
+  "noDevicesFound": "No devices found",
+  "noDevicesTip": "Make sure other devices have Syndro open and are on the same WiFi network",
+  "scanAgain": "Scan Again",
+  "errorDiscoveringDevices": "Error discovering devices",
+  "retry": "Retry",
+  "shareViaWeb": "Share via Web",
+  "receiveViaWeb": "Receive via Web",
+  
+  // Transfer
+  "transferAccepted": "Transfer accepted",
+  "transferRejected": "Transfer rejected",
+  "failedToAccept": "Failed to accept: {error}",
+  "@failedToAccept": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
   },
+  "failedToReject": "Failed to reject: {error}",
+  "@failedToReject": {
+    "placeholders": {
+      "error": {"type": "String"}
+    }
+  },
+  "incomingTransfer": "Incoming Transfer",
+  "fromDevice": "From: {deviceName}",
+  "@fromDevice": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+  "fileCountWithSize": "{count} file(s) • {size}",
+  "@fileCountWithSize": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "size": {"type": "String"}
+    }
+  },
+  "reject": "REJECT",
+  "accept": "ACCEPT",
+  
+  // File picker
+  "selectFiles": "Select Files",
+  "selectFolder": "Select Folder",
+  "selectedFiles": "Selected Files",
+  "noFilesSelected": "No files selected",
+  "tapToSelect": "Tap + to select files",
+  "send": "SEND",
+  "totalSize": "Total: {size}",
+  "@totalSize": {
+    "placeholders": {
+      "size": {"type": "String"}
+    }
+  },
+  "sendingTo": "Sending to {deviceName}",
+  "@sendingTo": {
+    "placeholders": {
+      "deviceName": {"type": "String"}
+    }
+  },
+  
+  // Transfer progress
+  "transferring": "Transferring...",
+  "receiving": "Receiving...",
+  "preparingFiles": "Preparing files...",
+  "encrypting": "Encrypting...",
+  "decrypting": "Decrypting...",
+  "completed": "Completed",
+  "failed": "Failed",
+  "cancelled": "Cancelled",
+  "paused": "Paused",
+  "resumed": "Resumed",
+  "speed": "Speed: {speed}/s",
+  "@speed": {
+    "placeholders": {
+      "speed": {"type": "String"}
+    }
+  },
+  "timeRemaining": "Time remaining: {time}",
+  "@timeRemaining": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "transferComplete": "Transfer complete!",
+  "transferFailed": "Transfer failed",
+  "filesSavedTo": "Files saved to: {path}",
+  "@filesSavedTo": {
+    "placeholders": {
+      "path": {"type": "String"}
+    }
+  },
+  "openFiles": "Open Files",
+  "openFolder": "Open Folder",
+  "cancelTransfer": "Cancel",
+  "pauseTransfer": "Pause",
+  "resumeTransfer": "Resume",
+  
+  // History
+  "transferHistory": "Transfer History",
+  "noTransfersYet": "No transfers yet",
+  "sentFiles": "Sent Files",
+  "receivedFiles": "Received Files",
+  "today": "Today",
+  "yesterday": "Yesterday",
+  "thisWeek": "This Week",
+  "older": "Older",
+  "deleteTransfer": "Delete",
+  "deleteAllHistory": "Delete All",
+  "confirmDelete": "Are you sure you want to delete this transfer?",
+  "confirmDeleteAll": "Are you sure you want to delete all transfer history?",
+  
+  // Settings
   "language": "Language",
-  "@language": {
-    "description": "Language setting"
-  },
+  "systemDefault": "System Default",
+  "device": "Device",
+  "deviceName": "Device Name",
+  "editDeviceName": "Edit Device Name",
+  "deviceNameHint": "This name will be visible to other devices on the network.",
+  "ipAddress": "IP Address",
+  "deviceId": "Device ID",
+  "copyDeviceId": "Copy device ID",
+  "autoAcceptTrusted": "Auto-accept from trusted devices",
+  "autoAcceptTrustedDesc": "Automatically accept transfers from devices you trust",
+  "autoAcceptEnabled": "Auto-accept enabled for trusted devices",
+  "willAlwaysAsk": "Will always ask for approval",
   "autoDeleteHistory": "Auto-delete history",
-  "@autoDeleteHistory": {
-    "description": "Auto-delete transfer history setting"
-  },
   "autoDeleteDisabled": "Disabled",
-  "@autoDeleteDisabled": {
-    "description": "Auto-delete disabled option"
-  },
   "autoDeleteDays": "{days} days",
   "@autoDeleteDays": {
-    "description": "Auto-delete after N days",
     "placeholders": {
-      "days": {
-        "type": "int"
-      }
+      "days": {"type": "int"}
     }
   },
   "trustedDevices": "Trusted Devices",
-  "@trustedDevices": {
-    "description": "Trusted devices section title"
-  },
   "noTrustedDevices": "No trusted devices",
-  "@noTrustedDevices": {
-    "description": "Empty state for trusted devices"
-  },
   "trustedSince": "Trusted since {date}",
   "@trustedSince": {
-    "description": "Shows when device was trusted",
     "placeholders": {
-      "date": {
-        "type": "String"
-      }
+      "date": {"type": "String"}
     }
   },
   "revokeTrust": "Revoke Trust",
-  "@revokeTrust": {
-    "description": "Revoke trust button"
-  },
   "revokeTrustConfirm": "Are you sure you want to remove \"{deviceName}\" from trusted devices?",
   "@revokeTrustConfirm": {
-    "description": "Confirm revoke trust dialog",
     "placeholders": {
-      "deviceName": {
-        "type": "String"
-      }
+      "deviceName": {"type": "String"}
     }
   },
   "clearAllTrusted": "Clear All Trusted Devices",
-  "@clearAllTrusted": {
-    "description": "Clear all trusted devices button"
-  },
-  "clearAllTrustedConfirm": "This will remove all devices from your trusted list. You will need to re-accept transfers from them.",
-  "@clearAllTrustedConfirm": {
-    "description": "Confirm clear all dialog"
-  },
+  "clearAllTrustedConfirm": "This will remove all devices from your trusted list.",
   "deviceRemoved": "Device removed from trusted list",
-  "@deviceRemoved": {
-    "description": "Snackbar message when device is removed"
-  },
   "allTrustedCleared": "All trusted devices cleared",
-  "@allTrustedCleared": {
-    "description": "Snackbar message when all trusted devices are cleared"
-  },
-  "autoAcceptTrusted": "Auto-accept from trusted devices",
-  "@autoAcceptTrusted": {
-    "description": "Auto-accept setting title"
-  },
-  "autoAcceptTrustedDesc": "Automatically accept transfers from devices you trust",
-  "@autoAcceptTrustedDesc": {
-    "description": "Auto-accept setting description"
-  },
-  "autoAcceptEnabled": "Auto-accept enabled for trusted devices",
-  "@autoAcceptEnabled": {
-    "description": "Snackbar when auto-accept is enabled"
-  },
-  "willAlwaysAsk": "Will always ask for approval",
-  "@willAlwaysAsk": {
-    "description": "Snackbar when auto-accept is disabled"
-  },
-  "device": "Device",
-  "@device": {
-    "description": "Device section title"
-  },
-  "editDeviceName": "Edit Device Name",
-  "@editDeviceName": {
-    "description": "Edit device name dialog title"
-  },
-  "deviceNameHint": "This name will be visible to other devices on the network.",
-  "@deviceNameHint": {
-    "description": "Edit device name hint text"
-  },
   "about": "About",
-  "@about": {
-    "description": "About section title"
-  },
   "version": "Version",
-  "@version": {
-    "description": "Version label"
-  },
   "fastSecureSharing": "Fast & secure file sharing",
-  "@fastSecureSharing": {
-    "description": "App tagline"
-  },
   "cancel": "Cancel",
-  "@cancel": {
-    "description": "Cancel button"
-  },
   "remove": "Remove",
-  "@remove": {
-    "description": "Remove button"
-  },
   "clearAll": "Clear All",
-  "@clearAll": {
-    "description": "Clear all button"
-  },
   "save": "Save",
-  "@save": {
-    "description": "Save button"
-  },
+  "ok": "OK",
+  "yes": "Yes",
+  "no": "No",
+  "delete": "Delete",
   "acceptTransfers": "Accept transfers to add trusted devices",
-  "@acceptTransfers": {
-    "description": "Hint for adding trusted devices"
-  },
   "historyOlderThan": "History older than {days} days will be deleted",
   "@historyOlderThan": {
-    "description": "Snackbar when auto-delete is set",
     "placeholders": {
-      "days": {
-        "type": "int"
-      }
+      "days": {"type": "int"}
     }
-  }
+  },
+  "languageChanged": "Language changed. Restart app to fully apply.",
+  "custom": "Custom",
+  
+  // Onboarding
+  "welcomeToSyndro": "Welcome to Syndro",
+  "getStarted": "Get Started",
+  "next": "Next",
+  "skip": "Skip",
+  "permissionsRequired": "Permissions Required",
+  "grantPermissions": "Grant Permissions",
+  "storagePermission": "Storage Permission",
+  "storagePermissionDesc": "Syndro needs access to storage to send and receive files.",
+  "notificationPermission": "Notification Permission",
+  "notificationPermissionDesc": "Allow notifications to receive transfer updates.",
+  "lanPermission": "Local Network Permission",
+  "lanPermissionDesc": "Syndro needs local network access to discover nearby devices.",
+  "allPermissionsGranted": "All permissions granted",
+  
+  // Network errors
+  "noInternetConnection": "No internet connection",
+  "connectionError": "Connection error",
+  "serverError": "Server error",
+  "timeout": "Request timed out",
+  "tryAgain": "Try Again",
+  
+  // Browser share
+  "generateLink": "Generate Link",
+  "linkGenerated": "Link generated!",
+  "copyLink": "Copy Link",
+  "linkCopied": "Link copied to clipboard",
+  "shareInBrowser": "Share in Browser",
+  "waitingForConnection": "Waiting for connection...",
+  "someoneJoined": "Someone joined!",
+  "sendFiles": "Send Files",
+  "downloadFiles": "Download Files",
+  "webShareDesc": "Share files with devices that don't have Syndro installed"
 }
