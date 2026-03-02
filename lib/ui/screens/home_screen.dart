@@ -11,10 +11,10 @@ import '../../core/models/device.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/providers/transfer_provider.dart';
 import '../../core/services/transfer_service.dart';
+import '../../core/l10n/app_localizations.dart';
 import 'file_picker_screen.dart';
 import 'browser_share_screen.dart';
 import 'browser_receive_screen.dart';
-import 'home_screen_strings.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -123,7 +123,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 if (!mounted) return;
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
-                    content: Text(HomeScreenStrings.getLocalized('transferAccepted', ref)),
+                    content: Text(l10n.transferAccepted),
                     backgroundColor: AppTheme.successColor,
                   ),
                 );
@@ -132,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 if (!mounted) return;
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
-                    content: Text(HomeScreenStrings.getLocalized('failedToAccept', ref) + ': ' + e.toString()),
+                    content: Text('${l10n.failedToAccept}: ${e.toString()}'),
                     backgroundColor: AppTheme.errorColor,
                   ),
                 );
@@ -152,7 +152,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 if (!mounted) return;
                 scaffoldMessenger.showSnackBar(
                   SnackBar(
-                    content: Text(HomeScreenStrings.getLocalized('transferRejected', ref)),
+                    content: Text(l10n.transferRejected),
                     backgroundColor: AppTheme.warningColor,
                   ),
                 );
@@ -823,6 +823,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final currentDevice = ref.watch(currentDeviceProvider);
     final discoveredDevicesAsync = ref.watch(discoveredDevicesProvider);
     final selectedDevice = ref.watch(selectedDeviceProvider);
@@ -1168,7 +1169,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 16),
-            Text(HomeScreenStrings.initializing),
+            Text(l10n.initializing),
           ],
         ),
       );
@@ -1201,9 +1202,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             color: AppTheme.textTertiary,
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            HomeScreenStrings.noDevicesFound,
-                            style: Theme.of(context)
+                            Text(
+                              l10n.noDevicesFound,
+                              style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
                                 ?.copyWith(
@@ -1213,9 +1214,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           const SizedBox(height: 8),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: Text(
-                              HomeScreenStrings.noDevicesTip,
-                              style: Theme.of(context)
+                              child: Text(
+                                l10n.noDevicesTip,
+                                style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
                                   ?.copyWith(
@@ -1228,7 +1229,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           OutlinedButton.icon(
                             onPressed: _isRefreshing ? null : _refreshDevices,
                             icon: const Icon(Icons.refresh),
-                            label: Text(HomeScreenStrings.scanAgain),
+                            label: Text(l10n.scanAgain),
                           ),
                         ],
                       ),
@@ -1298,7 +1299,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              HomeScreenStrings.scanningForDevices,
+              l10n.scanningForDevices,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppTheme.textTertiary,
                   ),
@@ -1319,7 +1320,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ),
             const SizedBox(height: 16),
             Text(
-              HomeScreenStrings.errorDiscoveringDevices,
+              l10n.errorDiscoveringDevices,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -1335,7 +1336,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             ElevatedButton.icon(
               onPressed: _refreshDevices,
               icon: const Icon(Icons.refresh),
-              label: Text(HomeScreenStrings.retry),
+              label: Text(l10n.retry),
             ),
           ],
         ),
