@@ -9,6 +9,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../theme/app_theme.dart';
 import '../../core/services/web_share/web_share_service.dart';
+import '../../core/l10n/app_localizations.dart';
 
 /// Enum to define the share mode
 enum ShareMode {
@@ -40,6 +41,8 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
 
   late List<File> _files;
   int _activeConnections = 0;
+  
+  AppLocalizations? _l10n;
 
   StreamSubscription<int>? _connectionCountSubscription;
   StreamSubscription<ConnectionEvent>? _connectionEventSubscription;
@@ -617,7 +620,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       Clipboard.setData(ClipboardData(text: _shareUrl!));
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Link copied to clipboard!'),
+          content: Text(l10n.linkCopied),
           backgroundColor: AppTheme.successColor,
           behavior: SnackBarBehavior.floating,
         ),
@@ -793,11 +796,14 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _l10n = AppLocalizations.of(context)!;
+    final l10n = _l10n!;
+    
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.shareMode == ShareMode.media
-            ? 'Share Media'
-            : 'Share via Browser'),
+            ? l10n.shareInBrowser
+            : l10n.shareViaWeb),
         actions: [
           // NEW: Clickable viewer count badge
           if (!_isLoading && _shareUrl != null)

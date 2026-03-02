@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme/app_theme.dart';
+import '../../core/l10n/app_localizations.dart';
 import 'main_navigation_screen.dart';
 import 'permissions_onboarding_screen.dart';
 
@@ -104,6 +105,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final screenWidth = MediaQuery.of(context).size.width;
     final maxContentWidth = _isDesktop ? 450.0 : screenWidth;
 
@@ -122,8 +124,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     padding: const EdgeInsets.all(16.0),
                     child: TextButton(
                       onPressed: _isLoading ? null : _skip,
-                      child: const Text(
-                        'Skip',
+                      child: Text(
+                        l10n.skip,
                         style: TextStyle(
                           color: AppTheme.textTertiary,
                           fontSize: 14,

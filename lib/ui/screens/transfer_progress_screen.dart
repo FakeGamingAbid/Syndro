@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../../core/models/device.dart';
 import '../../core/models/transfer.dart';
 import '../../core/providers/transfer_provider.dart';
+import '../../core/l10n/app_localizations.dart';
 
 class TransferProgressScreen extends ConsumerStatefulWidget {
   final String transferId;
@@ -36,6 +37,8 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
   int _lastBytes = 0;
   double _speed = 0;
   Timer? _speedTimer;
+  
+  AppLocalizations? _l10n;
 
   @override
   void initState() {
@@ -180,6 +183,9 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
 
   @override
   Widget build(BuildContext context) {
+    _l10n = AppLocalizations.of(context)!;
+    final l10n = _l10n!;
+    
     // FIX (Bug #17): Improved PopScope with proper state handling
     return PopScope(
       canPop: false,
@@ -416,11 +422,11 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         break;
       case TransferStatus.completed:
         color = AppTheme.successColor;
-        text = 'Completed';
+        text = l10n.completed;
         break;
       case TransferStatus.failed:
         color = AppTheme.errorColor;
-        text = 'Failed';
+        text = l10n.failed;
         break;
       case TransferStatus.cancelled:
         color = AppTheme.textTertiary;

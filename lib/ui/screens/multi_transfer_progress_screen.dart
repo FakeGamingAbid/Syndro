@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../../core/models/device.dart';
 import '../../core/models/transfer.dart';
 import '../../core/providers/transfer_provider.dart';
+import '../../core/l10n/app_localizations.dart';
 
 /// Screen for tracking multiple simultaneous transfers
 class MultiTransferProgressScreen extends ConsumerStatefulWidget {
@@ -28,6 +29,7 @@ class MultiTransferProgressScreen extends ConsumerStatefulWidget {
 }
 
 class _MultiTransferProgressScreenState extends ConsumerState<MultiTransferProgressScreen> {
+  AppLocalizations? _l10n;
   final Map<String, Transfer> _transfers = {};
   final Map<String, String> _errors = {};
   StreamSubscription<Transfer>? _transferSubscription;
@@ -95,6 +97,9 @@ class _MultiTransferProgressScreenState extends ConsumerState<MultiTransferProgr
 
   @override
   Widget build(BuildContext context) {
+    _l10n = AppLocalizations.of(context)!;
+    final l10n = _l10n!;
+    
     return PopScope(
       canPop: _allCompleted,
       child: Scaffold(

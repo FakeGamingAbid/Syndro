@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/device.dart';
 import '../../core/services/transfer_service.dart';
 import '../../core/providers/transfer_provider.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../screens/transfer_progress_screen.dart';
 import 'transfer_request_strings.dart';
@@ -19,6 +20,8 @@ class TransferRequestSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    
     final totalSize =
         request.items.fold<int>(0, (sum, item) => sum + item.size);
 

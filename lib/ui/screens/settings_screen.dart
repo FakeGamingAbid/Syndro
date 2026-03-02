@@ -11,6 +11,7 @@ import '../../core/providers/device_provider.dart';
 import '../../core/providers/transfer_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/services/app_settings_service.dart';
+import '../../core/l10n/app_localizations.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -24,6 +25,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _autoAcceptTrusted = false;
   int _autoDeleteDays = 30;
   final AppSettingsService _settingsService = AppSettingsService();
+  
+  AppLocalizations? _l10n;
 
   @override
   void initState() {
@@ -230,6 +233,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _l10n = AppLocalizations.of(context)!;
+    final l10n = _l10n!;
+    
     final currentDevice = ref.watch(currentDeviceProvider);
     final customNickname = ref.watch(currentDeviceNicknameProvider);
 
@@ -255,7 +261,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Settings'),
+            Text(l10n.settings),
           ],
         ),
       ),

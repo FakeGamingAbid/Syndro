@@ -1,18 +1,29 @@
-/// FIX V18: Localization constants for transfer request sheet
+/// Localization constants for transfer request sheet
+/// Uses AppLocalizations for multi-language support
 class TransferRequestStrings {
-  // Sheet title and messages
-  static const String incomingTransfer = 'Incoming Transfer';
-  static const String senderWantsToSend = 'wants to send you:';
+  /// Get incoming transfer string
+  static String incomingTransfer(dynamic l10n) => l10n.incomingTransfer;
   
-  // File info
-  static String fileCount(int count) => count == 1 ? '1 file' : '$count files';
+  /// Get sender wants to send message
+  static String senderWantsToSend(dynamic l10n) => 'wants to send you:';
   
-  // Button labels
-  static const String decline = 'Decline';
-  static const String accept = 'Accept';
-  static const String acceptAndTrust = 'Accept & Always Trust This Device';
+  /// Get file count string
+  static String fileCount(int count, dynamic l10n) => count == 1 
+      ? '1 ${l10n.fileCountWithSize(1, '').replaceAll('1 ', '').replaceAll(RegExp(r' • .*'), '')}'
+      : '$count ${l10n.fileCountWithSize(count, '').replaceAll(RegExp(r'\d+ '), '').replaceAll(RegExp(r' • .*'), '')}';
   
-  // Confirmation messages
-  static const String transferApproved = 'Transfer accepted';
-  static const String transferRejected = 'Transfer rejected';
+  /// Get decline button text
+  static String decline(dynamic l10n) => l10n.reject;
+  
+  /// Get accept button text
+  static String accept(dynamic l10n) => l10n.accept;
+  
+  /// Get accept and trust button text
+  static String acceptAndTrust(dynamic l10n) => '${l10n.accept} & ${l10n.autoAcceptTrusted}';
+  
+  /// Get transfer approved message
+  static String transferApproved(dynamic l10n) => l10n.transferAccepted;
+  
+  /// Get transfer rejected message
+  static String transferRejected(dynamic l10n) => l10n.transferRejected;
 }

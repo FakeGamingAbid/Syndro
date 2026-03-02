@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../theme/app_theme.dart';
 import '../../core/database/database_helper.dart';
+import '../../core/l10n/app_localizations.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
@@ -15,6 +16,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   List<Map<String, dynamic>> _transfers = [];
   bool _isLoading = true;
   Map<String, int> _statistics = {};
+
+  AppLocalizations? _l10n;
 
   @override
   void initState() {
@@ -54,7 +57,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error loading history: $e'),
+            content: Text(_l10n?.connectionError ?? 'Error loading history'),
             backgroundColor: AppTheme.errorColor,
           ),
         );
@@ -69,8 +72,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Transfer removed from history'),
+          SnackBar(
+            content: Text(_l10n!.deleteTransfer),
             backgroundColor: AppTheme.successColor,
           ),
         );
@@ -198,6 +201,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _l10n = AppLocalizations.of(context)!;
+    final l10n = _l10n!;
+    
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -216,7 +222,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text('Transfer History'),
+            Text(l10n.transferHistory),
           ],
         ),
         actions: [
@@ -235,7 +241,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 ),
               ),
               onPressed: _clearAllHistory,
-              tooltip: 'Clear All',
+              tooltip: l10n.clearAll,
             ),
         ],
       ),

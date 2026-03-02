@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import '../services/app_settings_service.dart';
 
 /// Available locales in the app
@@ -19,11 +20,24 @@ class AppLocale {
 const List<AppLocale> supportedLocales = [
   AppLocale(code: 'en', name: 'English', locale: Locale('en')),
   AppLocale(code: 'es', name: 'Español', locale: Locale('es')),
-  AppLocale(code: 'fr', name: 'Français', locale: Locale('fr')),
-  AppLocale(code: 'de', name: 'Deutsch', locale: Locale('de')),
   AppLocale(code: 'zh', name: '中文', locale: Locale('zh')),
   AppLocale(code: 'ja', name: '日本語', locale: Locale('ja')),
 ];
+
+/// Get system locale and map to supported locale
+Locale? _getSystemLocale() {
+  final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
+  final languageCode = systemLocale.languageCode;
+  
+  // Check if system language is supported
+  final supportedCodes = ['en', 'es', 'zh', 'ja'];
+  if (supportedCodes.contains(languageCode)) {
+    return Locale(languageCode);
+  }
+  
+  // Default to English if not supported
+  return const Locale('en');
+}
 
 /// Simple locale state
 class LocaleState {
@@ -57,12 +71,16 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
     try {
       final localeCode = await _settingsService.getLocale();
       if (localeCode != null) {
+        // User has selected a locale - use it
         state = LocaleState(locale: Locale(localeCode), isLoading: false);
       } else {
-        state = const LocaleState(locale: null, isLoading: false);
+        // No saved locale - detect system language
+        final systemLocale = _getSystemLocale();
+        state = LocaleState(locale: systemLocale, isLoading: false);
       }
     } catch (e) {
-      state = const LocaleState(locale: null, isLoading: false);
+      // On error, use system locale as fallback
+      state = LocaleState(locale: _getSystemLocale(), isLoading: false);
     }
   }
 
@@ -77,10 +95,20 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
   }
 
   AppLocale? get currentAppLocale {
-    if (state.locale == null) return null;
+    if (state.locale == null) {
+      // Return system locale's corresponding AppLocale
+      final systemLocale = _getSystemLocale();
+      return supportedLocales.firstWhere(
+        (l) => l.code == systemLocale.languageCode,
+        orElse: () => supportedLocales.first,
+      );
+    }
     return supportedLocales.firstWhere(
       (l) => l.code == state.locale!.languageCode,
       orElse: () => supportedLocales.first,
     );
   }
+  
+  /// Get the effective locale (user selected or system)
+  Locale get effectiveLocale => state.locale ?? _getSystemLocale();
 }

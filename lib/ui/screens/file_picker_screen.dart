@@ -12,6 +12,7 @@ import '../../core/models/device.dart';
 import '../../core/models/transfer.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/providers/transfer_provider.dart';
+import '../../core/l10n/app_localizations.dart';
 import 'transfer_progress_screen.dart';
 import 'multi_transfer_progress_screen.dart';
 
@@ -48,6 +49,8 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
   bool _isLoading = false;
   bool _isSending = false;
   bool _isDragging = false; // NEW: For drag & drop
+  
+  AppLocalizations? _l10n;
 
   // Animation controller for staggered list
   late AnimationController _animationController;
@@ -572,6 +575,9 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
 
   @override
   Widget build(BuildContext context) {
+    _l10n = AppLocalizations.of(context)!;
+    final l10n = _l10n!;
+    
     final totalSize =
         _selectedFiles.fold<int>(0, (sum, item) => sum + item.size);
     final isDesktop =
@@ -933,7 +939,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Select Files'),
+        title: Text(l10n.selectFiles),
         actions: [
           if (_selectedFiles.isNotEmpty)
             IconButton(
@@ -1301,14 +1307,14 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
                       delay: const Duration(milliseconds: 300),
                       onPressed: widget.onPickFiles,
                       icon: Icons.insert_drive_file_rounded,
-                      label: 'Select Files',
+                      label: l10n.selectFiles,
                     );
 
                     final folderButton = _AnimatedButton(
                       delay: const Duration(milliseconds: 400),
                       onPressed: widget.onPickFolder,
                       icon: Icons.folder_rounded,
-                      label: 'Select Folder',
+                      label: l10n.selectFolder,
                       isPrimary: false,
                     );
 

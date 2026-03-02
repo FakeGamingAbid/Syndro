@@ -9,10 +9,6 @@ class HomeScreenStrings {
     switch (langCode) {
       case 'es':
         return _spanishStrings;
-      case 'fr':
-        return _frenchStrings;
-      case 'de':
-        return _germanStrings;
       case 'zh':
         return _chineseStrings;
       case 'ja':
@@ -72,52 +68,6 @@ class HomeScreenStrings {
     'fileCount': 'archivo(s)',
     'reject': 'RECHAZAR',
     'accept': 'ACEPTAR',
-  };
-
-  static const Map<String, String> _frenchStrings = {
-    'devices': 'Appareils',
-    'history': 'Historique',
-    'initializing': 'Initialisation...',
-    'scanningForDevices': 'Recherche d\'appareils...',
-    'noDevicesFound': 'Aucun appareil trouvé',
-    'noDevicesTip': 'Assurez-vous que d\'autres appareils ont Syndro ouvert et sont sur le même réseau WiFi',
-    'scanAgain': 'Rechercher',
-    'errorDiscoveringDevices': 'Erreur lors de la découverte des appareils',
-    'retry': 'Réessayer',
-    'shareViaWeb': 'Partager via Web',
-    'receiveViaWeb': 'Recevoir via Web',
-    'transferAccepted': 'Transfert accepté',
-    'transferRejected': 'Transfert rejeté',
-    'failedToAccept': 'Échec de l\'acceptation',
-    'failedToReject': 'Échec du rejet',
-    'incomingTransfer': 'Transfert entrant',
-    'fromDevice': 'De',
-    'fileCount': 'fichier(s)',
-    'reject': 'REJETER',
-    'accept': 'ACCEPTER',
-  };
-
-  static const Map<String, String> _germanStrings = {
-    'devices': 'Geräte',
-    'history': 'Verlauf',
-    'initializing': 'Initialisierung...',
-    'scanningForDevices': 'Suche nach Geräten...',
-    'noDevicesFound': 'Keine Geräte gefunden',
-    'noDevicesTip': 'Stellen Sie sicher, dass andere Geräte Syndro geöffnet haben und im selben WLAN sind',
-    'scanAgain': 'Erneut suchen',
-    'errorDiscoveringDevices': 'Fehler beim Erkunden von Geräten',
-    'retry': 'Wiederholen',
-    'shareViaWeb': 'Über Web teilen',
-    'receiveViaWeb': 'Über Web empfangen',
-    'transferAccepted': 'Übertragung akzeptiert',
-    'transferRejected': 'Übertragung abgelehnt',
-    'failedToAccept': 'Akzeptieren fehlgeschlagen',
-    'failedToReject': 'Ablehnen fehlgeschlagen',
-    'incomingTransfer': 'Eingehende Übertragung',
-    'fromDevice': 'Von',
-    'fileCount': 'Datei(en)',
-    'reject': 'ABLEHNEN',
-    'accept': 'AKZEPTIEREN',
   };
 
   static const Map<String, String> _chineseStrings = {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/device.dart';
 import '../../core/models/transfer.dart';
 import '../../core/providers/device_provider.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../widgets/device_card.dart';
 import '../widgets/file_preview_widgets.dart';
@@ -24,6 +25,8 @@ class QuickSendScreen extends ConsumerStatefulWidget {
 }
 
 class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
+  AppLocalizations? _l10n;
+  
   @override
   void initState() {
     super.initState();
@@ -83,6 +86,9 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
 
   @override
   Widget build(BuildContext context) {
+    _l10n = AppLocalizations.of(context)!;
+    final l10n = _l10n!;
+    
     final discoveredDevices = ref.watch(deviceDiscoveryProvider);
     final isScanning = ref.watch(deviceDiscoveryProvider.notifier).isScanning;
 
@@ -142,8 +148,8 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
               children: [
                 ShaderMask(
                   shaderCallback: (bounds) => AppTheme.logoGradient.createShader(bounds),
-                  child: const Text(
-                    'Quick Send',
+                  child: Text(
+                    l10n.sendFiles,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import 'home_screen.dart';
 import 'history_screen.dart';
 import 'settings_screen.dart';
+import '../../core/l10n/app_localizations.dart';
 
 class MainNavigationScreen extends ConsumerStatefulWidget {
   const MainNavigationScreen({super.key});
@@ -23,23 +24,26 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     SettingsScreen(),
   ];
 
-  final List<NavigationRailDestination> _railDestinations = const [
-    NavigationRailDestination(
-      icon: Icon(Icons.devices_outlined),
-      selectedIcon: Icon(Icons.devices),
-      label: Text('Devices'),
-    ),
-    NavigationRailDestination(
-      icon: Icon(Icons.history_outlined),
-      selectedIcon: Icon(Icons.history),
-      label: Text('History'),
-    ),
-    NavigationRailDestination(
-      icon: Icon(Icons.settings_outlined),
-      selectedIcon: Icon(Icons.settings),
-      label: Text('Settings'),
-    ),
-  ];
+  final List<NavigationRailDestination> _railDestinations(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      NavigationRailDestination(
+        icon: Icon(Icons.devices_outlined),
+        selectedIcon: Icon(Icons.devices),
+        label: Text(l10n.devices),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.history_outlined),
+        selectedIcon: Icon(Icons.history),
+        label: Text(l10n.history),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.settings_outlined),
+        selectedIcon: Icon(Icons.settings),
+        label: Text(l10n.settings),
+      ),
+    ];
+  }
 
   void _onDestinationSelected(int index) {
     setState(() {
@@ -135,7 +139,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   ],
                 ),
               ),
-              destinations: _railDestinations,
+              destinations: _railDestinations(context),
             ),
           ),
           // Vertical divider
@@ -164,6 +168,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   /// Mobile layout with Floating Bottom Navigation Bar
   Widget _buildMobileLayout() {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Scaffold(
       body: Stack(
         children: [
@@ -208,21 +214,21 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                       index: 0,
                       icon: Icons.devices_outlined,
                       selectedIcon: Icons.devices,
-                      label: 'Devices',
+                      label: l10n.devices,
                     ),
                     const SizedBox(width: 8),
                     _buildNavItem(
                       index: 1,
                       icon: Icons.history_outlined,
                       selectedIcon: Icons.history,
-                      label: 'History',
+                      label: l10n.history,
                     ),
                     const SizedBox(width: 8),
                     _buildNavItem(
                       index: 2,
                       icon: Icons.settings_outlined,
                       selectedIcon: Icons.settings,
-                      label: 'Settings',
+                      label: l10n.settings,
                     ),
                   ],
                 ),
