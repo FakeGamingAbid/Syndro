@@ -184,7 +184,6 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
   @override
   Widget build(BuildContext context) {
     _l10n = AppLocalizations.of(context)!;
-    final l10n = _l10n!;
     
     // FIX (Bug #17): Improved PopScope with proper state handling
     return PopScope(
@@ -422,11 +421,11 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         break;
       case TransferStatus.completed:
         color = AppTheme.successColor;
-        text = l10n.completed;
+        text = _l10n?.completed ?? 'Completed';
         break;
       case TransferStatus.failed:
         color = AppTheme.errorColor;
-        text = l10n.failed;
+        text = _l10n?.failed ?? 'Failed';
         break;
       case TransferStatus.cancelled:
         color = AppTheme.textTertiary;

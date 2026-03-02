@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../../core/models/device.dart';
 import '../../core/providers/device_nickname_provider.dart';
-import '../../core/l10n/app_localizations.dart';
 import 'device_nickname_dialog.dart';
 
 /// Device card with nickname support
@@ -81,8 +80,6 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    
     final nickname = ref.watch(deviceNicknameProvider)[widget.device.id];
     final displayName = nickname ?? widget.device.name;
     final hasNickname = nickname != null;

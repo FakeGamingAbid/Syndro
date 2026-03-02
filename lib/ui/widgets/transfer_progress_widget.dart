@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 import '../../core/models/transfer.dart';
-import '../../core/l10n/app_localizations.dart';
 
 class TransferProgressWidget extends StatelessWidget {
   final Transfer transfer;
@@ -18,8 +17,6 @@ class TransferProgressWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),

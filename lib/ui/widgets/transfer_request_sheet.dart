@@ -6,7 +6,6 @@ import '../../core/providers/transfer_provider.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import '../screens/transfer_progress_screen.dart';
-import 'transfer_request_strings.dart';
 
 class TransferRequestSheet extends ConsumerWidget {
   final PendingTransferRequest request;
@@ -62,7 +61,7 @@ class TransferRequestSheet extends ConsumerWidget {
 
           // Title
           Text(
-            TransferRequestStrings.incomingTransfer,
+            l10n.incomingTransfer,
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 8),
@@ -73,7 +72,7 @@ class TransferRequestSheet extends ConsumerWidget {
             children: [
               Flexible(
                 child: Text(
-                  '${request.senderName} ${TransferRequestStrings.senderWantsToSend}',
+                  '${request.senderName} ${l10n.sendingTo('').split(' ').first} ',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.textSecondary,
                       ),
@@ -140,7 +139,7 @@ class TransferRequestSheet extends ConsumerWidget {
                       Text(
                         request.items.length == 1
                             ? request.items.first.name
-                            : TransferRequestStrings.fileCount(request.items.length),
+                            : l10n.fileCountWithSize(request.items.length, _formatBytes(totalSize)),
                         style: const TextStyle(fontWeight: FontWeight.w600),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -230,8 +229,8 @@ class TransferRequestSheet extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    TransferRequestStrings.decline,
+                  child: Text(
+                    l10n.reject,
                     style: TextStyle(color: AppTheme.errorColor),
                   ),
                 ),
@@ -249,9 +248,9 @@ class TransferRequestSheet extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    TransferRequestStrings.accept,
-                    style: TextStyle(color: Colors.white),
+                  child: Text(
+                    l10n.accept,
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
               ),
@@ -264,9 +263,9 @@ class TransferRequestSheet extends ConsumerWidget {
             onPressed: () {
               _acceptTransfer(context, ref, true);
             },
-            child: const Text(
-              TransferRequestStrings.acceptAndTrust,
-              style: TextStyle(
+            child: Text(
+              '${l10n.accept} & ${l10n.autoAcceptTrusted}',
+              style: const TextStyle(
                 color: AppTheme.primaryColor,
                 fontSize: 13,
               ),
