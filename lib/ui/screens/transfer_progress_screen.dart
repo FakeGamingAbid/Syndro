@@ -235,7 +235,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
       child: Scaffold(
         backgroundColor: AppTheme.backgroundColor,
         appBar: AppBar(
-          title: Text(widget.isSender ? 'Sending Files' : 'Receiving Files'),
+          title: Text(widget.isSender ? _l10n?.sendingTo('') ?? 'Sending Files' : _l10n?.receiving ?? 'Receiving Files'),
           backgroundColor: AppTheme.backgroundColor,
           leading: IconButton(
             icon: const Icon(Icons.close),
@@ -405,19 +405,19 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
     switch (status) {
       case TransferStatus.connecting:
         color = AppTheme.warningColor;
-        text = 'Connecting';
+        text = _l10n?.connecting ?? 'Connecting';
         break;
       case TransferStatus.pending:
         color = AppTheme.warningColor;
-        text = 'Waiting';
+        text = _l10n?.pending ?? 'Waiting';
         break;
       case TransferStatus.transferring:
         color = AppTheme.primaryColor;
-        text = 'Transferring';
+        text = _l10n?.transferring ?? 'Transferring';
         break;
       case TransferStatus.paused:
         color = AppTheme.warningColor;
-        text = 'Paused';
+        text = _l10n?.paused ?? 'Paused';
         break;
       case TransferStatus.completed:
         color = AppTheme.successColor;
@@ -429,7 +429,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         break;
       case TransferStatus.cancelled:
         color = AppTheme.textTertiary;
-        text = 'Cancelled';
+        text = _l10n?.cancelled ?? 'Cancelled';
         break;
     }
 
