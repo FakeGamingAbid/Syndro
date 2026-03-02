@@ -24,7 +24,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     SettingsScreen(),
   ];
 
-  final List<NavigationRailDestination> _railDestinations(BuildContext context) {
+  List<NavigationRailDestination> _railDestinations(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return [
       NavigationRailDestination(

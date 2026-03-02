@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/locale_provider.dart';
 
 /// Localization strings for home screen - uses locale provider for translations
@@ -161,6 +159,6 @@ class HomeScreenStrings {
   // Helper methods with parameters
   static String failedToAccept(String error) => '${_t('failedToAccept')}: $error';
   static String failedToReject(String error) => '${_t('failedToReject')}: $error';
-  static String fromDevice(String deviceName) => '${_t('fromDevice')}: $deviceName';
+  static String fromDeviceWithName(String deviceName) => '${_t('fromDevice')}: $deviceName';
   static String fileCountWithSize(int count, String size) => '$count ${_t('fileCount')} • $size';
 }

@@ -619,8 +619,8 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
     if (_shareUrl != null) {
       Clipboard.setData(ClipboardData(text: _shareUrl!));
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(l10n.linkCopied),
+        SnackBar(
+          content: Text(_l10n?.linkCopied ?? 'Link copied to clipboard'),
           backgroundColor: AppTheme.successColor,
           behavior: SnackBarBehavior.floating,
         ),

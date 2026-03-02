@@ -87,7 +87,6 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
   @override
   Widget build(BuildContext context) {
     _l10n = AppLocalizations.of(context)!;
-    final l10n = _l10n!;
     
     final discoveredDevices = ref.watch(deviceDiscoveryProvider);
     final isScanning = ref.watch(deviceDiscoveryProvider.notifier).isScanning;
@@ -149,7 +148,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
                 ShaderMask(
                   shaderCallback: (bounds) => AppTheme.logoGradient.createShader(bounds),
                   child: Text(
-                    l10n.sendFiles,
+                    _l10n?.sendFiles ?? 'Send Files',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

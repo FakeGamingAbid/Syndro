@@ -98,7 +98,6 @@ class _MultiTransferProgressScreenState extends ConsumerState<MultiTransferProgr
   @override
   Widget build(BuildContext context) {
     _l10n = AppLocalizations.of(context)!;
-    final l10n = _l10n!;
     
     return PopScope(
       canPop: _allCompleted,

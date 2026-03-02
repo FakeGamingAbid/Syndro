@@ -1,15 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/locale_provider.dart';
-
-/// Extension to easily get localizations in any widget
-extension AppLocalizationsExtension on BuildContext {
-  /// Get the current locale
-  Locale? get locale => ref.watch(localeProvider).locale;
-  
-  /// Check if locale is loaded
-  bool get isLocaleLoaded => !ref.watch(localeProvider).isLoading;
-}
 
 /// Helper class to get localized strings
 /// Usage: AppLocalizations.of(context).devices

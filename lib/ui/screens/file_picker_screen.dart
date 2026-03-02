@@ -1307,14 +1307,14 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
                       delay: const Duration(milliseconds: 300),
                       onPressed: widget.onPickFiles,
                       icon: Icons.insert_drive_file_rounded,
-                      label: l10n.selectFiles,
+                      label: _l10n?.selectFiles ?? 'Select Files',
                     );
 
                     final folderButton = _AnimatedButton(
                       delay: const Duration(milliseconds: 400),
                       onPressed: widget.onPickFolder,
                       icon: Icons.folder_rounded,
-                      label: l10n.selectFolder,
+                      label: _l10n?.selectFolder ?? 'Select Folder',
                       isPrimary: false,
                     );
 

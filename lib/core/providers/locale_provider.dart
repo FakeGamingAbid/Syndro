@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import '../services/app_settings_service.dart';
 
 /// Available locales in the app
@@ -98,6 +97,9 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
     if (state.locale == null) {
       // Return system locale's corresponding AppLocale
       final systemLocale = _getSystemLocale();
+      if (systemLocale == null) {
+        return supportedLocales.first;
+      }
       return supportedLocales.firstWhere(
         (l) => l.code == systemLocale.languageCode,
         orElse: () => supportedLocales.first,
@@ -110,5 +112,5 @@ class LocaleNotifier extends StateNotifier<LocaleState> {
   }
   
   /// Get the effective locale (user selected or system)
-  Locale get effectiveLocale => state.locale ?? _getSystemLocale();
+  Locale get effectiveLocale => state.locale ?? _getSystemLocale() ?? const Locale('en');
 }
