@@ -976,12 +976,12 @@ class _LanguageSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Use select() to only rebuild when locale changes
-    final currentLocale = ref.watch(localeProvider.select((locale) => locale?.languageCode));
+    final localeState = ref.watch(localeProvider.select((state) => state.locale?.languageCode));
     
-    final currentAppLocale = currentLocale == null 
+    final currentAppLocale = localeState == null 
         ? null 
         : supportedLocales.firstWhere(
-            (l) => l.code == currentLocale,
+            (l) => l.code == localeState,
             orElse: () => supportedLocales.first,
           );
     

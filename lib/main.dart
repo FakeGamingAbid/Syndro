@@ -400,13 +400,45 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   @override
   Widget build(BuildContext context) {
     final incomingFilesState = ref.watch(incomingFilesProvider);
-    final locale = ref.watch(localeProvider);
+    final localeState = ref.watch(localeProvider);
+
+    // Wait for locale to load before showing app
+    if (localeState.isLoading) {
+      return MaterialApp(
+        title: 'Syndro',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.darkTheme,
+        home: Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: AppTheme.backgroundGradient,
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 24),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return MaterialApp(
       title: 'Syndro',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
-      locale: locale,
+      locale: localeState.locale,
       supportedLocales: supportedLocales.map((l) => l.locale),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

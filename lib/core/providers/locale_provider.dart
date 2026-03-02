@@ -25,41 +25,61 @@ const List<AppLocale> supportedLocales = [
   AppLocale(code: 'ja', name: '日本語', locale: Locale('ja')),
 ];
 
-/// Provider for the current app locale
-final localeProvider = StateNotifierProvider<LocaleNotifier, Locale?>((ref) {
+/// Simple locale state
+class LocaleState {
+  final Locale? locale;
+  final bool isLoading;
+
+  const LocaleState({this.locale, this.isLoading = true});
+
+  LocaleState copyWith({Locale? locale, bool? isLoading}) {
+    return LocaleState(
+      locale: locale ?? this.locale,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+}
+
+/// Provider for locale state
+final localeProvider = StateNotifierProvider<LocaleNotifier, LocaleState>((ref) {
   return LocaleNotifier();
 });
 
 /// Notifier to manage app locale
-class LocaleNotifier extends StateNotifier<Locale?> {
+class LocaleNotifier extends StateNotifier<LocaleState> {
   final AppSettingsService _settingsService = AppSettingsService();
 
-  LocaleNotifier() : super(null) {
+  LocaleNotifier() : super(const LocaleState()) {
     _loadLocale();
   }
 
   Future<void> _loadLocale() async {
-    final localeCode = await _settingsService.getLocale();
-    if (localeCode != null) {
-      state = Locale(localeCode);
+    try {
+      final localeCode = await _settingsService.getLocale();
+      if (localeCode != null) {
+        state = LocaleState(locale: Locale(localeCode), isLoading: false);
+      } else {
+        state = const LocaleState(locale: null, isLoading: false);
+      }
+    } catch (e) {
+      state = const LocaleState(locale: null, isLoading: false);
     }
   }
 
   Future<void> setLocale(AppLocale? appLocale) async {
     if (appLocale == null) {
-      // System default
       await _settingsService.setLocale(null);
-      state = null;
+      state = state.copyWith(locale: null);
     } else {
       await _settingsService.setLocale(appLocale.code);
-      state = appLocale.locale;
+      state = state.copyWith(locale: appLocale.locale);
     }
   }
 
   AppLocale? get currentAppLocale {
-    if (state == null) return null;
+    if (state.locale == null) return null;
     return supportedLocales.firstWhere(
-      (l) => l.code == state!.languageCode,
+      (l) => l.code == state.locale!.languageCode,
       orElse: () => supportedLocales.first,
     );
   }
