@@ -1017,11 +1017,20 @@ class TransferService {
   }
 
   bool _secureTokenCompare(String a, String b) {
-    if (a.length != b.length) return false;
-
-    int result = 0;
-    for (int i = 0; i < a.length; i++) {
+    // Use constant-time comparison to prevent timing attacks
+    // Always iterate through both strings regardless of length
+    final lenA = a.length;
+    final lenB = b.length;
+    final minLen = lenA < lenB ? lenA : lenB;
+    final maxLen = lenA > lenB ? lenA : lenB;
+    
+    int result = lenA ^ lenB; // Include length difference in timing
+    for (int i = 0; i < minLen; i++) {
       result |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    }
+    // Process remaining characters (if any) to maintain constant time
+    for (int i = minLen; i < maxLen; i++) {
+      result |= lenA > lenB ? a.codeUnitAt(i) ^ 0 : 0 ^ b.codeUnitAt(i);
     }
     return result == 0;
   }
