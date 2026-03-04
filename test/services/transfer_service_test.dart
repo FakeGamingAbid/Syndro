@@ -12,6 +12,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -129,6 +130,9 @@ void registerFallbackValues() {
 // ============================================================================
 
 void main() {
+  // Initialize Flutter binding for tests that use platform channels
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   late TransferService transferService;
   late MockFileService mockFileService;
   late MockCheckpointManager mockCheckpointManager;
