@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../theme/app_theme.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/services/app_settings_service.dart';
+import '../../core/providers/theme_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -52,6 +53,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         });
       }
     }
+  }
+
+  void _showThemeSelector() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Appearance',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...AppThemeMode.values.map((mode) {
+                return ListTile(
+                  leading: Icon(mode.icon),
+                  title: Text(mode.displayName),
+                  trailing: ref.watch(themeNotifierProvider) == mode
+                      ? Icon(Icons.check, color: AppTheme.primaryColor)
+                      : null,
+                  onTap: () {
+                    ref.read(themeNotifierProvider.notifier).setThemeMode(mode);
+                    Navigator.pop(context);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showEditNicknameDialog() {
@@ -447,6 +490,30 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         );
                       }
                     },
+                  ),
+                  const SizedBox(height: 8),
+                  // Theme selector
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        ref.watch(themeNotifierProvider).icon,
+                        color: AppTheme.primaryColor,
+                        size: 24,
+                      ),
+                    ),
+                    title: const Text('Appearance'),
+                    subtitle: Text(
+                      ref.watch(themeNotifierProvider).displayName,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => _showThemeSelector(),
                   ),
                 ],
               ),

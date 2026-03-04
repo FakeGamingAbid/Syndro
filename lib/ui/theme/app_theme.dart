@@ -293,37 +293,55 @@ class AppTheme {
 
   // Light theme
   static ThemeData get lightTheme {
+    // Light theme colors
+    const lightBackground = Color(0xFFFFFFFF);
+    const lightSurface = Color(0xFFF9FAFB);
+    const lightCard = Color(0xFFFFFFFF);
+    const lightTextPrimary = Color(0xFF111827);
+    const lightTextSecondary = Color(0xFF6B7280);
+    const lightTextTertiary = Color(0xFF9CA3AF);
+    const lightBorder = Color(0xFFE5E7EB);
+    const lightDivider = Color(0xFFF3F4F6);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
         secondary: secondaryColor,
-        surface: Color(0xFFF8FAFC),
+        surface: lightSurface,
         error: errorColor,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
+        onSurface: lightTextPrimary,
+        onError: Colors.white,
       ),
-      scaffoldBackgroundColor: const Color(0xFFFFFFFF),
+      scaffoldBackgroundColor: lightBackground,
 
+      // AppBar Theme
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFFFFFFF),
+        backgroundColor: lightBackground,
         elevation: 0,
         centerTitle: true,
-        iconTheme: IconThemeData(color: Color(0xFF1E1E2E)),
+        iconTheme: IconThemeData(color: lightTextPrimary),
         titleTextStyle: TextStyle(
-          color: Color(0xFF1E1E2E),
+          color: lightTextPrimary,
           fontSize: 20,
           fontWeight: FontWeight.w600,
         ),
       ),
 
-      cardTheme: CardTheme(
-        color: const Color(0xFFF8FAFC),
-        elevation: 0,
+      // Card Theme
+      cardTheme: CardThemeData(
+        color: lightCard,
+        elevation: 1,
+        shadowColor: Colors.black.withOpacity(0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
       ),
 
+      // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
@@ -333,13 +351,230 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
 
+      // Outlined Button Theme
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: primaryColor,
+          side: const BorderSide(color: primaryColor, width: 1.5),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+
+      // Text Button Theme
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryColor,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          textStyle: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+
+      // Floating Action Button Theme
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 4,
+      ),
+
+      // Icon Theme
+      iconTheme: const IconThemeData(
+        color: lightTextSecondary,
+        size: 24,
+      ),
+
+      // Text Theme
       textTheme: const TextTheme(
-        displayLarge: TextStyle(color: Color(0xFF0F172A), fontSize: 32, fontWeight: FontWeight.bold),
-        bodyLarge: TextStyle(color: Color(0xFF475569), fontSize: 16),
-        bodyMedium: TextStyle(color: Color(0xFF475569), fontSize: 14),
+        displayLarge: TextStyle(
+          color: lightTextPrimary,
+          fontSize: 32,
+          fontWeight: FontWeight.bold,
+        ),
+        displayMedium: TextStyle(
+          color: lightTextPrimary,
+          fontSize: 28,
+          fontWeight: FontWeight.bold,
+        ),
+        displaySmall: TextStyle(
+          color: lightTextPrimary,
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
+        ),
+        headlineMedium: TextStyle(
+          color: lightTextPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: TextStyle(
+          color: lightTextPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+        titleMedium: TextStyle(
+          color: lightTextPrimary,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        bodyLarge: TextStyle(
+          color: lightTextSecondary,
+          fontSize: 16,
+        ),
+        bodyMedium: TextStyle(
+          color: lightTextSecondary,
+          fontSize: 14,
+        ),
+        bodySmall: TextStyle(
+          color: lightTextTertiary,
+          fontSize: 12,
+        ),
+      ),
+
+      // Input Decoration Theme
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: lightSurface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: lightBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: lightBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      ),
+
+      // Progress Indicator Theme
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: primaryColor,
+        linearTrackColor: lightSurface,
+      ),
+
+      // Snackbar Theme
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: lightTextPrimary,
+        contentTextStyle: const TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        behavior: SnackBarBehavior.floating,
+      ),
+
+      // Bottom Sheet Theme
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: lightBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
+
+      // Dialog Theme
+      dialogTheme: DialogThemeData(
+        backgroundColor: lightBackground,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+
+      // Divider Theme
+      dividerTheme: const DividerThemeData(
+        color: lightDivider,
+        thickness: 1,
+      ),
+
+      // Chip Theme
+      chipTheme: ChipThemeData(
+        backgroundColor: lightSurface,
+        selectedColor: primaryColor,
+        labelStyle: const TextStyle(color: lightTextPrimary),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+
+      // Switch Theme
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return lightTextTertiary;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor.withOpacity(0.5);
+          }
+          return lightBorder;
+        }),
+      ),
+
+      // Checkbox Theme
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return Colors.transparent;
+        }),
+        checkColor: WidgetStateProperty.all(Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+
+      // Radio Theme
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primaryColor;
+          }
+          return lightTextTertiary;
+        }),
+      ),
+
+      // Slider Theme
+      sliderTheme: SliderThemeData(
+        activeTrackColor: primaryColor,
+        inactiveTrackColor: lightBorder,
+        thumbColor: primaryColor,
+        overlayColor: primaryColor.withOpacity(0.2),
+      ),
+
+      // Navigation Bar Theme (Android)
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: lightBackground,
+        indicatorColor: primaryColor.withOpacity(0.2),
+        labelTextStyle: WidgetStateProperty.all(
+          const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ),
+
+      // Navigation Rail Theme (Desktop)
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: lightBackground,
+        selectedIconTheme: const IconThemeData(color: primaryColor),
+        unselectedIconTheme: const IconThemeData(color: lightTextTertiary),
+        indicatorColor: primaryColor.withOpacity(0.2),
       ),
     );
   }

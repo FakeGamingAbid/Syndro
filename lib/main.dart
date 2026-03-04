@@ -12,6 +12,7 @@ import 'core/models/transfer.dart';
 import 'core/providers/device_provider.dart';
 import 'core/providers/transfer_provider.dart';
 import 'core/providers/incoming_files_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'core/services/system_tray_service.dart';
 import 'core/services/share_intent_service.dart';
 import 'core/services/desktop_notification_service.dart';
@@ -106,7 +107,11 @@ void main(List<String> args) async {
   }
 
   // Create the ProviderContainer to pre-initialize services
-  final container = ProviderContainer();
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ],
+  );
 
   // PRE-INITIALIZE device discovery service BEFORE app loads
   debugPrint('🚀 Pre-initializing device discovery...');
@@ -387,7 +392,9 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     return MaterialApp(
       title: 'Syndro',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ref.watch(flutterThemeModeProvider),
       home: _buildHome(incomingFilesState),
     );
   }
