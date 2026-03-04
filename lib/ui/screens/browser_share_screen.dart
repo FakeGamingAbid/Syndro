@@ -227,7 +227,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'Someone wants to download your files:',
               style: TextStyle(color: AppTheme.textSecondary),
             ),
@@ -274,7 +274,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       children: [
         Icon(icon, size: 18, color: AppTheme.textTertiary),
         const SizedBox(width: 8),
-        Text('$label: ', style: TextStyle(color: AppTheme.textTertiary)),
+        Text('$label: ', style: const TextStyle(color: AppTheme.textTertiary)),
         Expanded(
           child: Text(
             value,

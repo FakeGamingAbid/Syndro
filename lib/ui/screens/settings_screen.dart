@@ -82,7 +82,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   leading: Icon(mode.icon),
                   title: Text(mode.displayName),
                   trailing: ref.watch(themeNotifierProvider) == mode
-                      ? Icon(Icons.check, color: AppTheme.primaryColor)
+                      ? const Icon(Icons.check, color: AppTheme.primaryColor)
                       : null,
                   onTap: () {
                     ref.read(themeNotifierProvider.notifier).setThemeMode(mode);

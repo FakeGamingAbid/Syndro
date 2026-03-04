@@ -566,11 +566,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             color: AppTheme.warningColor.withOpacity(0.3),
           ),
         ),
-        title: Row(
+        title: const Row(
           children: [
             Icon(Icons.warning_amber_rounded, color: AppTheme.warningColor),
-            const SizedBox(width: 12),
-            const Text('Large File Warning'),
+            SizedBox(width: 12),
+            Text('Large File Warning'),
           ],
         ),
         content: Column(
@@ -596,11 +596,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   color: AppTheme.primaryColor.withOpacity(0.2),
                 ),
               ),
-              child: Row(
+              child: const Row(
                 children: [
                   Icon(Icons.lightbulb_outline, color: AppTheme.primaryColor, size: 20),
-                  const SizedBox(width: 8),
-                  const Expanded(
+                  SizedBox(width: 8),
+                  Expanded(
                     child: Text(
                       'Tip: For better performance with large files, '
                       'use direct device-to-device transfer instead.',

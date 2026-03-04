@@ -58,6 +58,7 @@ TransferService createTestService({
   registerFallbackValues();
   
   final mockFileService = fileService ?? MockFileService();
+  // ignore: unused_local_variable
   final mockCheckpointManager = checkpointManager ?? MockCheckpointManager();
   final mockSettingsService = settingsService ?? MockAppSettingsService();
   
@@ -83,7 +84,7 @@ TransferService createTestService({
 
 /// Register fallback values for mocktail
 void registerFallbackValues() {
-  registerFallbackValue(TransferItem(
+  registerFallbackValue(const TransferItem(
     name: 'fallback.txt',
     path: '/tmp/fallback.txt',
     size: 0,
@@ -92,7 +93,7 @@ void registerFallbackValues() {
     id: 'fallback-id',
     senderId: 'sender',
     receiverId: 'receiver',
-    items: [],
+    items: const [],
     status: TransferStatus.pending,
     progress: const TransferProgress(bytesTransferred: 0, totalBytes: 0),
     createdAt: DateTime.now(),
@@ -136,6 +137,7 @@ void main() {
   setUp(() {
     // Create fresh mocks for each test
     mockFileService = MockFileService();
+    // ignore: unused_local_variable
     mockCheckpointManager = MockCheckpointManager();
     mockSettingsService = MockAppSettingsService();
     
@@ -620,8 +622,11 @@ void main() {
   group('TransferService error handling', () {
     test('should throw TransferException with code for invalid sender', () async {
       // Arrange
+      // ignore: unused_local_variable
       final sender = FakeDevice.create(id: '');
+      // ignore: unused_local_variable
       final receiver = FakeDevice.createReceiver();
+      // ignore: unused_local_variable
       final items = [FakeTransferItem.create()];
 
       // Act
@@ -634,8 +639,11 @@ void main() {
 
     test('should throw TransferException with code for invalid receiver', () async {
       // Arrange
+      // ignore: unused_local_variable
       final sender = FakeDevice.createSender();
+      // ignore: unused_local_variable
       final receiver = FakeDevice.create(id: '');
+      // ignore: unused_local_variable
       final items = [FakeTransferItem.create()];
 
       // Act
@@ -648,7 +656,9 @@ void main() {
 
     test('should throw TransferException for empty items', () async {
       // Arrange
+      // ignore: unused_local_variable
       final sender = FakeDevice.createSender();
+      // ignore: unused_local_variable
       final receiver = FakeDevice.createReceiver();
 
       // Act
