@@ -14,7 +14,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:cryptography/cryptography.dart';
 
 import 'package:syndro/core/models/device.dart';
 import 'package:syndro/core/models/transfer.dart';
