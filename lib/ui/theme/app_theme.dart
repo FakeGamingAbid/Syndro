@@ -206,7 +206,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-      ) as DialogThemeData,
+      ),
 
       // Divider Theme
       dividerTheme: const DividerThemeData(
@@ -339,7 +339,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-      ) as CardThemeData,
+      ),
 
       // Elevated Button Theme
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -494,7 +494,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-      ) as DialogThemeData,
+      ),
 
       // Divider Theme
       dividerTheme: const DividerThemeData(
