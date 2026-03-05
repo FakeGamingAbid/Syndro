@@ -371,8 +371,8 @@ lib/
 | Android | ✅ Supported | Android 5.0 (API 21) |
 | Windows | ✅ Supported | Windows 10 |
 | Linux | ✅ Supported | Modern distros |
+| macOS | ✅ Supported | macOS 10.14+ |
 | iOS | ❌ Not supported | - |
-| macOS | ❌ Not supported | - |
 | Web | ❌ Not supported | - |
 
 ---
