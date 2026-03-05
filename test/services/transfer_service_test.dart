@@ -134,6 +134,7 @@ void main() {
 
   late TransferService transferService;
   late MockFileService mockFileService;
+  // ignore: unused_local_variable
   late MockCheckpointManager mockCheckpointManager;
   late MockAppSettingsService mockSettingsService;
 

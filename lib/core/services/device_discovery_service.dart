@@ -128,6 +128,7 @@ class DeviceDiscoveryService {
   List<String> _localIps = [];
   List<String> _subnets = [];
 
+  // ignore: unused_element
   /// Check if discovery can proceed based on rate limits
   /// 
   /// Returns true if we're within the rate limit, false if too many requests

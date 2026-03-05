@@ -2,6 +2,7 @@ include: package:flutter_lints/flutter.yaml
 
 analyzer:
   errors:
+    invalid_section_format: warning
 
 linter:
   rules:

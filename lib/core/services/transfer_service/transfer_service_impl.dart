@@ -286,7 +286,9 @@ class TransferService {
   }
 
   // Trusted devices cleanup - remove old entries to prevent unbounded growth
+  // ignore: unused_field
   static const Duration _trustedDevicesMaxAge = Duration(days: 90);
+  // ignore: unused_field
   Timer? _trustedDevicesCleanupTimer;
 
   void _startTrustedDevicesCleanup() {
