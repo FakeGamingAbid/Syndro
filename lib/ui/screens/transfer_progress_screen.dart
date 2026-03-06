@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../../core/models/device.dart';
 import '../../core/models/transfer.dart';
 import '../../core/providers/transfer_provider.dart';
+import '../../core/services/cache_cleanup_service.dart';
 
 class TransferProgressScreen extends ConsumerStatefulWidget {
   final String transferId;
@@ -174,6 +175,11 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
     } catch (e) {
       debugPrint('Error cancelling speed timer: $e');
     }
+    
+    // Clear cache after transfer completes/disposes
+    CacheCleanupService.clearAllCache().catchError((e) {
+      debugPrint('Cache cleanup error (non-critical): $e');
+    });
     
     super.dispose();
   }

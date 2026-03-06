@@ -9,6 +9,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 
 import '../theme/app_theme.dart';
 import '../../core/services/web_share/web_share_service.dart';
+import '../../core/services/cache_cleanup_service.dart';
 
 /// Enum to define the share mode
 enum ShareMode {
@@ -98,50 +99,21 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
     }
     
     // Clear FilePicker cache to free storage
-    // Fire-and-forget is acceptable for cache cleanup - if it fails, it's not critical
-    // Using then/catchError instead of ignore() for proper error handling
-    _clearFilePickerCache().then((_) {
-      debugPrint('✅ FilePicker cache cleanup completed');
+    // Uses centralized CacheCleanupService for consistency
+    CacheCleanupService.clearAllCache().then((freed) {
+      debugPrint('✅ Cache cleanup completed: ${CacheCleanupService.formatBytes(freed)} freed');
     }).catchError((e) {
-      debugPrint('⚠️ FilePicker cache cleanup failed (non-critical): $e');
+      debugPrint('⚠️ Cache cleanup failed (non-critical): $e');
     });
     super.dispose();
   }
 
-  /// Clear FilePicker cache completely
+  /// Legacy method - now redirects to centralized service
+  /// Kept for backwards compatibility if needed
   Future<void> _clearFilePickerCache() async {
-    // Method 1: Use FilePicker's built-in clear
-    try {
-      await FilePicker.platform.clearTemporaryFiles();
-    } catch (e) {
-      debugPrint('FilePicker.clearTemporaryFiles failed: $e');
-    }
-
-    // Method 2: Manually delete cache directory (more reliable on Android)
-    try {
-      final cacheDir = await getTemporaryDirectory();
-      final filePickerDir = Directory('${cacheDir.path}/file_picker');
-
-      if (await filePickerDir.exists()) {
-        await filePickerDir.delete(recursive: true);
-        debugPrint('✅ FilePicker cache cleared: ${filePickerDir.path}');
-      }
-
-      // Method 3: Also clear any file_picker related folders
-      final cacheContents = cacheDir.listSync();
-      for (final entity in cacheContents) {
-        if (entity is Directory && entity.path.contains('file_picker')) {
-          try {
-            await entity.delete(recursive: true);
-            debugPrint('✅ Cleared: ${entity.path}');
-          } catch (e) {
-            debugPrint('Failed to clear ${entity.path}: $e');
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error in manual cache cleanup: $e');
-    }
+    // This method now just calls the centralized service
+    // Keeping for potential backwards compatibility
+    await CacheCleanupService.clearAllCache();
   }
 
   void _setupConnectionListeners() {

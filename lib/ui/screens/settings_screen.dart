@@ -8,6 +8,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../theme/app_theme.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/services/app_settings_service.dart';
+import '../../core/services/cache_cleanup_service.dart';
 import '../../core/providers/theme_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -20,6 +21,8 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _version = 'Loading...';
   bool _autoAcceptTrusted = false;
+  String _cacheSize = 'Calculating...';
+  bool _isCleaningCache = false;
   final AppSettingsService _settingsService = AppSettingsService();
 
   @override
@@ -27,6 +30,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     super.initState();
     _loadVersion();
     _loadSettings();
+    _loadCacheSize();
+  }
+
+  Future<void> _loadCacheSize() async {
+    try {
+      final size = await CacheCleanupService.getCacheSize();
+      if (mounted) {
+        setState(() {
+          _cacheSize = CacheCleanupService.formatBytes(size);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _cacheSize = 'Unknown';
+        });
+      }
+    }
+  }
+
+  Future<void> _cleanCache() async {
+    setState(() {
+      _isCleaningCache = true;
+    });
+
+    try {
+      final freed = await CacheCleanupService.clearAllCache();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Cache cleared! Freed ${CacheCleanupService.formatBytes(freed)}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+        
+        // Refresh cache size display
+        await _loadCacheSize();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to clear cache'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCleaningCache = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadSettings() async {
@@ -93,6 +151,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showCacheCleanupDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppTheme.surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.cleaning_services_outlined, color: AppTheme.warningColor),
+            SizedBox(width: 12),
+            Text('Clear Cache'),
+          ],
+        ),
+        content: Text(
+          'This will clear all cached files and temporary data.\n\n'
+          'Current cache size: $_cacheSize\n\n'
+          'This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              _cleanCache();
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppTheme.warningColor,
+            ),
+            child: const Text('Clear Cache'),
+          ),
+        ],
       ),
     );
   }
@@ -490,6 +588,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         );
                       }
                     },
+                  ),
+                  const Divider(height: 1, indent: 60),
+                  // Cache cleanup
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.warningColor.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: _isCleaningCache
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(
+                              Icons.cleaning_services_outlined,
+                              color: AppTheme.warningColor,
+                              size: 24,
+                            ),
+                    ),
+                    title: const Text('Clear Cache'),
+                    subtitle: Text(
+                      'Current cache size: $_cacheSize',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    trailing: _isCleaningCache
+                        ? null
+                        : const Icon(Icons.chevron_right),
+                    enabled: !_isCleaningCache,
+                    onTap: _isCleaningCache ? null : () => _showCacheCleanupDialog(),
                   ),
                   const SizedBox(height: 8),
                   // Theme selector

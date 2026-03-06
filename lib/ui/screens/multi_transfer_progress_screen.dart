@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../../core/models/device.dart';
 import '../../core/models/transfer.dart';
 import '../../core/providers/transfer_provider.dart';
+import '../../core/services/cache_cleanup_service.dart';
 
 /// Screen for tracking multiple simultaneous transfers
 class MultiTransferProgressScreen extends ConsumerStatefulWidget {
@@ -51,6 +52,12 @@ class _MultiTransferProgressScreenState extends ConsumerState<MultiTransferProgr
   @override
   void dispose() {
     _transferSubscription?.cancel();
+    
+    // Clear cache after transfers complete/disposes
+    CacheCleanupService.clearAllCache().catchError((e) {
+      debugPrint('Cache cleanup error (non-critical): $e');
+    });
+    
     super.dispose();
   }
 
