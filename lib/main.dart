@@ -387,14 +387,16 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = ref.watch(flutterThemeModeProvider);
     final incomingFilesState = ref.watch(incomingFilesProvider);
+    debugPrint('🔄 Building MaterialApp with themeMode: $themeMode');
 
     return MaterialApp(
       title: 'Syndro',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ref.watch(flutterThemeModeProvider),
+      themeMode: themeMode,
       home: _buildHome(incomingFilesState),
     );
   }

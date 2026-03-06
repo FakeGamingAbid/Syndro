@@ -43,17 +43,21 @@ class ThemeNotifier extends StateNotifier<AppThemeMode> {
 
   void _loadTheme() {
     final savedMode = _prefs.getString(_themeModeKey);
+    debugPrint('📝 Loading saved theme mode: $savedMode');
     if (savedMode != null) {
       state = AppThemeMode.values.firstWhere(
         (e) => e.name == savedMode,
         orElse: () => AppThemeMode.dark,
       );
+      debugPrint('✅ Theme loaded: $state');
     }
   }
 
   Future<void> setThemeMode(AppThemeMode mode) async {
+    debugPrint('🔄 Setting theme mode to: $mode');
     state = mode;
     await _prefs.setString(_themeModeKey, mode.name);
+    debugPrint('✅ Theme saved: ${mode.name}');
   }
 }
 
