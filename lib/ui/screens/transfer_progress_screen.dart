@@ -179,6 +179,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
     // Clear cache after transfer completes/disposes
     CacheCleanupService.clearAllCache().catchError((e) {
       debugPrint('Cache cleanup error (non-critical): $e');
+      return 0;
     });
     
     super.dispose();

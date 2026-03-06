@@ -56,6 +56,7 @@ class _MultiTransferProgressScreenState extends ConsumerState<MultiTransferProgr
     // Clear cache after transfers complete/disposes
     CacheCleanupService.clearAllCache().catchError((e) {
       debugPrint('Cache cleanup error (non-critical): $e');
+      return 0; // Required for Future<int> return type
     });
     
     super.dispose();
