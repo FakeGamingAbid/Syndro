@@ -3,10 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../theme/app_theme.dart';
 import '../../core/database/database_helper.dart';
-import '../../core/models/transfer.dart';
-
-// Filter enum for transfer types
-enum TransferFilter { all, sent, received, failed }
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
@@ -19,22 +15,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   List<Map<String, dynamic>> _transfers = [];
   bool _isLoading = true;
   Map<String, int> _statistics = {};
-  
-  // Search and filter state
-  String _searchQuery = '';
-  TransferFilter _currentFilter = TransferFilter.all;
-  bool _isMultiSelectMode = false;
-  final Set<String> _selectedTransfers = {};
-  final TextEditingController _searchController = TextEditingController();
-  
-  // Deleted transfer for undo
-  Map<String, dynamic>? _lastDeletedTransfer;
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
 
   @override
   void initState() {
@@ -52,34 +32,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
     try {
       final db = DatabaseHelper.instance;
-      List<Map<String, dynamic>> transfers;
-      
-      // Apply search and filter
-      if (_searchQuery.isNotEmpty) {
-        if (_currentFilter == TransferFilter.all) {
-          transfers = await db.searchTransfers(_searchQuery);
-        } else {
-          // Map filter to status
-          final status = _getStatusFromFilter(_currentFilter);
-          if (status != null) {
-            transfers = await db.getTransfersByStatusAndSearch(status, _searchQuery);
-          } else {
-            transfers = await db.getTransferHistory(limit: 100);
-          }
-        }
-      } else {
-        if (_currentFilter == TransferFilter.all) {
-          transfers = await db.getTransferHistory(limit: 100);
-        } else {
-          final status = _getStatusFromFilter(_currentFilter);
-          if (status != null) {
-            transfers = await db.getTransfersByStatus(status);
-          } else {
-            transfers = await db.getTransferHistory(limit: 100);
-          }
-        }
-      }
-      
+      final transfers = await db.getTransferHistory(limit: 100);
       final stats = await db.getStatistics();
 
       // FIXED (Bug #23): Add mounted check before setState
@@ -107,35 +60,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         );
       }
     }
-  }
-
-  // Helper to get TransferStatus from filter
-  TransferStatus? _getStatusFromFilter(TransferFilter filter) {
-    switch (filter) {
-      case TransferFilter.sent:
-        return TransferStatus.completed;
-      case TransferFilter.failed:
-        return TransferStatus.failed;
-      case TransferFilter.received:
-        // Received is also completed but from a different device
-        return null; // Will need to handle differently
-      case TransferFilter.all:
-        return null;
-    }
-  }
-
-  void _onSearchChanged(String query) {
-    setState(() {
-      _searchQuery = query;
-    });
-    _loadHistory();
-  }
-
-  void _onFilterChanged(TransferFilter filter) {
-    setState(() {
-      _currentFilter = filter;
-    });
-    _loadHistory();
   }
 
   Future<void> _deleteTransfer(String transferId) async {
@@ -292,71 +216,27 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Text(_isMultiSelectMode 
-                ? '${_selectedTransfers.length} selected' 
-                : 'Transfer History'),
+            const Text('Transfer History'),
           ],
         ),
         actions: [
-          if (_isMultiSelectMode) ...[
+          if (_transfers.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.select_all),
-              onPressed: () {
-                setState(() {
-                  if (_selectedTransfers.length == _transfers.length) {
-                    _selectedTransfers.clear();
-                  } else {
-                    _selectedTransfers.addAll(
-                      _transfers.map((t) => t['id'] as String),
-                    );
-                  }
-                });
-              },
-              tooltip: 'Select All',
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: AppTheme.errorColor),
-              onPressed: _selectedTransfers.isEmpty ? null : _deleteSelectedTransfers,
-              tooltip: 'Delete Selected',
-            ),
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                setState(() {
-                  _isMultiSelectMode = false;
-                  _selectedTransfers.clear();
-                });
-              },
-              tooltip: 'Cancel',
-            ),
-          ] else ...[
-            if (_transfers.isNotEmpty)
-              IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.errorColor.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.delete_sweep,
-                    color: AppTheme.errorColor,
-                    size: 20,
-                  ),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                onPressed: _clearAllHistory,
-                tooltip: 'Clear All',
+                child: const Icon(
+                  Icons.delete_sweep,
+                  color: AppTheme.errorColor,
+                  size: 20,
+                ),
               ),
-            IconButton(
-              icon: const Icon(Icons.select_all),
-              onPressed: _transfers.isEmpty ? null : () {
-                setState(() {
-                  _isMultiSelectMode = true;
-                });
-              },
-              tooltip: 'Multi-select',
+              onPressed: _clearAllHistory,
+              tooltip: 'Clear All',
             ),
-          ],
         ],
       ),
       body: Container(
@@ -365,132 +245,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ),
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  // Search bar
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search by filename or device name...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.clear),
-                                onPressed: () {
-                                  _searchController.clear();
-                                  _onSearchChanged('');
-                                },
-                              )
-                            : null,
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      onChanged: _onSearchChanged,
-                    ),
+            : _transfers.isEmpty
+                ? _buildEmptyState()
+                : Column(
+                    children: [
+                      _buildStatistics(),
+                      Expanded(child: _buildHistoryList()),
+                    ],
                   ),
-                  // Filter chips
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        _buildFilterChip('All', TransferFilter.all),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Sent', TransferFilter.sent),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Received', TransferFilter.received),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('Failed', TransferFilter.failed),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildStatistics(),
-                  Expanded(
-                    child: _transfers.isEmpty
-                        ? _buildEmptyState()
-                        : _buildHistoryList(),
-                  ),
-                ],
       ),
     );
-  }
-
-  // Build filter chip widget
-  Widget _buildFilterChip(String label, TransferFilter filter) {
-    final isSelected = _currentFilter == filter;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => _onFilterChanged(filter),
-      selectedColor: AppTheme.primaryColor.withOpacity(0.2),
-      checkmarkColor: AppTheme.primaryColor,
-    );
-  }
-
-  // Delete selected transfers
-  Future<void> _deleteSelectedTransfers() async {
-    if (_selectedTransfers.isEmpty) return;
-    
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Selected?'),
-        content: Text(
-          'This will permanently delete ${_selectedTransfers.length} transfer record(s). '
-          'This action cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        await DatabaseHelper.instance.deleteTransfers(_selectedTransfers.toList());
-        
-        if (mounted) {
-          setState(() {
-            _isMultiSelectMode = false;
-            _selectedTransfers.clear();
-          });
-          await _loadHistory();
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Deleted ${_selectedTransfers.length} transfer(s)'),
-              backgroundColor: AppTheme.successColor,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error deleting transfers: $e'),
-              backgroundColor: AppTheme.errorColor,
-            ),
-          );
-        }
-      }
-    }
   }
 
   Widget _buildEmptyState() {

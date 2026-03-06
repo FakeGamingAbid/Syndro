@@ -158,9 +158,6 @@ class DatabaseHelper {
         });
       }
     });
-
-    // Auto-prune if over 1000 records (run outside transaction)
-    await pruneOldTransfers(maxRecords: 1000);
   }
 
   // FIX: Update transfer status using parameterized queries
@@ -274,7 +271,7 @@ class DatabaseHelper {
     );
   }
 
-  // FIX: Search transfers by name with parameterized LIKE query (now includes files)
+  // FIX: Search transfers by name with parameterized LIKE query
   Future<List<Map<String, dynamic>>> searchTransfers(String query) async {
     if (query.isEmpty) {
       return await getTransferHistory();
@@ -289,17 +286,14 @@ class DatabaseHelper {
         .replaceAll('[', '')
         .replaceAll(']', '');
 
-    // FIX: Use raw query to search in both transfers and transfer_items tables
-    return await db.rawQuery('''
-      SELECT DISTINCT t.* 
-      FROM transfers t
-      LEFT JOIN transfer_items ti ON t.id = ti.transfer_id
-      WHERE t.sender_name LIKE ? 
-         OR t.receiver_name LIKE ? 
-         OR ti.file_name LIKE ?
-      ORDER BY t.created_at DESC
-      LIMIT 50
-    ''', ['%$sanitizedQuery%', '%$sanitizedQuery%', '%$sanitizedQuery%']);
+    // FIX: Use simple LIKE without ESCAPE clause for compatibility
+    return await db.query(
+      'transfers',
+      where: 'sender_name LIKE ? OR receiver_name LIKE ?',
+      whereArgs: ['%$sanitizedQuery%', '%$sanitizedQuery%'],
+      orderBy: 'created_at DESC',
+      limit: 50,
+    );
   }
 
   // FIX: Delete a transfer with parameterized query
@@ -421,143 +415,5 @@ class DatabaseHelper {
       _database = null;
       _initFuture = null; // Reset to allow re-initialization
     }
-  }
-
-  // Get total transfer count
-  Future<int> getTransferCount() async {
-    final db = await database;
-    return Sqflite.firstIntValue(
-          await db.rawQuery('SELECT COUNT(*) FROM transfers'),
-        ) ??
-        0;
-  }
-
-  // Search transfers by device name or filename (full search)
-  Future<List<Map<String, dynamic>>> searchTransfersFull(
-    String query, {
-    int limit = 100,
-    int offset = 0,
-  }) async {
-    final db = await database;
-    final searchPattern = '%$query%';
-
-    return await db.rawQuery('''
-      SELECT DISTINCT t.* 
-      FROM transfers t
-      LEFT JOIN transfer_items ti ON t.id = ti.transfer_id
-      WHERE t.sender_name LIKE ? 
-         OR t.receiver_name LIKE ? 
-         OR ti.file_name LIKE ?
-      ORDER BY t.created_at DESC
-      LIMIT ? OFFSET ?
-    ''', [searchPattern, searchPattern, searchPattern, limit, offset]);
-  }
-
-  // Get transfers by status with search
-  Future<List<Map<String, dynamic>>> getTransfersByStatusAndSearch(
-    TransferStatus status,
-    String searchQuery, {
-    int limit = 100,
-    int offset = 0,
-  }) async {
-    final db = await database;
-    final searchPattern = '%$searchQuery%';
-
-    return await db.rawQuery('''
-      SELECT DISTINCT t.* 
-      FROM transfers t
-      LEFT JOIN transfer_items ti ON t.id = ti.transfer_id
-      WHERE t.status = ?
-        AND (t.sender_name LIKE ? 
-           OR t.receiver_name LIKE ? 
-           OR ti.file_name LIKE ?)
-      ORDER BY t.created_at DESC
-      LIMIT ? OFFSET ?
-    ''', [
-      status.name,
-      searchPattern,
-      searchPattern,
-      searchPattern,
-      limit,
-      offset
-    ]);
-  }
-
-  // Prune oldest transfers if count exceeds maxRecords
-  Future<int> pruneOldTransfers({int maxRecords = 1000}) async {
-    final db = await database;
-    final count = await getTransferCount();
-
-    if (count <= maxRecords) {
-      return 0;
-    }
-
-    // Calculate how many to delete
-    final toDelete = count - maxRecords;
-
-    // Get IDs of oldest transfers to delete
-    final toRemove = await db.rawQuery('''
-      SELECT id FROM transfers 
-      ORDER BY created_at ASC 
-      LIMIT ?
-    ''', [toDelete]);
-
-    if (toRemove.isEmpty) {
-      return 0;
-    }
-
-    final ids = toRemove.map((r) => r['id'] as String).toList();
-    final placeholders = List.filled(ids.length, '?').join(',');
-
-    // Delete in transaction to maintain consistency
-    return await db.transaction((txn) async {
-      // Delete items first (cascade should handle this, but being explicit)
-      await txn.delete(
-        'transfer_items',
-        where: 'transfer_id IN ($placeholders)',
-        whereArgs: ids,
-      );
-      // Delete transfers
-      return await txn.delete(
-        'transfers',
-        where: 'id IN ($placeholders)',
-        whereArgs: ids,
-      );
-    });
-  }
-
-  // Delete transfers older than a specific date
-  Future<int> deleteTransfersOlderThan(DateTime cutoff) async {
-    final db = await database;
-    final cutoffTime = cutoff.millisecondsSinceEpoch;
-
-    return await db.delete(
-      'transfers',
-      where: 'created_at < ?',
-      whereArgs: [cutoffTime],
-    );
-  }
-
-  // Bulk delete multiple transfers
-  Future<int> deleteTransfers(List<String> transferIds) async {
-    if (transferIds.isEmpty) return 0;
-
-    final db = await database;
-    final placeholders = List.filled(transferIds.length, '?').join(',');
-
-    return await db.transaction((txn) async {
-      // Delete items first
-      await txn.delete(
-        'transfer_items',
-        where: 'transfer_id IN ($placeholders)',
-        whereArgs: transferIds,
-      );
-      // Delete transfers
-      return await txn.delete(
-        'transfers',
-        where: 'id IN ($placeholders)',
-        whereArgs: transferIds,
-      );
-    });
   }
 }
