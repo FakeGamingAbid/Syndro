@@ -167,7 +167,7 @@ class _PermissionsOnboardingScreenState
     final maxContentWidth = _isDesktop ? 450.0 : screenWidth;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: AppTheme.getBackgroundColorFromContext(context),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -184,7 +184,7 @@ class _PermissionsOnboardingScreenState
                       child: const Text(
                         'Skip',
                         style: TextStyle(
-                          color: AppTheme.textTertiary,
+                          color: AppTheme.getTextTertiaryFromContext(context),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -276,7 +276,7 @@ class _PermissionsOnboardingScreenState
                           'Missing: ${_missingPermissions.join(", ")}',
                           style: const TextStyle(
                             fontSize: 13,
-                            color: AppTheme.textTertiary,
+                            color: AppTheme.getTextTertiaryFromContext(context),
                           ),
                         ),
                       ],
@@ -370,7 +370,7 @@ class _PermissionsOnboardingScreenState
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: AppTheme.textSecondary,
+                color: AppTheme.getTextSecondaryFromContext(context),
                 height: 1.6,
               ),
             ),
@@ -412,8 +412,8 @@ class _PermissionsOnboardingScreenState
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.9),
-            AppTheme.surfaceColor.withOpacity(0.7),
+            AppTheme.getCardColorFromContext(context).withOpacity(0.9),
+            AppTheme.getSurfaceColorFromContext(context).withOpacity(0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -497,7 +497,7 @@ class _PermissionsOnboardingScreenState
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.getTextPrimaryFromContext(context),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -505,7 +505,7 @@ class _PermissionsOnboardingScreenState
                   permission.description,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.getTextSecondaryFromContext(context),
                   ),
                 ),
               ],
@@ -531,12 +531,12 @@ class _PermissionsOnboardingScreenState
                     : null,
                 color: isGranted
                     ? Colors.transparent
-                    : AppTheme.surfaceColor.withOpacity(0.5),
+                    : AppTheme.getSurfaceColorFromContext(context).withOpacity(0.5),
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isGranted
                       ? AppTheme.successColor.withOpacity(0.5)
-                      : AppTheme.textTertiary.withOpacity(0.3),
+                      : AppTheme.getTextTertiaryFromContext(context).withOpacity(0.3),
                   width: 1.5,
                 ),
               ),
@@ -545,7 +545,7 @@ class _PermissionsOnboardingScreenState
                     ? Icons.check_rounded
                     : Icons.horizontal_rule_rounded,
                 size: 16,
-                color: isGranted ? AppTheme.successColor : AppTheme.textTertiary,
+                color: isGranted ? AppTheme.successColor : AppTheme.getTextTertiaryFromContext(context),
               ),
             ),
         ],

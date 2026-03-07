@@ -126,7 +126,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.getSurfaceColorFromContext(context),
         title: const Text('Cancel Transfer?'),
         content: const Text('Are you sure you want to cancel this transfer?'),
         actions: [
@@ -212,7 +212,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
           final shouldCancel = await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              backgroundColor: AppTheme.surfaceColor,
+              backgroundColor: AppTheme.getSurfaceColorFromContext(context),
               title: const Text('Cancel Transfer?'),
               content: const Text('Are you sure you want to cancel this transfer?'),
               actions: [
@@ -235,10 +235,10 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         }
       },
       child: Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
+        backgroundColor: AppTheme.getBackgroundColorFromContext(context),
         appBar: AppBar(
           title: Text(widget.isSender ? 'Sending Files' : 'Receiving Files'),
-          backgroundColor: AppTheme.backgroundColor,
+          backgroundColor: AppTheme.getBackgroundColorFromContext(context),
           leading: IconButton(
             icon: const Icon(Icons.close),
             onPressed: () async {
@@ -253,7 +253,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                 final shouldCancel = await showDialog<bool>(
                   context: context,
                   builder: (dialogContext) => AlertDialog(
-                    backgroundColor: AppTheme.surfaceColor,
+                    backgroundColor: AppTheme.getSurfaceColorFromContext(context),
                     title: const Text('Cancel Transfer?'),
                     content: const Text('Are you sure you want to cancel this transfer?'),
                     actions: [
@@ -308,8 +308,8 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.9),
-            AppTheme.surfaceColor.withOpacity(0.7),
+            AppTheme.getCardColorFromContext(context).withOpacity(0.9),
+            AppTheme.getSurfaceColorFromContext(context).withOpacity(0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -375,7 +375,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                 Text(
                   widget.isSender ? 'Sending to' : 'Receiving from',
                   style: const TextStyle(
-                    color: AppTheme.textTertiary,
+                    color: AppTheme.getTextTertiaryFromContext(context),
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
@@ -384,7 +384,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                 Text(
                   widget.remoteDevice?.name ?? 'Unknown Device',
                   style: const TextStyle(
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.getTextPrimaryFromContext(context),
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
                   ),
@@ -426,7 +426,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         text = 'Failed';
         break;
       case TransferStatus.cancelled:
-        color = AppTheme.textTertiary;
+        color = AppTheme.getTextTertiaryFromContext(context);
         text = 'Cancelled';
         break;
     }
@@ -494,7 +494,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
               ? 'Waiting for approval...'
               : 'Connecting...',
           style: const TextStyle(
-            color: AppTheme.textPrimary,
+            color: AppTheme.getTextPrimaryFromContext(context),
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
@@ -520,7 +520,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
+            color: AppTheme.getSurfaceColorFromContext(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: AppTheme.primaryColor.withOpacity(0.3),
@@ -551,7 +551,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                         Text(
                           currentFile.name,
                           style: const TextStyle(
-                            color: AppTheme.textPrimary,
+                            color: AppTheme.getTextPrimaryFromContext(context),
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
@@ -562,7 +562,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                         Text(
                           'File ${_currentFileIndex + 1} of ${widget.items.length}',
                           style: const TextStyle(
-                            color: AppTheme.textTertiary,
+                            color: AppTheme.getTextTertiaryFromContext(context),
                             fontSize: 12,
                           ),
                         ),
@@ -577,7 +577,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                 child: LinearProgressIndicator(
                   value: percentage / 100,
                   minHeight: 12,
-                  backgroundColor: AppTheme.cardColor,
+                  backgroundColor: AppTheme.getCardColorFromContext(context),
                   valueColor: const AlwaysStoppedAnimation<Color>(
                       AppTheme.primaryColor),
                 ),
@@ -589,7 +589,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                   Text(
                     '${_formatSize(bytesTransferred)} / ${_formatSize(totalBytes)}',
                     style: const TextStyle(
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.getTextSecondaryFromContext(context),
                       fontSize: 14,
                     ),
                   ),
@@ -643,7 +643,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: AppTheme.getSurfaceColorFromContext(context),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -653,7 +653,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
           Text(
             value,
             style: const TextStyle(
-              color: AppTheme.textPrimary,
+              color: AppTheme.getTextPrimaryFromContext(context),
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -662,7 +662,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
           Text(
             label,
             style: const TextStyle(
-              color: AppTheme.textTertiary,
+              color: AppTheme.getTextTertiaryFromContext(context),
               fontSize: 12,
             ),
           ),
@@ -674,7 +674,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
   Widget _buildFileList() {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: AppTheme.getSurfaceColorFromContext(context),
         borderRadius: BorderRadius.circular(16),
       ),
       child: ListView.separated(
@@ -682,7 +682,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         itemCount: widget.items.length,
         separatorBuilder: (_, __) => const Divider(
           height: 1,
-          color: AppTheme.cardColor,
+          color: AppTheme.getCardColorFromContext(context),
         ),
         itemBuilder: (context, index) {
           final item = widget.items[index];
@@ -697,7 +697,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                     ? AppTheme.successColor.withOpacity(0.2)
                     : isCurrent
                         ? AppTheme.primaryColor.withOpacity(0.2)
-                        : AppTheme.cardColor,
+                        : AppTheme.getCardColorFromContext(context),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -706,7 +706,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                     ? AppTheme.successColor
                     : isCurrent
                         ? AppTheme.primaryColor
-                        : AppTheme.textTertiary,
+                        : AppTheme.getTextTertiaryFromContext(context),
                 size: 20,
               ),
             ),
@@ -714,8 +714,8 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
               item.name,
               style: TextStyle(
                 color: isCompleted || isCurrent
-                    ? AppTheme.textPrimary
-                    : AppTheme.textTertiary,
+                    ? AppTheme.getTextPrimaryFromContext(context)
+                    : AppTheme.getTextTertiaryFromContext(context),
                 fontSize: 14,
               ),
               maxLines: 1,
@@ -724,7 +724,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
             trailing: Text(
               item.sizeFormatted,
               style: const TextStyle(
-                color: AppTheme.textTertiary,
+                color: AppTheme.getTextTertiaryFromContext(context),
                 fontSize: 12,
               ),
             ),
@@ -754,7 +754,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         const Text(
           'Transfer Complete!',
           style: TextStyle(
-            color: AppTheme.textPrimary,
+            color: AppTheme.getTextPrimaryFromContext(context),
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -763,7 +763,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         Text(
           '${widget.items.length} file${widget.items.length == 1 ? '' : 's'} ${widget.isSender ? 'sent' : 'received'} successfully',
           style: const TextStyle(
-            color: AppTheme.textSecondary,
+            color: AppTheme.getTextSecondaryFromContext(context),
             fontSize: 16,
           ),
         ),
@@ -791,7 +791,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         const Text(
           'Transfer Failed',
           style: TextStyle(
-            color: AppTheme.textPrimary,
+            color: AppTheme.getTextPrimaryFromContext(context),
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -802,7 +802,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
           child: Text(
             _currentTransfer?.errorMessage ?? 'An unknown error occurred',
             style: const TextStyle(
-              color: AppTheme.textSecondary,
+              color: AppTheme.getTextSecondaryFromContext(context),
               fontSize: 14,
             ),
             textAlign: TextAlign.center,
@@ -819,20 +819,20 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppTheme.textTertiary.withOpacity(0.2),
+            color: AppTheme.getTextTertiaryFromContext(context).withOpacity(0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(
             Icons.cancel_outlined,
             size: 80,
-            color: AppTheme.textTertiary,
+            color: AppTheme.getTextTertiaryFromContext(context),
           ),
         ),
         const SizedBox(height: 32),
         const Text(
           'Transfer Cancelled',
           style: TextStyle(
-            color: AppTheme.textPrimary,
+            color: AppTheme.getTextPrimaryFromContext(context),
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -871,7 +871,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         child: ElevatedButton(
           onPressed: () => Navigator.of(context).pop(false),
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppTheme.cardColor,
+            backgroundColor: AppTheme.getCardColorFromContext(context),
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),

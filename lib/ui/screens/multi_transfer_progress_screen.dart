@@ -158,7 +158,7 @@ class _MultiTransferProgressScreenState extends ConsumerState<MultiTransferProgr
                 Text(
                   '${widget.items.length} file${widget.items.length > 1 ? 's' : ''}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.getTextSecondaryFromContext(context),
                       ),
                 ),
               ],
@@ -245,7 +245,7 @@ class _MultiTransferProgressScreenState extends ConsumerState<MultiTransferProgr
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: _overallProgress / 100,
-              backgroundColor: AppTheme.cardColor,
+              backgroundColor: AppTheme.getCardColorFromContext(context),
               valueColor: AlwaysStoppedAnimation<Color>(
                 _failedCount > 0 && _completedCount > 0
                     ? AppTheme.warningColor
@@ -263,7 +263,7 @@ class _MultiTransferProgressScreenState extends ConsumerState<MultiTransferProgr
               const SizedBox(width: 12),
               _buildCountChip('Remaining', 
                   widget.transferIds.length - _completedCount - _failedCount, 
-                  AppTheme.textTertiary),
+                  AppTheme.getTextTertiaryFromContext(context)),
             ],
           ),
         ],
@@ -377,7 +377,7 @@ class _TransferProgressCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.cardColor,
+        color: AppTheme.getCardColorFromContext(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: status.color.withOpacity(0.3),
@@ -414,7 +414,7 @@ class _TransferProgressCard extends StatelessWidget {
                     Text(
                       '${items.length} file${items.length > 1 ? 's' : ''}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textTertiary,
+                            color: AppTheme.getTextTertiaryFromContext(context),
                           ),
                     ),
                   ],
@@ -429,7 +429,7 @@ class _TransferProgressCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
               child: LinearProgressIndicator(
                 value: status == TransferItemStatus.failed ? 0 : progress / 100,
-                backgroundColor: AppTheme.surfaceColor,
+                backgroundColor: AppTheme.getSurfaceColorFromContext(context),
                 valueColor: AlwaysStoppedAnimation<Color>(status.color),
                 minHeight: 6,
               ),
@@ -448,7 +448,7 @@ class _TransferProgressCard extends StatelessWidget {
                   Text(
                     '${transfer!.progress.bytesTransferredFormatted} / ${transfer!.progress.totalBytesFormatted}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textTertiary,
+                          color: AppTheme.getTextTertiaryFromContext(context),
                         ),
                   ),
               ],
@@ -548,7 +548,7 @@ extension TransferItemStatusExtension on TransferItemStatus {
   Color get color {
     switch (this) {
       case TransferItemStatus.pending:
-        return AppTheme.textTertiary;
+        return AppTheme.getTextTertiaryFromContext(context);
       case TransferItemStatus.transferring:
         return AppTheme.primaryColor;
       case TransferItemStatus.completed:

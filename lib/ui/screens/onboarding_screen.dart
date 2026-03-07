@@ -108,7 +108,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final maxContentWidth = _isDesktop ? 450.0 : screenWidth;
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: AppTheme.getBackgroundColorFromContext(context),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -125,7 +125,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: const Text(
                         'Skip',
                         style: TextStyle(
-                          color: AppTheme.textTertiary,
+                          color: AppTheme.getTextTertiaryFromContext(context),
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
@@ -300,7 +300,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 16,
-                color: AppTheme.textSecondary,
+                color: AppTheme.getTextSecondaryFromContext(context),
                 height: 1.6,
               ),
             ),
@@ -342,7 +342,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         width: isActive ? 24 : 8,
         height: 8,
         decoration: BoxDecoration(
-          color: isActive ? AppTheme.primaryColor : AppTheme.cardColor,
+          color: isActive ? AppTheme.primaryColor : AppTheme.getCardColorFromContext(context),
           borderRadius: BorderRadius.circular(4),
         ),
       ),

@@ -159,7 +159,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.getSurfaceColorFromContext(context),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -206,7 +206,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.getSurfaceColorFromContext(context),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -235,7 +235,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Text(
               'This name will be visible to other devices on the network.',
               style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textTertiary,
+                    color: AppTheme.getTextTertiaryFromContext(context),
                   ),
             ),
             const SizedBox(height: 16),
@@ -269,7 +269,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Text(
               'Original name: ${currentDevice.name}',
               style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textTertiary,
+                    color: AppTheme.getTextTertiaryFromContext(context),
                     fontStyle: FontStyle.italic,
                   ),
             ),
@@ -413,8 +413,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.cardColor.withOpacity(0.8),
-                    AppTheme.surfaceColor.withOpacity(0.6),
+                    AppTheme.getCardColorFromContext(context).withOpacity(0.8),
+                    AppTheme.getSurfaceColorFromContext(context).withOpacity(0.6),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
@@ -467,7 +467,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor.withOpacity(0.5),
+                          color: AppTheme.getSurfaceColorFromContext(context).withOpacity(0.5),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.edit_rounded, size: 18),
@@ -488,7 +488,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor.withOpacity(0.5),
+                          color: AppTheme.getSurfaceColorFromContext(context).withOpacity(0.5),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.copy_rounded, size: 18),
@@ -526,7 +526,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor.withOpacity(0.5),
+                          color: AppTheme.getSurfaceColorFromContext(context).withOpacity(0.5),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.copy_rounded, size: 18),
@@ -664,8 +664,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.cardColor.withOpacity(0.8),
-                    AppTheme.surfaceColor.withOpacity(0.6),
+                    AppTheme.getCardColorFromContext(context).withOpacity(0.8),
+                    AppTheme.getSurfaceColorFromContext(context).withOpacity(0.6),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
@@ -716,7 +716,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       Text(
                         'Made by ',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.textTertiary,
+                              color: AppTheme.getTextTertiaryFromContext(context),
                             ),
                       ),
                       Text(

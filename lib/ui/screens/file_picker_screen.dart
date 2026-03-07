@@ -580,8 +580,8 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.cardColor.withOpacity(0.9),
-                    AppTheme.surfaceColor.withOpacity(0.7),
+                    AppTheme.getCardColorFromContext(context).withOpacity(0.9),
+                    AppTheme.getSurfaceColorFromContext(context).withOpacity(0.7),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
@@ -629,7 +629,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                         Text(
                           'Sending to',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.textTertiary,
+                                color: AppTheme.getTextTertiaryFromContext(context),
                               ),
                         ),
                         const SizedBox(height: 4),
@@ -645,14 +645,14 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                             const Icon(
                               Icons.wifi_rounded,
                               size: 14,
-                              color: AppTheme.textTertiary,
+                              color: AppTheme.getTextTertiaryFromContext(context),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               widget.recipientDevice!.ipAddress,
                               style:
                                   Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: AppTheme.textTertiary,
+                                        color: AppTheme.getTextTertiaryFromContext(context),
                                       ),
                             ),
                           ],
@@ -819,7 +819,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: const BoxDecoration(
-                        color: AppTheme.cardColor,
+                        color: AppTheme.getCardColorFromContext(context),
                         borderRadius: BorderRadius.vertical(
                           top: Radius.circular(24),
                         ),
@@ -1212,7 +1212,7 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
             decoration: BoxDecoration(
               color: widget.isDragging
                   ? AppTheme.primaryColor.withOpacity(0.1)
-                  : AppTheme.surfaceColor.withOpacity(0.3),
+                  : AppTheme.getSurfaceColorFromContext(context).withOpacity(0.3),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: widget.isDragging
@@ -1248,7 +1248,7 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
                           size: 64,
                           color: widget.isDragging
                               ? AppTheme.primaryColor
-                              : AppTheme.textTertiary,
+                              : AppTheme.getTextTertiaryFromContext(context),
                         ),
                       ),
                     );
@@ -1260,7 +1260,7 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: widget.isDragging
                             ? AppTheme.primaryColor
-                            : AppTheme.textTertiary,
+                            : AppTheme.getTextTertiaryFromContext(context),
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -1272,7 +1272,7 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
                         ? 'Drag & drop files here, or use the buttons below'
                         : 'Select files or folders to send',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textTertiary,
+                          color: AppTheme.getTextTertiaryFromContext(context),
                         ),
                     textAlign: TextAlign.center,
                   ),
@@ -1507,8 +1507,8 @@ class _FileListTile extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.9),
-            AppTheme.surfaceColor.withOpacity(0.7),
+            AppTheme.getCardColorFromContext(context).withOpacity(0.9),
+            AppTheme.getSurfaceColorFromContext(context).withOpacity(0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
@@ -1615,14 +1615,14 @@ class _FileListTile extends StatelessWidget {
                               const Icon(
                                 Icons.storage_rounded,
                                 size: 12,
-                                color: AppTheme.textTertiary,
+                                color: AppTheme.getTextTertiaryFromContext(context),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 file.sizeFormatted,
                                 style:
                                     Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: AppTheme.textTertiary,
+                                          color: AppTheme.getTextTertiaryFromContext(context),
                                         ),
                               ),
                             ],
@@ -1637,13 +1637,13 @@ class _FileListTile extends StatelessWidget {
                 if (onRemove != null)
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor.withOpacity(0.5),
+                      color: AppTheme.getSurfaceColorFromContext(context).withOpacity(0.5),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.close_rounded, size: 20),
                       onPressed: onRemove,
-                      color: AppTheme.textTertiary,
+                      color: AppTheme.getTextTertiaryFromContext(context),
                       tooltip: 'Remove file',
                     ),
                   ),
@@ -1672,7 +1672,7 @@ class _FileDetailsSheet extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: AppTheme.getSurfaceColorFromContext(context),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.all(24),
@@ -1684,7 +1684,7 @@ class _FileDetailsSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppTheme.textTertiary,
+              color: AppTheme.getTextTertiaryFromContext(context),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1736,7 +1736,7 @@ class _FileDetailsSheet extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.cardColor,
+              color: AppTheme.getCardColorFromContext(context),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
@@ -1747,13 +1747,13 @@ class _FileDetailsSheet extends StatelessWidget {
                     const Icon(
                       Icons.folder_outlined,
                       size: 16,
-                      color: AppTheme.textTertiary,
+                      color: AppTheme.getTextTertiaryFromContext(context),
                     ),
                     const SizedBox(width: 8),
                     Text(
                       'Location',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textTertiary,
+                            color: AppTheme.getTextTertiaryFromContext(context),
                           ),
                     ),
                   ],
@@ -1789,7 +1789,7 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final chipColor = color ?? AppTheme.textTertiary;
+    final chipColor = color ?? AppTheme.getTextTertiaryFromContext(context);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),

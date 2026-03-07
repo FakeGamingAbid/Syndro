@@ -86,7 +86,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
 
     final cardColor = widget.isSelected
         ? AppTheme.primaryColor.withOpacity(0.12)
-        : AppTheme.cardColor;
+        : AppTheme.getCardColorFromContext(context);
     final borderColor = widget.isSelected
         ? AppTheme.primaryColor
         : Colors.transparent;
@@ -216,7 +216,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                               widget.device.name,
                               style:
                                   Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: AppTheme.textTertiary,
+                                        color: AppTheme.getTextTertiaryFromContext(context),
                                         fontSize: 11,
                                       ),
                               maxLines: 1,
@@ -230,7 +230,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                               Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.surfaceColor.withOpacity(0.5),
+                                  color: AppTheme.getSurfaceColorFromContext(context).withOpacity(0.5),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Icon(
@@ -246,7 +246,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                                     .textTheme
                                     .bodyMedium
                                     ?.copyWith(
-                                      color: AppTheme.textSecondary,
+                                      color: AppTheme.getTextSecondaryFromContext(context),
                                     ),
                               ),
                             ],
@@ -257,14 +257,14 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                               const Icon(
                                 Icons.router_rounded,
                                 size: 12,
-                                color: AppTheme.textTertiary,
+                                color: AppTheme.getTextTertiaryFromContext(context),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 widget.device.ipAddress,
                                 style:
                                     Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          color: AppTheme.textTertiary,
+                                          color: AppTheme.getTextTertiaryFromContext(context),
                                         ),
                               ),
                             ],
@@ -282,7 +282,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                           decoration: BoxDecoration(
                             color: widget.device.isOnline
                                 ? AppTheme.successColor
-                                : AppTheme.textTertiary,
+                                : AppTheme.getTextTertiaryFromContext(context),
                             shape: BoxShape.circle,
                             boxShadow: widget.device.isOnline
                                 ? [
@@ -304,7 +304,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                           decoration: BoxDecoration(
                             color: (widget.device.isOnline
                                     ? AppTheme.successColor
-                                    : AppTheme.textTertiary)
+                                    : AppTheme.getTextTertiaryFromContext(context))
                                 .withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -314,7 +314,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                               fontSize: 10,
                               color: widget.device.isOnline
                                   ? AppTheme.successColor
-                                  : AppTheme.textTertiary,
+                                  : AppTheme.getTextTertiaryFromContext(context),
                               fontWeight: FontWeight.w600,
                             ),
                           ),

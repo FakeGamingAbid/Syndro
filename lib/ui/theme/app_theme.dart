@@ -6,23 +6,107 @@ class AppTheme {
   static const Color secondaryColor = Color(0xFF5B8DEF); // Blue from logo
   static const Color accentColor = Color(0xFF06B6D4); // Cyan for highlights
 
-  // Background Colors
-  static const Color backgroundColor = Color(0xFF0A0A0F); // Near black
-  static const Color surfaceColor = Color(0xFF141420); // Dark purple-gray
-  static const Color cardColor = Color(0xFF1E1E2E); // Card background
+  // Dark Theme Colors
+  static const Color darkBackground = Color(0xFF0A0A0F); // Near black
+  static const Color darkSurface = Color(0xFF141420); // Dark purple-gray
+  static const Color darkCard = Color(0xFF1E1E2E); // Card background
+  static const Color darkTextPrimary = Color(0xFFF8FAFC); // White
+  static const Color darkTextSecondary = Color(0xFFCBD5E1); // Light gray
+  static const Color darkTextTertiary = Color(0xFF94A3B8); // Muted gray
+  static const Color darkBorder = Color(0xFF2D2D3D); // Subtle border
 
-  // Status Colors
+  // Light Theme Colors
+  static const Color lightBackground = Color(0xFFFFFFFF);
+  static const Color lightSurface = Color(0xFFF9FAFB);
+  static const Color lightCard = Color(0xFFFFFFFF);
+  static const Color lightTextPrimary = Color(0xFF111827);
+  static const Color lightTextSecondary = Color(0xFF6B7280);
+  static const Color lightTextTertiary = Color(0xFF9CA3AF);
+  static const Color lightBorder = Color(0xFFE5E7EB);
+
+  // Status Colors (same for both light and dark)
   static const Color successColor = Color(0xFF22C55E); // Green
   static const Color errorColor = Color(0xFFEF4444); // Red
   static const Color warningColor = Color(0xFFF59E0B); // Amber
 
-  // Text Colors
-  static const Color textPrimary = Color(0xFFF8FAFC); // White
-  static const Color textSecondary = Color(0xFFCBD5E1); // Light gray
-  static const Color textTertiary = Color(0xFF94A3B8); // Muted gray
+  // Background Colors (for backward compatibility - dark by default)
+  static const Color backgroundColor = darkBackground;
+  static const Color surfaceColor = darkSurface;
+  static const Color cardColor = darkCard;
 
-  // ✅ ADD THIS LINE - Border Color (was missing!)
-  static const Color borderColor = Color(0xFF2D2D3D); // Subtle border
+  // Text Colors (for backward compatibility - dark by default)
+  static const Color textPrimary = darkTextPrimary;
+  static const Color textSecondary = darkTextSecondary;
+  static const Color textTertiary = darkTextTertiary;
+
+  // Border Color (for backward compatibility - dark by default)
+  static const Color borderColor = darkBorder;
+
+  // Brightness-aware color getters
+  static Color getBackgroundColor(Brightness brightness) =>
+      brightness == Brightness.dark ? darkBackground : lightBackground;
+
+  static Color getSurfaceColor(Brightness brightness) =>
+      brightness == Brightness.dark ? darkSurface : lightSurface;
+
+  static Color getCardColor(Brightness brightness) =>
+      brightness == Brightness.dark ? darkCard : lightCard;
+
+  static Color getTextPrimary(Brightness brightness) =>
+      brightness == Brightness.dark ? darkTextPrimary : lightTextPrimary;
+
+  static Color getTextSecondary(Brightness brightness) =>
+      brightness == Brightness.dark ? darkTextSecondary : lightTextSecondary;
+
+  static Color getTextTertiary(Brightness brightness) =>
+      brightness == Brightness.dark ? darkTextTertiary : lightTextTertiary;
+
+  static Color getBorderColor(Brightness brightness) =>
+      brightness == Brightness.dark ? darkBorder : lightBorder;
+
+  // Helper methods that get colors from BuildContext
+  static Color of(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkBackground
+          : lightBackground;
+
+  static Color getBackgroundColorFromContext(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkBackground
+          : lightBackground;
+
+  static Color getSurfaceColorFromContext(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkSurface
+          : lightSurface;
+
+  static Color getCardColorFromContext(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkCard
+          : lightCard;
+
+  static Color getTextPrimaryFromContext(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkTextPrimary
+          : lightTextPrimary;
+
+  static Color getTextSecondaryFromContext(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkTextSecondary
+          : lightTextSecondary;
+
+  static Color getTextTertiaryFromContext(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkTextTertiary
+          : lightTextTertiary;
+
+  static Color getBorderColorFromContext(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+          ? darkBorder
+          : lightBorder;
+
+  static Brightness getBrightness(BuildContext context) =>
+      Theme.of(context).brightness ?? Brightness.dark;
 
   static ThemeData get darkTheme {
     return ThemeData(
@@ -49,7 +133,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardColor,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -201,7 +285,7 @@ class AppTheme {
       ),
 
       // Dialog Theme
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -332,7 +416,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: lightCard,
         elevation: 1,
         shadowColor: Colors.black12,
@@ -489,7 +573,7 @@ class AppTheme {
       ),
 
       // Dialog Theme
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: lightBackground,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),

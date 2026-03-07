@@ -38,7 +38,7 @@ class _ShareIntentDialogState extends State<ShareIntentDialog> {
   Widget build(BuildContext context) {
     if (_isProcessing) {
       return Dialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.getSurfaceColorFromContext(context),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
@@ -57,7 +57,7 @@ class _ShareIntentDialogState extends State<ShareIntentDialog> {
               const Text(
                 'Please wait',
                 style: TextStyle(
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.getTextSecondaryFromContext(context),
                   fontSize: 14,
                 ),
               ),
@@ -68,7 +68,7 @@ class _ShareIntentDialogState extends State<ShareIntentDialog> {
     }
 
     return Dialog(
-      backgroundColor: AppTheme.surfaceColor,
+      backgroundColor: AppTheme.getSurfaceColorFromContext(context),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -107,7 +107,7 @@ class _ShareIntentDialogState extends State<ShareIntentDialog> {
                   ? '1 file selected'
                   : '${widget.fileCount} files selected',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.getTextSecondaryFromContext(context),
                   ),
             ),
             const SizedBox(height: 24),
@@ -135,7 +135,7 @@ class _ShareIntentDialogState extends State<ShareIntentDialog> {
               onPressed: () => Navigator.of(context).pop(),
               child: const Text(
                 'Cancel',
-                style: TextStyle(color: AppTheme.textSecondary),
+                style: TextStyle(color: AppTheme.getTextSecondaryFromContext(context)),
               ),
             ),
           ],
@@ -166,7 +166,7 @@ class _ShareOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppTheme.cardColor,
+          color: AppTheme.getCardColorFromContext(context),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: AppTheme.primaryColor.withOpacity(0.3),
@@ -203,7 +203,7 @@ class _ShareOption extends StatelessWidget {
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.getTextSecondaryFromContext(context),
                       fontSize: 12,
                     ),
                   ),
@@ -212,7 +212,7 @@ class _ShareOption extends StatelessWidget {
             ),
             const Icon(
               Icons.chevron_right,
-              color: AppTheme.textSecondary,
+              color: AppTheme.getTextSecondaryFromContext(context),
             ),
           ],
         ),

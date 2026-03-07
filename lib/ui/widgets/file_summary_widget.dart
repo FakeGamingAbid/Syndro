@@ -61,7 +61,7 @@ class FileSummaryWidget extends StatelessWidget {
                       Text(
                         'Total size: ${FileTypeHelper.formatFileSize(totalSize)}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textTertiary,
+                              color: AppTheme.getTextTertiaryFromContext(context),
                             ),
                       ),
                     ],

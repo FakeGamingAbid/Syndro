@@ -227,7 +227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               vertical: 24,
             ),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
+              color: AppTheme.getSurfaceColorFromContext(context),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
@@ -247,7 +247,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 Text(
                   'Preparing files...',
                   style: TextStyle(
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.getTextPrimaryFromContext(context),
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                     decoration: TextDecoration.none,
@@ -257,7 +257,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 Text(
                   'This may take a moment for large files',
                   style: TextStyle(
-                    color: AppTheme.textTertiary,
+                    color: AppTheme.getTextTertiaryFromContext(context),
                     fontSize: 12,
                     decoration: TextDecoration.none,
                   ),
@@ -287,8 +287,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       context: context,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) => Container(
-        decoration: const BoxDecoration(
-          color: AppTheme.surfaceColor,
+        decoration: BoxDecoration(
+          color: AppTheme.getSurfaceColorFromContext(context),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.all(24),
@@ -299,7 +299,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppTheme.textTertiary,
+                color: AppTheme.getTextTertiaryFromContext(context),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -312,7 +312,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             Text(
               'Share files without installing an app',
               style: Theme.of(sheetContext).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textTertiary,
+                    color: AppTheme.getTextTertiaryFromContext(context),
                   ),
             ),
             const SizedBox(height: 8),
@@ -417,7 +417,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textTertiary,
+                            color: AppTheme.getTextTertiaryFromContext(context),
                           ),
                     ),
                   ],
@@ -425,7 +425,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               ),
               const Icon(
                 Icons.chevron_right,
-                color: AppTheme.textTertiary,
+                color: AppTheme.getTextTertiaryFromContext(context),
               ),
             ],
           ),
@@ -559,7 +559,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.getSurfaceColorFromContext(context),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
@@ -697,8 +697,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.8),
-            AppTheme.surfaceColor.withOpacity(0.6),
+            AppTheme.getCardColorFromContext(context).withOpacity(0.8),
+            AppTheme.getSurfaceColorFromContext(context).withOpacity(0.6),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -747,7 +747,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       Text(
                         'This Device',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textTertiary,
+                              color: AppTheme.getTextTertiaryFromContext(context),
                             ),
                       ),
                       const SizedBox(width: 8),
@@ -798,7 +798,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       const Icon(
                         Icons.wifi_rounded,
                         size: 14,
-                        color: AppTheme.textTertiary,
+                        color: AppTheme.getTextTertiaryFromContext(context),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -807,7 +807,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             .textTheme
                             .bodySmall
                             ?.copyWith(
-                              color: AppTheme.textTertiary,
+                              color: AppTheme.getTextTertiaryFromContext(context),
                             ),
                       ),
                     ],
@@ -901,7 +901,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                             Text(
                               'Scanning...',
                               style: TextStyle(
-                                color: AppTheme.textTertiary,
+                                color: AppTheme.getTextTertiaryFromContext(context),
                                 fontSize: 12,
                               ),
                             ),
@@ -933,7 +933,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   height: 64,
                   width: 64,
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor,
+                    color: AppTheme.getSurfaceColorFromContext(context),
                     borderRadius: BorderRadius.circular(32),
                     boxShadow: [
                       BoxShadow(
@@ -943,7 +943,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       ),
                     ],
                     border: Border.all(
-                      color: AppTheme.cardColor,
+                      color: AppTheme.getBorderColorFromContext(context),
                       width: 1.5,
                     ),
                   ),
@@ -975,7 +975,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     height: 56,
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor,
+                      color: AppTheme.getSurfaceColorFromContext(context),
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
@@ -985,7 +985,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         ),
                       ],
                       border: Border.all(
-                        color: AppTheme.cardColor,
+                        color: AppTheme.getCardColorFromContext(context),
                         width: 1.5,
                       ),
                     ),
@@ -1078,7 +1078,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                     height: 56,
                     width: 56,
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor,
+                      color: AppTheme.getSurfaceColorFromContext(context),
                       borderRadius: BorderRadius.circular(28),
                       boxShadow: [
                         BoxShadow(
@@ -1126,7 +1126,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       loading: () => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: AppTheme.textTertiary,
+          color: AppTheme.getTextTertiaryFromContext(context),
           borderRadius: BorderRadius.circular(14),
         ),
         child: const Text(
@@ -1198,7 +1198,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                           const Icon(
                             Icons.devices,
                             size: 64,
-                            color: AppTheme.textTertiary,
+                            color: AppTheme.getTextTertiaryFromContext(context),
                           ),
                           const SizedBox(height: 16),
                           Text(
@@ -1207,7 +1207,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 .textTheme
                                 .titleMedium
                                 ?.copyWith(
-                                  color: AppTheme.textTertiary,
+                                  color: AppTheme.getTextTertiaryFromContext(context),
                                 ),
                           ),
                           const SizedBox(height: 8),
@@ -1219,7 +1219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                   .textTheme
                                   .bodyMedium
                                   ?.copyWith(
-                                    color: AppTheme.textTertiary,
+                                    color: AppTheme.getTextTertiaryFromContext(context),
                                   ),
                               textAlign: TextAlign.center,
                             ),
@@ -1294,13 +1294,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             const Icon(
               Icons.devices,
               size: 64,
-              color: AppTheme.textTertiary,
+              color: AppTheme.getTextTertiaryFromContext(context),
             ),
             const SizedBox(height: 16),
             Text(
               HomeScreenStrings.scanningForDevices,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.textTertiary,
+                    color: AppTheme.getTextTertiaryFromContext(context),
                   ),
             ),
             const SizedBox(height: 16),
@@ -1359,8 +1359,8 @@ class _TransferRequestSheetContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppTheme.cardColor,
+      decoration: BoxDecoration(
+        color: AppTheme.getCardColorFromContext(context),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -1370,7 +1370,7 @@ class _TransferRequestSheetContent extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppTheme.textTertiary,
+              color: AppTheme.getTextTertiaryFromContext(context),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1394,7 +1394,7 @@ class _TransferRequestSheetContent extends StatelessWidget {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
+              color: AppTheme.getTextPrimaryFromContext(context),
             ),
           ),
           const SizedBox(height: 8),
@@ -1402,7 +1402,7 @@ class _TransferRequestSheetContent extends StatelessWidget {
             'From: ${request.senderName}',
             style: const TextStyle(
               fontSize: 16,
-              color: AppTheme.textSecondary,
+              color: AppTheme.getTextSecondaryFromContext(context),
             ),
           ),
           const SizedBox(height: 4),
@@ -1410,7 +1410,7 @@ class _TransferRequestSheetContent extends StatelessWidget {
             '${request.fileCount} file(s) • ${_formatSize(request.totalSize)}',
             style: const TextStyle(
               fontSize: 14,
-              color: AppTheme.textTertiary,
+              color: AppTheme.getTextTertiaryFromContext(context),
             ),
           ),
           const SizedBox(height: 24),

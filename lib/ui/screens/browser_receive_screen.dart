@@ -323,7 +323,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.getSurfaceColorFromContext(context),
         title: const Text('Discard File?'),
         content: Text('Are you sure you want to discard "${file.name}"?'),
         actions: [
@@ -352,7 +352,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                   : '❌ Failed to discard: ${file.name}',
             ),
             backgroundColor:
-                success ? AppTheme.textSecondary : AppTheme.errorColor,
+                success ? AppTheme.getTextSecondaryFromContext(context) : AppTheme.errorColor,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -380,7 +380,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.getSurfaceColorFromContext(context),
         title: const Text('Discard All Files?'),
         content: Text(
             'Are you sure you want to discard ${unsavedFiles.length} file(s)?'),
@@ -421,7 +421,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
       final action = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
-          backgroundColor: AppTheme.surfaceColor,
+          backgroundColor: AppTheme.getSurfaceColorFromContext(context),
           title: const Text('Unsaved Files'),
           content: Text(
               'You have ${unsavedFiles.length} unsaved file(s). What would you like to do?'),
@@ -518,7 +518,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppTheme.textSecondary),
+                style: const TextStyle(color: AppTheme.getTextSecondaryFromContext(context)),
               ),
               const SizedBox(height: 24),
               if (isPermissionError) ...[
@@ -571,20 +571,20 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
+              color: AppTheme.getSurfaceColorFromContext(context),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.textTertiary.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.getTextTertiaryFromContext(context).withOpacity(0.3)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.folder, color: AppTheme.textSecondary, size: 20),
+                const Icon(Icons.folder, color: AppTheme.getTextSecondaryFromContext(context), size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Saving to: ${_downloadPath ?? 'Downloads'}',
                     style: const TextStyle(
                       fontSize: 12,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.getTextSecondaryFromContext(context),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -603,8 +603,8 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.surfaceColor.withOpacity(0.9),
-                  AppTheme.cardColor.withOpacity(0.7),
+                  AppTheme.getSurfaceColorFromContext(context).withOpacity(0.9),
+                  AppTheme.getCardColorFromContext(context).withOpacity(0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(24),
@@ -670,7 +670,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                 Text(
                   'No app needed on the other device',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textTertiary,
+                        color: AppTheme.getTextTertiaryFromContext(context),
                       ),
                 ),
                 const SizedBox(height: 20),
@@ -681,8 +681,8 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppTheme.cardColor.withOpacity(0.9),
-                        AppTheme.surfaceColor.withOpacity(0.7),
+                        AppTheme.getCardColorFromContext(context).withOpacity(0.9),
+                        AppTheme.getSurfaceColorFromContext(context).withOpacity(0.7),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(14),
@@ -712,7 +712,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                           style: const TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.getTextSecondaryFromContext(context),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -746,7 +746,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
+              color: AppTheme.getSurfaceColorFromContext(context),
               borderRadius: BorderRadius.circular(12),
               border:
                   Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
@@ -759,7 +759,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                     style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 12,
-                      color: AppTheme.textSecondary,
+                      color: AppTheme.getTextSecondaryFromContext(context),
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -909,7 +909,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
         // Files list
         Container(
           decoration: BoxDecoration(
-            color: AppTheme.surfaceColor,
+            color: AppTheme.getSurfaceColorFromContext(context),
             borderRadius: BorderRadius.circular(12),
           ),
           child: ListView.separated(
@@ -918,7 +918,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
             itemCount: _pendingFiles.length,
             separatorBuilder: (_, __) => Divider(
               height: 1,
-              color: AppTheme.textTertiary.withOpacity(0.2),
+              color: AppTheme.getTextTertiaryFromContext(context).withOpacity(0.2),
             ),
             itemBuilder: (context, index) {
               final file = _pendingFiles[index];
@@ -957,8 +957,8 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: isDiscarded
-                        ? AppTheme.textTertiary
-                        : AppTheme.textPrimary,
+                        ? AppTheme.getTextTertiaryFromContext(context)
+                        : AppTheme.getTextPrimaryFromContext(context),
                     decoration:
                         isDiscarded ? TextDecoration.lineThrough : null,
                   ),
@@ -970,7 +970,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                       file.sizeFormatted,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: AppTheme.textTertiary,
+                        color: AppTheme.getTextTertiaryFromContext(context),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1004,7 +1004,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
           ] else if (isSaved) ...[
             const Icon(Icons.check_circle, color: AppTheme.successColor),
           ] else if (isDiscarded) ...[
-            const Icon(Icons.delete, color: AppTheme.textTertiary),
+            const Icon(Icons.delete, color: AppTheme.getTextTertiaryFromContext(context)),
           ],
         ],
       ),
@@ -1207,7 +1207,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
         break;
       case FileReceiveStatus.discarded:
         text = 'DISCARDED';
-        color = AppTheme.textTertiary;
+        color = AppTheme.getTextTertiaryFromContext(context);
         break;
       case FileReceiveStatus.error:
         text = 'ERROR';

@@ -69,7 +69,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           // Side Navigation Rail
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
+              color: AppTheme.getSurfaceColorFromContext(context),
               border: Border(
                 right: BorderSide(
                   color: AppTheme.primaryColor.withOpacity(0.1),
@@ -86,14 +86,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 color: AppTheme.primaryColor,
               ),
               unselectedIconTheme: const IconThemeData(
-                color: AppTheme.textTertiary,
+                color: AppTheme.getTextTertiaryFromContext(context),
               ),
               selectedLabelTextStyle: const TextStyle(
                 color: AppTheme.primaryColor,
                 fontWeight: FontWeight.w600,
               ),
               unselectedLabelTextStyle: const TextStyle(
-                color: AppTheme.textTertiary,
+                color: AppTheme.getTextTertiaryFromContext(context),
               ),
               extended: true,
               minExtendedWidth: 200,
@@ -184,8 +184,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppTheme.surfaceColor.withOpacity(0.95),
-                      AppTheme.surfaceColor.withOpacity(0.85),
+                      AppTheme.getSurfaceColorFromContext(context).withOpacity(0.95),
+                      AppTheme.getSurfaceColorFromContext(context).withOpacity(0.85),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(34),
@@ -281,7 +281,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           children: [
             Icon(
               isSelected ? selectedIcon : icon,
-              color: isSelected ? AppTheme.primaryColor : AppTheme.textSecondary,
+              color: isSelected ? AppTheme.primaryColor : AppTheme.getTextSecondaryFromContext(context),
               size: 26,
             ),
             if (isSelected) ...[

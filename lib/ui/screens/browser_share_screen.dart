@@ -180,7 +180,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.getSurfaceColorFromContext(context),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
@@ -200,7 +200,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
           children: [
             const Text(
               'Someone wants to download your files:',
-              style: TextStyle(color: AppTheme.textSecondary),
+              style: TextStyle(color: AppTheme.getTextSecondaryFromContext(context)),
             ),
             const SizedBox(height: 16),
             _buildInfoRow(Icons.devices, 'Device', os),
@@ -243,9 +243,9 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppTheme.textTertiary),
+        Icon(icon, size: 18, color: AppTheme.getTextTertiaryFromContext(context)),
         const SizedBox(width: 8),
-        Text('$label: ', style: const TextStyle(color: AppTheme.textTertiary)),
+        Text('$label: ', style: const TextStyle(color: AppTheme.getTextTertiaryFromContext(context))),
         Expanded(
           child: Text(
             value,
@@ -273,7 +273,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.surfaceColor,
+        backgroundColor: AppTheme.getSurfaceColorFromContext(context),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
@@ -296,7 +296,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                 child: Text(
                   'No viewers connected yet.\nShare the QR code or link to get started!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: AppTheme.textTertiary),
+                  style: TextStyle(color: AppTheme.getTextTertiaryFromContext(context)),
                 ),
               )
             : SizedBox(
@@ -332,7 +332,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                       subtitle: Text(
                         os,
                         style: const TextStyle(
-                          color: AppTheme.textTertiary,
+                          color: AppTheme.getTextTertiaryFromContext(context),
                           fontSize: 12,
                         ),
                       ),
@@ -782,12 +782,12 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                   decoration: BoxDecoration(
                     color: _activeConnections > 0
                         ? AppTheme.successColor.withOpacity(0.2)
-                        : AppTheme.surfaceColor,
+                        : AppTheme.getSurfaceColorFromContext(context),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: _activeConnections > 0
                           ? AppTheme.successColor
-                          : AppTheme.textTertiary.withOpacity(0.3),
+                          : AppTheme.getTextTertiaryFromContext(context).withOpacity(0.3),
                     ),
                   ),
                   child: Row(
@@ -798,7 +798,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                         size: 16,
                         color: _activeConnections > 0
                             ? AppTheme.successColor
-                            : AppTheme.textTertiary,
+                            : AppTheme.getTextTertiaryFromContext(context),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -807,7 +807,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                           fontWeight: FontWeight.bold,
                           color: _activeConnections > 0
                               ? AppTheme.successColor
-                              : AppTheme.textTertiary,
+                              : AppTheme.getTextTertiaryFromContext(context),
                         ),
                       ),
                       const SizedBox(width: 2),
@@ -816,7 +816,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                         size: 14,
                         color: _activeConnections > 0
                             ? AppTheme.successColor
-                            : AppTheme.textTertiary,
+                            : AppTheme.getTextTertiaryFromContext(context),
                       ),
                     ],
                   ),
@@ -882,8 +882,8 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.surfaceColor.withOpacity(0.9),
-                  AppTheme.cardColor.withOpacity(0.7),
+                  AppTheme.getSurfaceColorFromContext(context).withOpacity(0.9),
+                  AppTheme.getCardColorFromContext(context).withOpacity(0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(24),
@@ -1006,7 +1006,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                 Text(
                   'No app needed on the other device',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textTertiary,
+                        color: AppTheme.getTextTertiaryFromContext(context),
                       ),
                 ),
                 const SizedBox(height: 20),
@@ -1018,8 +1018,8 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppTheme.cardColor.withOpacity(0.9),
-                        AppTheme.surfaceColor.withOpacity(0.7),
+                        AppTheme.getCardColorFromContext(context).withOpacity(0.9),
+                        AppTheme.getSurfaceColorFromContext(context).withOpacity(0.7),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(14),
@@ -1049,7 +1049,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                           style: const TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 12,
-                            color: AppTheme.textSecondary,
+                            color: AppTheme.getTextSecondaryFromContext(context),
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1103,7 +1103,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                     return Text(
                       _formatFileSize(snapshot.data!),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textTertiary,
+                            color: AppTheme.getTextTertiaryFromContext(context),
                           ),
                     );
                   }
@@ -1116,7 +1116,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
 
           Container(
             decoration: BoxDecoration(
-              color: AppTheme.surfaceColor,
+              color: AppTheme.getSurfaceColorFromContext(context),
               borderRadius: BorderRadius.circular(16),
             ),
             child: ListView.separated(
@@ -1125,7 +1125,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
               itemCount: _files.length,
               separatorBuilder: (_, __) => const Divider(
                 height: 1,
-                color: AppTheme.cardColor,
+                color: AppTheme.getCardColorFromContext(context),
               ),
               itemBuilder: (context, index) {
                 final file = _files[index];
@@ -1209,7 +1209,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            color: AppTheme.textTertiary,
+                                            color: AppTheme.getTextTertiaryFromContext(context),
                                           ),
                                     ),
                                   ],
@@ -1268,13 +1268,13 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
               Icon(
                 Icons.timer_outlined,
                 size: 16,
-                color: AppTheme.textTertiary,
+                color: AppTheme.getTextTertiaryFromContext(context),
               ),
               SizedBox(width: 6),
               Text(
                 'Link active while this screen is open',
                 style: TextStyle(
-                  color: AppTheme.textTertiary,
+                  color: AppTheme.getTextTertiaryFromContext(context),
                   fontSize: 12,
                 ),
               ),

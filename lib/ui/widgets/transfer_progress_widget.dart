@@ -63,7 +63,7 @@ class TransferProgressWidget extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: transfer.progress.percentage / 100,
                   minHeight: 8,
-                  backgroundColor: AppTheme.surfaceColor,
+                  backgroundColor: AppTheme.getSurfaceColorFromContext(context),
                   valueColor:
                       const AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                 ),

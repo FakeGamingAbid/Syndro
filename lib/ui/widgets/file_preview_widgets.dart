@@ -424,7 +424,7 @@ class FilePreviewCard extends StatelessWidget {
                       Text(
                         FileTypeHelper.formatFileSize(fileSize),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textTertiary,
+                              color: AppTheme.getTextTertiaryFromContext(context),
                             ),
                       ),
                     ],
@@ -582,7 +582,7 @@ class FileTypeHelper {
       case FileType.code:
         return const Color(0xFF00BCD4); // Cyan
       case FileType.unknown:
-        return AppTheme.textTertiary;
+        return AppTheme.getTextTertiaryFromContext(context);
     }
   }
 

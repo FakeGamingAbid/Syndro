@@ -25,7 +25,7 @@ class TransferRequestSheet extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: AppTheme.getSurfaceColorFromContext(context),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -36,7 +36,7 @@ class TransferRequestSheet extends ConsumerWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppTheme.textTertiary,
+              color: AppTheme.getTextTertiaryFromContext(context),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -72,7 +72,7 @@ class TransferRequestSheet extends ConsumerWidget {
                 child: Text(
                   '${request.senderName} ${TransferRequestStrings.senderWantsToSend}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.getTextSecondaryFromContext(context),
                       ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -118,7 +118,7 @@ class TransferRequestSheet extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.cardColor,
+              color: AppTheme.getCardColorFromContext(context),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -145,7 +145,7 @@ class TransferRequestSheet extends ConsumerWidget {
                       Text(
                         _formatBytes(totalSize),
                         style: const TextStyle(
-                          color: AppTheme.textTertiary,
+                          color: AppTheme.getTextTertiaryFromContext(context),
                           fontSize: 12,
                         ),
                       ),
@@ -162,7 +162,7 @@ class TransferRequestSheet extends ConsumerWidget {
             Container(
               constraints: const BoxConstraints(maxHeight: 150),
               decoration: BoxDecoration(
-                color: AppTheme.cardColor.withOpacity(0.5),
+                color: AppTheme.getCardColorFromContext(context).withOpacity(0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: ListView.builder(
@@ -181,7 +181,7 @@ class TransferRequestSheet extends ConsumerWidget {
                         const Icon(
                           Icons.insert_drive_file,
                           size: 16,
-                          color: AppTheme.textTertiary,
+                          color: AppTheme.getTextTertiaryFromContext(context),
                         ),
                         const SizedBox(width: 8),
                         Expanded(
@@ -189,7 +189,7 @@ class TransferRequestSheet extends ConsumerWidget {
                             item.name,
                             style: const TextStyle(
                               fontSize: 12,
-                              color: AppTheme.textSecondary,
+                              color: AppTheme.getTextSecondaryFromContext(context),
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -198,7 +198,7 @@ class TransferRequestSheet extends ConsumerWidget {
                           _formatBytes(item.size),
                           style: const TextStyle(
                             fontSize: 11,
-                            color: AppTheme.textTertiary,
+                            color: AppTheme.getTextTertiaryFromContext(context),
                           ),
                         ),
                       ],

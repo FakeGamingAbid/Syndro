@@ -187,7 +187,7 @@ class _DropZoneWidgetState extends State<DropZoneWidget>
                               'Release to add files for transfer',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: AppTheme.textSecondary,
+                                color: AppTheme.getTextSecondaryFromContext(context),
                               ),
                             ),
                           ],
@@ -308,7 +308,7 @@ class _EmptyDropZoneState extends State<EmptyDropZone>
       decoration: BoxDecoration(
         color: _isDragging
             ? AppTheme.primaryColor.withOpacity(0.1)
-            : AppTheme.surfaceColor.withOpacity(0.5),
+            : AppTheme.getSurfaceColorFromContext(context).withOpacity(0.5),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: _isDragging
@@ -351,7 +351,7 @@ class _EmptyDropZoneState extends State<EmptyDropZone>
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              color: _isDragging ? AppTheme.primaryColor : AppTheme.textPrimary,
+              color: _isDragging ? AppTheme.primaryColor : AppTheme.getTextPrimaryFromContext(context),
             ),
           ),
           const SizedBox(height: 8),
@@ -361,7 +361,7 @@ class _EmptyDropZoneState extends State<EmptyDropZone>
                 : 'Select files or folders to send',
             style: const TextStyle(
               fontSize: 14,
-              color: AppTheme.textSecondary,
+              color: AppTheme.getTextSecondaryFromContext(context),
             ),
             textAlign: TextAlign.center,
           ),

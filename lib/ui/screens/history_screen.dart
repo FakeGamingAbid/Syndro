@@ -179,7 +179,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       case 'cancelled':
         return AppTheme.errorColor;
       default:
-        return AppTheme.textTertiary;
+        return AppTheme.getTextTertiaryFromContext(context);
     }
   }
 
@@ -265,20 +265,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           const Icon(
             Icons.history,
             size: 64,
-            color: AppTheme.textTertiary,
+            color: AppTheme.getTextTertiaryFromContext(context),
           ),
           const SizedBox(height: 16),
           Text(
             'No transfer history',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.textTertiary,
+                  color: AppTheme.getTextTertiaryFromContext(context),
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             'Your completed transfers will appear here',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textTertiary,
+                  color: AppTheme.getTextTertiaryFromContext(context),
                 ),
           ),
         ],
@@ -297,8 +297,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.9),
-            AppTheme.surfaceColor.withOpacity(0.7),
+            AppTheme.getCardColorFromContext(context).withOpacity(0.9),
+            AppTheme.getSurfaceColorFromContext(context).withOpacity(0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -376,7 +376,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         Text(
           label,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textTertiary,
+                color: AppTheme.getTextTertiaryFromContext(context),
               ),
         ),
       ],
@@ -418,8 +418,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.cardColor.withOpacity(0.9),
-                  AppTheme.surfaceColor.withOpacity(0.7),
+                  AppTheme.getCardColorFromContext(context).withOpacity(0.9),
+                  AppTheme.getSurfaceColorFromContext(context).withOpacity(0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
@@ -491,7 +491,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.surfaceColor.withOpacity(0.5),
+                                    color: AppTheme.getSurfaceColorFromContext(context).withOpacity(0.5),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Row(
@@ -500,13 +500,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                       Icon(
                                         _getFileTypeIcon(fileCount),
                                         size: 12,
-                                        color: AppTheme.textTertiary,
+                                        color: AppTheme.getTextTertiaryFromContext(context),
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
                                         '$fileCount file(s)',
                                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: AppTheme.textTertiary,
+                                              color: AppTheme.getTextTertiaryFromContext(context),
                                             ),
                                       ),
                                     ],
@@ -528,13 +528,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                 const Icon(
                                   Icons.access_time_rounded,
                                   size: 12,
-                                  color: AppTheme.textTertiary,
+                                  color: AppTheme.getTextTertiaryFromContext(context),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
                                   _formatTimestamp(createdAt),
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: AppTheme.textTertiary,
+                                        color: AppTheme.getTextTertiaryFromContext(context),
                                       ),
                                 ),
                               ],
@@ -545,12 +545,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor.withOpacity(0.5),
+                          color: AppTheme.getSurfaceColorFromContext(context).withOpacity(0.5),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
                           Icons.chevron_right,
-                          color: AppTheme.textTertiary,
+                          color: AppTheme.getTextTertiaryFromContext(context),
                         ),
                       ),
                     ],

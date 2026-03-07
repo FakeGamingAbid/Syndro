@@ -156,7 +156,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
                   'Select a device to send your files',
                   style: TextStyle(
                     fontSize: 14,
-                    color: AppTheme.textSecondary,
+                    color: AppTheme.getTextSecondaryFromContext(context),
                   ),
                 ),
               ],
@@ -176,8 +176,8 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.surfaceColor.withOpacity(0.9),
-            AppTheme.cardColor.withOpacity(0.7),
+            AppTheme.getSurfaceColorFromContext(context).withOpacity(0.9),
+            AppTheme.getCardColorFromContext(context).withOpacity(0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -209,7 +209,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimary,
+                    color: AppTheme.getTextPrimaryFromContext(context),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -220,14 +220,14 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
                     const Icon(
                       Icons.storage_rounded,
                       size: 14,
-                      color: AppTheme.textTertiary,
+                      color: AppTheme.getTextTertiaryFromContext(context),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       _formatBytes(_totalSize),
                       style: const TextStyle(
                         fontSize: 14,
-                        color: AppTheme.textSecondary,
+                        color: AppTheme.getTextSecondaryFromContext(context),
                       ),
                     ),
                   ],
@@ -359,7 +359,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.getTextSecondaryFromContext(context),
                 ),
               ),
               const SizedBox(width: 8),
@@ -403,7 +403,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
           Icon(
             isScanning ? Icons.radar_rounded : Icons.devices_other_rounded,
             size: 64,
-            color: AppTheme.textTertiary,
+            color: AppTheme.getTextTertiaryFromContext(context),
           ),
           const SizedBox(height: 16),
           Text(
@@ -411,7 +411,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: AppTheme.textSecondary,
+              color: AppTheme.getTextSecondaryFromContext(context),
             ),
           ),
           const SizedBox(height: 8),
@@ -419,7 +419,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
             'Make sure other devices are on the same network',
             style: TextStyle(
               fontSize: 14,
-              color: AppTheme.textTertiary,
+              color: AppTheme.getTextTertiaryFromContext(context),
             ),
           ),
           if (!isScanning) ...[
