@@ -1,0 +1,22 @@
+[Desktop Entry]
+Type=Service
+Name=Send with Syndro
+Name[de]=Mit Syndro senden
+Name[es]=Enviar con Syndro
+Name[fr]=Envoyer avec Syndro
+Name[it]=Invia con Syndro
+Name[pt]=Enviar com Syndro
+Name[ru]=Отправить через Syndro
+Name[zh]=使用 Syndro 发送
+Name[ja]=Syndroで送信
+Icon=document-send
+Exec=syndro %F
+MimeType=inode/directory;application/octet-stream;all/allfiles;
+
+# KDE Dolphin Service Menu
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+X-KDE-Priority=TopLevel
+X-KDE-Submenu=Send with Syndro
+
+# This creates a top-level menu item in Dolphin's context menu
+# Works with KDE Plasma 5.x and later

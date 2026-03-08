@@ -1,0 +1,50 @@
+name: Build macOS
+
+on:
+  workflow_dispatch:
+    inputs:
+      flutter_version:
+        description: 'Flutter version'
+        required: false
+        default: '3.24.0'
+        type: string
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ github.event.inputs.flutter_version || '3.24.0' }}
+          channel: stable
+
+      - name: Enable macOS desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Setup macOS platform
+        run: |
+          rm -rf macos
+          flutter create --platforms=macos --project-name=syndro .
+
+      - name: Update deployment target
+        run: |
+          sed -i '' 's/platform :osx, .10.14./platform :osx, "11.0"/' macos/Podfile
+          sed -i '' 's/MACOSX_DEPLOYMENT_TARGET = 10.14/MACOSX_DEPLOYMENT_TARGET = 11.0/g' macos/Runner.xcodeproj/project.pbxproj
+
+      - name: Update CocoaPods
+        run: cd macos && pod repo update && pod install --repo-update
+
+      - name: Build macOS
+        run: flutter build macos --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: build/macos/Build/Products/Release/

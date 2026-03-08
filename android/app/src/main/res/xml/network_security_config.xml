@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Block cleartext (HTTP) by default -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+    
+    <!-- Allow cleartext ONLY for local network transfers -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Localhost -->
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        
+        <!-- Private IP ranges (local network only) -->
+        <!-- Class A: 10.0.0.0 - 10.255.255.255 -->
+        <domain includeSubdomains="true">10.0.0.0</domain>
+        
+        <!-- Class B: 172.16.0.0 - 172.31.255.255 -->
+        <domain includeSubdomains="true">172.16.0.0</domain>
+        
+        <!-- Class C: 192.168.0.0 - 192.168.255.255 -->
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        
+        <!-- Link-local: 169.254.0.0 - 169.254.255.255 -->
+        <domain includeSubdomains="true">169.254.0.0</domain>
+    </domain-config>
+</network-security-config>
