@@ -1,0 +1,63 @@
+name: "📺 Android TV Debug"
+
+on:
+  workflow_dispatch:
+
+description: >
+  Moonplex detects Android TV at runtime via UiModeManager platform channel.
+  The APK is the same binary as the phone APK — TV detection is runtime not build time.
+  This workflow builds a debug APK specifically labelled for TV testing so the user
+  knows which APK to sideload onto their Android TV device.
+
+jobs:
+  androidtv-debug:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      # 2. Setup Java 17 for Android builds
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      
+      # 3. Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          pub-cache-hash: true
+      
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: flutter pub get
+      
+      # 5. Generate Drift and Riverpod code
+      - name: Generate code
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+      
+      # 6. Build debug APK with secrets
+      - name: Build APK
+        run: |
+          flutter build apk --debug \
+            --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }} \
+            --dart-define=CONFIG_URL=${{ secrets.CONFIG_URL }} \
+            --dart-define=OPENSUBTITLES_API_KEY=${{ secrets.OPENSUBTITLES_API_KEY }}
+      
+      # 7. Copy and rename the APK for TV
+      - name: Rename APK
+        run: |
+          cp build/app/outputs/flutter-apk/app-debug.apk \
+             build/app/outputs/flutter-apk/moonplex-tv-debug.apk
+      
+      # 8. Upload artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moonplex-AndroidTV-Debug
+          path: build/app/outputs/flutter-apk/moonplex-tv-debug.apk
+          retention-days: 30

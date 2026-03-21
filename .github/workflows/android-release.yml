@@ -1,0 +1,82 @@
+name: "🚀 Android Release"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  android-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      # 2. Setup Java 17 for Android builds
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      
+      # 3. Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          pub-cache-hash: true
+      
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: flutter pub get
+      
+      # 5. Generate Drift and Riverpod code
+      - name: Generate code
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+      
+      # 6. Decode keystore from secrets
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/moonplex.jks
+      
+      # 7. Create key.properties file for signing
+      - name: Create key.properties
+        run: |
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=moonplex.jks
+          EOF
+      
+      # 8. Build release APK with secrets
+      - name: Build APK
+        run: |
+          flutter build apk --release \
+            --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }} \
+            --dart-define=CONFIG_URL=${{ secrets.CONFIG_URL }} \
+            --dart-define=OPENSUBTITLES_API_KEY=${{ secrets.OPENSUBTITLES_API_KEY }}
+      
+      # 9. Build App Bundle for Play Store
+      - name: Build AAB
+        run: |
+          flutter build appbundle --release \
+            --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }} \
+            --dart-define=CONFIG_URL=${{ secrets.CONFIG_URL }} \
+            --dart-define=OPENSUBTITLES_API_KEY=${{ secrets.OPENSUBTITLES_API_KEY }}
+      
+      # 10. Upload release APK artifact
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moonplex-Android-Release-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+      
+      # 11. Upload App Bundle artifact
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moonplex-Android-Release-AAB
+          path: build/app/outputs/bundle/release/app-release.aab
+          retention-days: 30

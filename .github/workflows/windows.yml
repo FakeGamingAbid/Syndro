@@ -1,0 +1,53 @@
+name: "🪟 Windows"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      # 2. Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          pub-cache-hash: true
+      
+      # 3. Enable Windows desktop support
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+      
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: flutter pub get
+      
+      # 5. Generate Drift and Riverpod code
+      - name: Generate code
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+      
+      # 6. Build Windows release with secrets
+      - name: Build Windows
+        run: |
+          flutter build windows --release `
+            --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }} `
+            --dart-define=CONFIG_URL=${{ secrets.CONFIG_URL }} `
+            --dart-define=OPENSUBTITLES_API_KEY=${{ secrets.OPENSUBTITLES_API_KEY }}
+      
+      # 7. Compress build output to zip
+      - name: Create zip archive
+        run: |
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath Moonplex-Windows.zip
+      
+      # 8. Upload artifact
+      - name: Upload zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moonplex-Windows
+          path: Moonplex-Windows.zip
+          retention-days: 30

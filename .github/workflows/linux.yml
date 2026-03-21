@@ -1,0 +1,68 @@
+name: "🐧 Linux"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      # 2. Install Linux build dependencies
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            ninja-build \
+            libgtk-3-dev \
+            libblkid-dev \
+            liblzma-dev \
+            cmake \
+            clang \
+            libsecret-1-dev \
+            libjsoncpp-dev \
+            libsqlite3-dev
+      
+      # 3. Setup Flutter
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          pub-cache-hash: true
+      
+      # 4. Enable Linux desktop support
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
+      
+      # 5. Install dependencies
+      - name: Install dependencies
+        run: flutter pub get
+      
+      # 6. Generate Drift and Riverpod code
+      - name: Generate code
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+      
+      # 7. Build Linux release with secrets
+      - name: Build Linux
+        run: |
+          flutter build linux --release \
+            --dart-define=TMDB_API_KEY=${{ secrets.TMDB_API_KEY }} \
+            --dart-define=CONFIG_URL=${{ secrets.CONFIG_URL }} \
+            --dart-define=OPENSUBTITLES_API_KEY=${{ secrets.OPENSUBTITLES_API_KEY }}
+      
+      # 8. Zip the Linux build output
+      - name: Create zip archive
+        run: |
+          zip -r Moonplex-Linux.zip build/linux/x64/release/bundle/
+      
+      # 9. Upload artifact
+      - name: Upload zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moonplex-Linux
+          path: Moonplex-Linux.zip
+          retention-days: 30

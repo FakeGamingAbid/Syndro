@@ -1,0 +1,65 @@
+name: moonplex
+description: A free, open source, cross-platform streaming app supporting Android, Android TV, Windows, Linux, and macOS.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '^3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # State management
+  flutter_riverpod: ^2.4.0
+  riverpod_annotation: ^2.3.0
+  
+  # Media playback
+  media_kit: any
+  media_kit_video: any
+  
+  # Networking
+  dio: any
+  
+  # Database
+  drift: any
+  sqlite3_flutter_libs: any
+  
+  # Media processing
+  ffmpeg_kit_flutter_new: any
+  
+  # Downloads
+  background_downloader: any
+  
+  # Real-time communication
+  livekit_client: any
+  
+  # UI utilities
+  cached_network_image: any
+  shimmer: any
+  
+  # TMDB API
+  tmdb_api: any
+  
+  # System utilities
+  package_info_plus: any
+  path_provider: any
+  url_launcher: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: any
+  
+  # Code generation
+  build_runner: any
+  drift_dev: any
+  riverpod_generator: any
+  riverpod_lint: any
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
