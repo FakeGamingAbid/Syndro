@@ -760,6 +760,7 @@ class SharePageTemplate {
             }
         }
 
+        // Fix 3: Improved download all using fetch + Blob API to avoid popup blockers
         async function downloadAllFiles() {
             if (allFiles.length === 0) return;
             const btn = document.getElementById('download-all-btn');
@@ -769,31 +770,89 @@ class SharePageTemplate {
             btnText.innerHTML = '<div class="spinner"></div> <span>Downloading...</span>';
             const totalFiles = allFiles.length;
             let downloaded = 0;
+            let failed = 0;
+            
+            // Use sequential downloads with fetch + Blob to avoid popup blockers
             for (const file of allFiles) {
                 try {
                     progress.textContent = `Downloading ${downloaded + 1} of ${totalFiles}: ${file.name}`;
+                    
+                    // Use fetch to get the file as a blob
+                    const response = await fetch(file.downloadUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    const blob = await response.blob();
+                    
+                    // Create object URL and download
+                    const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = file.downloadUrl;
+                    a.href = url;
                     a.download = file.name;
                     a.style.display = 'none';
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
                     downloaded++;
-                    if (downloaded < totalFiles) {
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    }
                 } catch (error) {
                     console.error('Error downloading file:', file.name, error);
+                    failed++;
+                    // Try fallback to direct link download
+                    try {
+                        const a = document.createElement('a');
+                        a.href = file.downloadUrl;
+                        a.download = file.name;
+                        a.target = '_blank';
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        downloaded++;
+                    } catch (fallbackError) {
+                        console.error('Fallback download also failed:', file.name, fallbackError);
+                    }
                 }
             }
-            progress.textContent = `✅ All ${totalFiles} files downloaded!`;
+            
+            if (failed > 0) {
+                progress.textContent = `⚠️ Downloaded ${downloaded} of ${totalFiles} files (${failed} failed)`;
+            } else {
+                progress.textContent = `✅ All ${totalFiles} files downloaded!`;
+            }
             btnText.textContent = 'Download All Files';
             setTimeout(() => {
                 btn.disabled = false;
                 progress.textContent = '';
-            }, 2000);
+            }, 3000);
         }
+
+        // Poll for confirmation status (Fix 4: Add confirmation notification)
+        let confirmationChecked = false;
+        const confirmationCheckInterval = setInterval(async () => {
+            try {
+                const response = await fetch('/api/confirmation-status');
+                const data = await response.json();
+                
+                const statusEl = document.getElementById('connection-status');
+                if (statusEl) {
+                    if (data.status === 'approved') {
+                        statusEl.textContent = '✅ Device accepted the transfer';
+                        statusEl.className = 'status-connected';
+                        clearInterval(confirmationCheckInterval);
+                        confirmationChecked = true;
+                    } else if (data.status === 'denied') {
+                        statusEl.textContent = '❌ Transfer rejected by device';
+                        statusEl.className = 'status-error';
+                        clearInterval(confirmationCheckInterval);
+                        confirmationChecked = true;
+                    }
+                }
+            } catch (e) {
+                // Silently fail - will retry on next interval
+            }
+        }, 3000);
 
         async function loadFiles() {
             try {

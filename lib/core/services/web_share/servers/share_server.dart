@@ -521,6 +521,9 @@ class ShareServer {
     } else if (requestPath == '/api/connected-clients') {
       // NEW: Serve all connected clients
       await _serveConnectedClients(request);
+    } else if (requestPath == '/api/confirmation-status') {
+      // NEW: Serve confirmation status for the requesting client
+      await _serveConfirmationStatus(request, clientIp);
     } else if (requestPath.startsWith('/thumbnail/')) {
       await _serveThumbnail(request, requestPath);
     } else if (requestPath.startsWith('/download/')) {
@@ -555,6 +558,38 @@ class ShareServer {
     request.response.write(jsonEncode({
       'clients': _connectedClients.values.map((c) => c.toJson()).toList(),
       'totalCount': _connectedClients.length,
+    }));
+    await request.response.close();
+  }
+
+  /// NEW: Serve confirmation status for the requesting client
+  Future<void> _serveConfirmationStatus(HttpRequest request, String clientIp) async {
+    // Check if confirmation is required
+    if (!_requireConfirmation) {
+      request.response.headers.contentType = ContentType.json;
+      request.response.write(jsonEncode({
+        'requireConfirmation': false,
+        'status': 'approved',
+      }));
+      await request.response.close();
+      return;
+    }
+
+    // Check if this client has a pending confirmation
+    final confirmation = _pendingConfirmations[clientIp];
+    String status = 'pending';
+    if (confirmation != null) {
+      if (confirmation.confirmed) {
+        status = 'approved';
+      } else if (confirmation.denied) {
+        status = 'denied';
+      }
+    }
+
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode({
+      'requireConfirmation': _requireConfirmation,
+      'status': status,
     }));
     await request.response.close();
   }

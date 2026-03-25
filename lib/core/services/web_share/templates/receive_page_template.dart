@@ -869,6 +869,29 @@ class ReceivePageTemplate {
         let imageFiles = [];
 
         // ========================================
+        // STATUS POLLING (Fix 2: Add status polling to receive page)
+        // ========================================
+        // Poll for status to detect when files have been received
+        const statusCheckInterval = setInterval(async () => {
+            try {
+                const response = await fetch('/api/status');
+                const data = await response.json();
+                
+                // Check if files are ready
+                if (data.status === 'ready' && data.pendingFiles > 0) {
+                    // Files have been received! Show completion message
+                    const statusEl = document.getElementById('connection-status');
+                    if (statusEl && statusEl.textContent.includes('Waiting')) {
+                        statusEl.textContent = `✅ ${data.pendingFiles} files ready to receive`;
+                        statusEl.className = 'status-connected';
+                    }
+                }
+            } catch (e) {
+                // Silently fail - server might not be ready yet
+            }
+        }, 2000);
+
+        // ========================================
         // EVENT LISTENERS
         // ========================================
 

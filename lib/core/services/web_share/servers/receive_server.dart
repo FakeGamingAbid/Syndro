@@ -373,12 +373,28 @@ class ReceiveServer {
     // Route requests
     if (requestPath == '/' || requestPath == '/index.html') {
       await _serveIndexPage(request);
+    } else if (requestPath == '/api/status') {
+      // NEW: Status polling endpoint for receive page
+      await _serveStatus(request);
     } else if (request.method == 'POST' && requestPath == '/upload') {
       await _handleFileUpload(request);
     } else {
       request.response.statusCode = HttpStatus.notFound;
       await request.response.close();
     }
+  }
+
+  /// Serve status information for polling - NEW
+  Future<void> _serveStatus(HttpRequest request) async {
+    // Get pending files from manager
+    final pendingFiles = _pendingFilesManager.pendingFiles;
+    request.response.headers.contentType = ContentType.json;
+    request.response.write(jsonEncode({
+      'status': isReceiving ? 'ready' : 'idle',
+      'pendingFiles': pendingFiles.length,
+      'tempDirectory': _tempDirectory ?? '',
+    }));
+    await request.response.close();
   }
 
   /// Serve the index HTML page
