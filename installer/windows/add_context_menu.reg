@@ -1,0 +1,29 @@
+Windows Registry Editor Version 5.00
+
+; =====================================================
+; Syndro - Right-Click "Send with Syndro" Context Menu
+; =====================================================
+
+; Add "Send with Syndro" to file context menu
+[HKEY_CURRENT_USER\Software\Classes\*\shell\SyndroSend]
+@="Send with Syndro"
+"Icon"="\"%LOCALAPPDATA%\\Syndro\\syndro.exe\",0"
+
+[HKEY_CURRENT_USER\Software\Classes\*\shell\SyndroSend\command]
+@="\"%LOCALAPPDATA%\\Syndro\\syndro.exe\" \"%1\""
+
+; Add "Send with Syndro" to folder context menu
+[HKEY_CURRENT_USER\Software\Classes\Directory\shell\SyndroSend]
+@="Send with Syndro"
+"Icon"="\"%LOCALAPPDATA%\\Syndro\\syndro.exe\",0"
+
+[HKEY_CURRENT_USER\Software\Classes\Directory\shell\SyndroSend\command]
+@="\"%LOCALAPPDATA%\\Syndro\\syndro.exe\" \"%1\""
+
+; Add "Send with Syndro" to directory background (right-click in folder)
+[HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\SyndroSend]
+@="Send with Syndro"
+"Icon"="\"%LOCALAPPDATA%\\Syndro\\syndro.exe\",0"
+
+[HKEY_CURRENT_USER\Software\Classes\Directory\Background\shell\SyndroSend\command]
+@="\"%LOCALAPPDATA%\\Syndro\\syndro.exe\" \"%V\""
