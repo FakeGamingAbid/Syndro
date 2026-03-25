@@ -626,6 +626,27 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
   }
 
   Future<void> _stopSharing() async {
+    // Show confirmation dialog before stopping
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Stop Sharing?'),
+        content: const Text('This will stop sharing files and close the connection. Are you sure?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Stop'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     await _webShareService.stopSharing();
     // Clear FilePicker cache to free storage
     await _clearFilePickerCache();
