@@ -1,0 +1,18 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Syndro
+Comment=Fast, privacy-first file sharing
+GenericName=File Sharing
+Exec=syndro %F
+Icon=syndro
+Terminal=false
+Categories=Network;FileTransfer;Utility;
+Keywords=file;transfer;share;send;
+MimeType=application/octet-stream;inode/directory;
+Actions=Send;
+
+[Desktop Action Send]
+Name=Send with Syndro
+Exec=syndro %F
+Icon=syndro

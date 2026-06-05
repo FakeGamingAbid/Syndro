@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    
+    <!-- External storage (Downloads, etc.) -->
+    <external-path 
+        name="external" 
+        path="." />
+    
+    <!-- App-specific external files -->
+    <external-files-path 
+        name="external_files" 
+        path="." />
+    
+    <!-- App cache directory -->
+    <cache-path 
+        name="cache" 
+        path="." />
+    
+    <!-- App internal files -->
+    <files-path 
+        name="files" 
+        path="." />
+    
+    <!-- External media directories (Android 10+) -->
+    <external-media-path 
+        name="media" 
+        path="." />
+    
+    <!-- Download directory -->
+    <external-path 
+        name="downloads" 
+        path="Download/" />
+    
+    <!-- Documents directory -->
+    <external-path 
+        name="documents" 
+        path="Documents/" />
+    
+    <!-- Pictures directory -->
+    <external-path 
+        name="pictures" 
+        path="Pictures/" />
+    
+    <!-- DCIM directory -->
+    <external-path 
+        name="dcim" 
+        path="DCIM/" />
+
+</paths>
