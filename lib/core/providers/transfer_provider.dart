@@ -242,18 +242,20 @@ class TransferState {
         pendingRequests: [],
       );
 
+  static const _sentinel = Object();
+
   TransferState copyWith({
     List<Transfer>? transfers,
     Transfer? currentTransfer,
     List<PendingTransferRequest>? pendingRequests,
-    String? error,
+    Object? error = _sentinel,
     bool? isLoading,
   }) {
     return TransferState(
       transfers: transfers ?? this.transfers,
       currentTransfer: currentTransfer ?? this.currentTransfer,
       pendingRequests: pendingRequests ?? this.pendingRequests,
-      error: error,
+      error: error == _sentinel ? this.error : error as String?,
       isLoading: isLoading ?? this.isLoading,
     );
   }

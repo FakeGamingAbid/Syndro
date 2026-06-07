@@ -70,6 +70,11 @@ class Device extends Equatable {
     required this.lastSeen,
   });
 
+  static const _placeholderIds = {'', 'empty', 'initializing'};
+
+  /// Whether this device is a placeholder (not a real discovered device).
+  bool get isPlaceholder => _placeholderIds.contains(id);
+
   factory Device.empty() {
     return Device(
       id: 'empty',
@@ -78,6 +83,17 @@ class Device extends Equatable {
       ipAddress: '0.0.0.0',
       port: AppConfig.defaultTransferPort,
       lastSeen: DateTime.now(),
+    );
+  }
+
+  factory Device.initializing() {
+    return Device(
+      id: 'initializing',
+      name: 'Initializing...',
+      platform: DevicePlatform.unknown,
+      ipAddress: '0.0.0.0',
+      port: AppConfig.defaultTransferPort,
+      lastSeen: DateTime.fromMillisecondsSinceEpoch(0),
     );
   }
 

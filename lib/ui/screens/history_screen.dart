@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../theme/app_theme.dart';
 import '../../core/database/database_helper.dart';
+import '../../core/utils/byte_formatter.dart';
 
 class HistoryScreen extends ConsumerStatefulWidget {
   const HistoryScreen({super.key});
@@ -157,18 +158,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final hour = dateTime.hour.toString().padLeft(2, '0');
     final minute = dateTime.minute.toString().padLeft(2, '0');
     return '$hour:$minute';
-  }
-
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) {
-      return '$bytes B';
-    } else if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    } else if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    } else {
-      return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-    }
   }
 
   Color _getStatusColor(String status) {
@@ -330,7 +319,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ),
           _buildStatItem(
             'Data',
-            _formatBytes(_statistics['totalBytes'] ?? 0),
+            ByteFormatter.format(_statistics['totalBytes'] ?? 0),
             Icons.data_usage,
           ),
         ],
@@ -514,7 +503,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _formatBytes(totalBytes),
+                                  ByteFormatter.format(totalBytes),
                                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                         color: AppTheme.primaryColor,
                                         fontWeight: FontWeight.w600,

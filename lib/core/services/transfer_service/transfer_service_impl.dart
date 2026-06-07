@@ -16,6 +16,7 @@ import '../../models/device.dart';
 import '../../models/transfer.dart';
 import '../../models/transfer_checkpoint.dart';
 import '../../database/database_helper.dart';
+import '../../utils/app_logger.dart';
 import '../encryption_service.dart';
 import '../file_service.dart';
 import '../app_settings_service.dart';
@@ -182,6 +183,7 @@ class TransferService {
       if (kDebugMode) debugPrint('🔐 Encryption initialized (X25519 + AES-256-GCM)');
     } catch (e) {
       if (kDebugMode) debugPrint('❌ Failed to initialize encryption: $e');
+      _encryptionKeyPair = null;
       encryptionEnabled = false;
     }
   }
@@ -330,6 +332,7 @@ class TransferService {
   void _initializeParallelTransfer() {
     _parallelReceiver = ParallelReceiverHandler(_fileService);
 
+    int lastProgress = -1;
     _parallelReceiver.onProgress = (transferId, received, total) {
       final transfer = _activeTransfers[transferId];
       if (transfer != null) {
@@ -343,13 +346,17 @@ class TransferService {
         _activeTransfers[transferId] = updatedTransfer;
         _transferController.add(updatedTransfer);
 
-        BackgroundTransferService.updateProgress(
-          title: 'Receiving file',
-          fileName: transfer.items.first.name,
-          progress: (received / total * 100).toInt(),
-          bytesTransferred: received,
-          totalBytes: total,
-        );
+        final progressPercent = (received / total * 100).toInt();
+        if (progressPercent != lastProgress) {
+          lastProgress = progressPercent;
+          BackgroundTransferService.updateProgress(
+            title: 'Receiving file',
+            fileName: transfer.items.first.name,
+            progress: progressPercent,
+            bytesTransferred: received,
+            totalBytes: total,
+          );
+        }
       }
     };
 
@@ -721,7 +728,7 @@ class TransferService {
       _deviceToken = _generateSecureToken();
     }
 
-    if (_encryptionKeyPair == null) {
+    if (_encryptionKeyPair == null && encryptionEnabled) {
       await _initializeEncryption();
       _initializeParallelTransfer();
     }
@@ -1733,8 +1740,7 @@ class TransferService {
         final progressPercent =
             fileSize > 0 ? ((bytesReceived / fileSize) * 100).toInt() : 0;
 
-        if (progressPercent - lastProgressPercent >= 2 ||
-            bytesReceived - lastProgressBytes > 512 * 1024) {
+        if (progressPercent != lastProgressPercent) {
           lastProgressPercent = progressPercent;
           lastProgressBytes = bytesReceived;
 
@@ -1872,12 +1878,12 @@ class TransferService {
     required List<TransferItem> items,
     bool? encrypted,
   }) async {
-    // IMPROVEMENT: Add validation for empty IDs
-    if (sender.id.isEmpty) {
+    // IMPROVEMENT: Add validation for placeholder/empty IDs
+    if (sender.isPlaceholder) {
       throw TransferException('Invalid sender device', code: 'INVALID_SENDER');
     }
     
-    if (receiver.id.isEmpty) {
+    if (receiver.isPlaceholder) {
       throw TransferException('Invalid receiver device', code: 'INVALID_RECEIVER');
     }
     
@@ -1978,6 +1984,7 @@ class TransferService {
       _activeTransfers[transferId] = parallelTransfer;
       _transferController.add(parallelTransfer);
 
+      int lastReportedProgress = -1;
       try {
         await parallelSender.sendFileParallel(
           transferId: transferId,
@@ -1997,13 +2004,17 @@ class TransferService {
             _activeTransfers[transferId] = updatedTransfer;
             _transferController.add(updatedTransfer);
 
-            BackgroundTransferService.updateProgress(
-              title: 'Sending to ${receiver.name}',
-              fileName: item.name,
-              progress: (sent / total * 100).toInt(),
-              bytesTransferred: sent,
-              totalBytes: total,
-            );
+            final progressPercent = (sent / total * 100).toInt();
+            if (progressPercent != lastReportedProgress) {
+              lastReportedProgress = progressPercent;
+              BackgroundTransferService.updateProgress(
+                title: 'Sending to ${receiver.name}',
+                fileName: item.name,
+                progress: progressPercent,
+                bytesTransferred: sent,
+                totalBytes: total,
+              );
+            }
           },
         );
 
@@ -2140,7 +2151,7 @@ class TransferService {
 
           debugPrint('🔐 Key exchange successful, encryption enabled');
         } catch (e) {
-          debugPrint('❌ Key exchange failed, falling back to unencrypted: $e');
+          debugPrint('❌ Key exchange failed, falling back to unencrypted');
           useEncryption = false;
         }
       }
@@ -2314,6 +2325,7 @@ class TransferService {
     request.headers['Content-Type'] = 'application/octet-stream';
 
     int bytesSent = 0;
+    int lastReportedProgress = -1;
     const chunkSize = 1024 * 1024;
 
     // Use await-for to avoid async race condition in stream listener
@@ -2342,13 +2354,16 @@ class TransferService {
           final progressPercent =
               ((totalBytesTransferred + bytesSent) / totalSize * 100).toInt();
 
-          BackgroundTransferService.updateProgress(
-            title: 'Sending (encrypted) to ${receiver.name}',
-            fileName: item.name,
-            progress: progressPercent,
-            bytesTransferred: totalBytesTransferred + bytesSent,
-            totalBytes: totalSize,
-          );
+          if (progressPercent != lastReportedProgress) {
+            lastReportedProgress = progressPercent;
+            BackgroundTransferService.updateProgress(
+              title: 'Sending (encrypted) to ${receiver.name}',
+              fileName: item.name,
+              progress: progressPercent,
+              bytesTransferred: totalBytesTransferred + bytesSent,
+              totalBytes: totalSize,
+            );
+          }
 
           final updatedTransfer = _activeTransfers[transferId]!.copyWith(
             status: TransferStatus.transferring,
@@ -2425,6 +2440,7 @@ class TransferService {
     request.headers['Content-Length'] = fileSize.toString();
 
     int bytesSent = 0;
+    int lastReportedProgress = -1;
     final fileStream = file.openRead();
 
     try {
@@ -2435,13 +2451,16 @@ class TransferService {
         final progressPercent =
             ((totalBytesTransferred + bytesSent) / totalSize * 100).toInt();
 
-        BackgroundTransferService.updateProgress(
-          title: 'Sending to ${receiver.name}',
-          fileName: item.name,
-          progress: progressPercent,
-          bytesTransferred: totalBytesTransferred + bytesSent,
-          totalBytes: totalSize,
-        );
+        if (progressPercent != lastReportedProgress) {
+          lastReportedProgress = progressPercent;
+          BackgroundTransferService.updateProgress(
+            title: 'Sending to ${receiver.name}',
+            fileName: item.name,
+            progress: progressPercent,
+            bytesTransferred: totalBytesTransferred + bytesSent,
+            totalBytes: totalSize,
+          );
+        }
 
         final updatedTransfer = _activeTransfers[transferId]!.copyWith(
           status: TransferStatus.transferring,

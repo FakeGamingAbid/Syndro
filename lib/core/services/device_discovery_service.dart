@@ -11,39 +11,9 @@ import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
 import '../models/device.dart';
+import '../utils/app_logger.dart';
+import '../utils/synchronized.dart';
 import 'device_nickname_service.dart';
-
-/// Simple lock implementation for thread-safe operations
-class Lock {
-  final _queue = <Completer<void>>[];
-  bool _locked = false;
-
-  Future<void> synchronized(FutureOr<void> Function() action) async {
-    final completer = Completer<void>();
-    _queue.add(completer);
-
-    if (_locked || _queue.length > 1) {
-      await completer.future;
-    }
-
-    _locked = true;
-
-    try {
-      await action();
-    } finally {
-      _locked = false;
-      _queue.removeAt(0);
-      
-      if (_queue.isNotEmpty) {
-        try {
-          _queue.first.complete();
-        } catch (e, stack) {
-          debugPrint('Lock notification failed: $e\n$stack');
-        }
-      }
-    }
-  }
-}
 
 /// Service for discovering and tracking devices on the local network.
 ///
@@ -92,7 +62,7 @@ class DeviceDiscoveryService {
 
   // Rate limiting configuration
   final List<DateTime> _discoveryTimestamps = [];
-  final _rateLimitLock = Lock();
+  final _rateLimitLock = SynchronizedLock<void>();
 
   final _uuid = const Uuid();
   final _networkInfo = NetworkInfo();
@@ -114,9 +84,19 @@ class DeviceDiscoveryService {
     lastSeen: DateTime.now(),
   );
 
+  final _scanningController = StreamController<bool>.broadcast();
+  Stream<bool> get scanningStream => _scanningController.stream;
+
   bool _isInitialized = false;
   bool _isScanning = false;
   bool _isDisposed = false;
+
+  void _setScanning(bool value) {
+    _isScanning = value;
+    if (!_isDisposed && !_scanningController.isClosed) {
+      _scanningController.add(value);
+    }
+  }
 
   final Map<String, Device> _discoveredDevices = {};
   Timer? _cleanupTimer;
@@ -193,9 +173,9 @@ class DeviceDiscoveryService {
               .toSet()
               .toList();
           ipAddress = primaryIp;
-          debugPrint('📍 Using IP: $ipAddress with ${_subnets.length} subnet(s)');
+          debugPrint('📍 Using IP: ${AppLogger.sanitize(ipAddress)} with ${_subnets.length} subnet(s)');
         } else {
-          debugPrint('⚠️ No valid IP addresses found, using fallback: $ipAddress');
+          debugPrint('⚠️ No valid IP addresses found, using fallback: ${AppLogger.sanitize(ipAddress)}');
         }
       } catch (e) {
         debugPrint('Error getting IPs: $e');
@@ -252,9 +232,9 @@ class DeviceDiscoveryService {
       if (deviceId == null || deviceId.isEmpty) {
         deviceId = _uuid.v4();
         await prefs.setString(_deviceIdKey, deviceId);
-        debugPrint('✅ Generated new device ID: $deviceId');
+        debugPrint('✅ Generated new device ID');
       } else {
-        debugPrint('✅ Loaded existing device ID: $deviceId');
+        debugPrint('✅ Loaded existing device ID');
       }
 
       return deviceId;
@@ -496,14 +476,14 @@ class DeviceDiscoveryService {
       return;
     }
 
-    _isScanning = true;
+    _setScanning(true);
 
     try {
       await _scanNetwork();
     } catch (e) {
       debugPrint('Scan error: $e');
     } finally {
-      _isScanning = false;
+      _setScanning(false);
     }
   }
 
@@ -884,7 +864,7 @@ class DeviceDiscoveryService {
       final ip = datagram.address.address;
       final port = data['port'] as int? ?? AppConfig.defaultTransferPort;
 
-      debugPrint('📡 UDP Discovered device: $ip:$port (${data['name']})');
+      debugPrint('📡 UDP Discovered device: ${AppLogger.sanitize('$ip:$port')} (${data['name']})');
 
       // Verify via HTTP
       _checkDeviceOnSpecificPort(ip, port);
@@ -909,7 +889,7 @@ class DeviceDiscoveryService {
         }
       }
     } catch (e) {
-      debugPrint('Error checking device at $ip:$port: $e');
+      debugPrint('Error checking device at ${AppLogger.sanitize('$ip:$port')}: $e');
     }
   }
 
@@ -972,6 +952,15 @@ class DeviceDiscoveryService {
       }
     } catch (e) {
       debugPrint('Error closing device controller: $e');
+    }
+
+    try {
+      if (!_scanningController.isClosed) {
+        await _scanningController.close();
+        debugPrint('✅ Scanning controller closed');
+      }
+    } catch (e) {
+      debugPrint('Error closing scanning controller: $e');
     }
   }
 }

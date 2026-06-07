@@ -5,6 +5,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
 
 import '../config/app_config.dart';
+import '../utils/synchronized.dart';
 
 /// Core encryption service using AES-256-GCM
 ///
@@ -72,7 +73,7 @@ class EncryptionService {
   int _nonceCount = 0;
   
   // Thread-safe lock for nonce operations using proper mutex pattern
-  final _nonceLock = _MutexLock();
+  final _nonceLock = SynchronizedLock<void>();
 
   /// Generate a new key pair for key exchange
   ///
@@ -481,36 +482,4 @@ class EncryptionException implements Exception {
 /// 
 /// Uses a queue-based approach to prevent race conditions.
 /// Each operation waits for its turn in the queue.
-class _MutexLock {
-  final _queue = <Completer<void>>[];
-  bool _locked = false;
 
-  Future<T> synchronized<T>(FutureOr<T> Function() action) async {
-    // Add ourselves to the queue
-    final completer = Completer<void>();
-    _queue.add(completer);
-
-    // Wait for our turn
-    if (_locked || _queue.length > 1) {
-      await completer.future;
-    }
-
-    _locked = true;
-
-    try {
-      return await action();
-    } finally {
-      _locked = false;
-      _queue.removeAt(0);
-      
-      // Notify next in queue - wrap in try-catch to prevent stranding
-      if (_queue.isNotEmpty) {
-        try {
-          _queue.first.complete();
-        } catch (e, stack) {
-          debugPrint('Lock notification failed: $e\n$stack');
-        }
-      }
-    }
-  }
-}

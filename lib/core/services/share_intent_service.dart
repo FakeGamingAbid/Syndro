@@ -62,8 +62,13 @@ class ShareIntentService {
 
   bool get hasSharedFiles => _lastSharedFiles != null && _lastSharedFiles!.isNotEmpty;
 
+  bool _initialized = false;
+
   /// Initialize the share intent service
   Future<void> initialize() async {
+    if (_initialized) return;
+    _initialized = true;
+
     // Set up method call handler for share intent events
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'onShareIntentReceived') {

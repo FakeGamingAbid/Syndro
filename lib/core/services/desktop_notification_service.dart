@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'package:path/path.dart' as p;
 
+import '../utils/byte_formatter.dart';
+
 /// Desktop notification service with rich content support (thumbnails, actions)
 class DesktopNotificationService {
   static bool _initialized = false;
@@ -41,7 +43,7 @@ class DesktopNotificationService {
     if (!_initialized) return;
 
     try {
-      final sizeText = _formatBytes(totalSize);
+      final sizeText = ByteFormatter.format(totalSize);
       final filesText = fileCount == 1 ? '1 file' : '$fileCount files';
 
       final notification = LocalNotification(
@@ -102,7 +104,7 @@ class DesktopNotificationService {
     if (!_initialized) return;
 
     try {
-      final sizeText = _formatBytes(totalSize);
+      final sizeText = ByteFormatter.format(totalSize);
       String body;
 
       if (fileCount == 1 && firstFileName != null) {
@@ -170,15 +172,6 @@ class DesktopNotificationService {
     return '...${text.substring(text.length - maxLength + 3)}';
   }
 
-  /// Format bytes to human readable string
-  static String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-  }
 
   /// Check if a file is an image
   static bool isImage(String filePath) {

@@ -7,6 +7,7 @@ import '../theme/app_theme.dart';
 import '../widgets/device_card.dart';
 import '../widgets/file_preview_widgets.dart';
 import 'file_picker_screen.dart';
+import '../../core/utils/byte_formatter.dart';
 
 /// Screen for quick sending files received from right-click context menu
 class QuickSendScreen extends ConsumerStatefulWidget {
@@ -55,15 +56,6 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
     });
   }
 
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-  }
-
   int get _totalSize => widget.files.fold(0, (sum, item) => sum + item.size);
 
   void _selectDevice(Device device) {
@@ -84,7 +76,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
   @override
   Widget build(BuildContext context) {
     final discoveredDevices = ref.watch(deviceDiscoveryProvider);
-    final isScanning = ref.watch(deviceDiscoveryProvider.notifier).isScanning;
+    final isScanning = ref.watch(isDiscoveryScanningProvider);
 
     return Scaffold(
       body: Container(
@@ -224,7 +216,7 @@ class _QuickSendScreenState extends ConsumerState<QuickSendScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      _formatBytes(_totalSize),
+                      ByteFormatter.format(_totalSize),
                       style: const TextStyle(
                         fontSize: 14,
                         color: AppTheme.textSecondary,

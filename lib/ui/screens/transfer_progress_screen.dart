@@ -230,7 +230,9 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
           );
           
           if (shouldCancel == true && context.mounted) {
-            _cancelTransfer();
+            final transferService = ref.read(transferServiceProvider);
+            transferService.cancelTransfer(widget.transferId);
+            Navigator.of(context).pop(false);
           }
         }
       },
@@ -271,8 +273,10 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                   ),
                 );
                 
-                if (shouldCancel == true && mounted) {
-                  _cancelTransfer();
+                if (shouldCancel == true && context.mounted) {
+                  final transferService = ref.read(transferServiceProvider);
+                  transferService.cancelTransfer(widget.transferId);
+                  Navigator.of(context).pop(false);
                 }
               }
             },

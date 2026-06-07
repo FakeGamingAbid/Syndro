@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +12,9 @@ import '../encryption_service.dart';
 import 'parallel_config.dart';
 import 'chunk_writer_service.dart';
 import '../../models/device.dart';
+import '../../utils/app_logger.dart';
+import '../../utils/byte_formatter.dart';
+import '../../utils/synchronized.dart';
 
 /// Parallel transfer service for high-speed file transfers
 /// 
@@ -27,7 +31,7 @@ class ParallelTransferService {
 
   final Map<String, ParallelTransferState> _activeTransfers = {};
 
-  final _SimpleLock _transfersLock = _SimpleLock();
+  final SynchronizedLock<void> _transfersLock = SynchronizedLock<void>();
 
   final _progressController = StreamController<ParallelProgress>.broadcast();
   Stream<ParallelProgress> get progressStream => _progressController.stream;
@@ -71,9 +75,9 @@ class ParallelTransferService {
     }
 
     debugPrint(
-        '🚀 Starting parallel transfer: $fileName (${_formatBytes(fileSize)})');
+        '🚀 Starting parallel transfer: $fileName (${ByteFormatter.format(fileSize)})');
     debugPrint(
-        '   Connections: ${config.connections}, Chunk size: ${_formatBytes(config.chunkSize)}');
+        '   Connections: ${config.connections}, Chunk size: ${ByteFormatter.format(config.chunkSize)}');
     debugPrint(
         '   Receiver: ${receiver.ipAddress}:${receiver.port}');
 
@@ -143,7 +147,7 @@ class ParallelTransferService {
         file: file,
         onProgress: (bytesProcessed, totalBytes) {
           if (bytesProcessed % (100 * 1024 * 1024) == 0) {
-            debugPrint('   Hash progress: ${_formatBytes(bytesProcessed)}/${_formatBytes(totalBytes)}');
+            debugPrint('   Hash progress: ${ByteFormatter.format(bytesProcessed)}/${ByteFormatter.format(totalBytes)}');
           }
         },
       ).then((hash) {
@@ -221,11 +225,10 @@ class ParallelTransferService {
     final hashStartTime = DateTime.now();
     debugPrint('📝 Starting background hash calculation...');
     
-    final hash = await StreamingHashService.calculateFileHashWithProgress(
-      file,
-      timeout: const Duration(minutes: 10),
-      onProgress: onProgress,
-    );
+    final filePath = file.path;
+    final hash = await Isolate.run(() async {
+      return StreamingHashService.calculateFileHash(File(filePath));
+    });
     
     final hashDuration = DateTime.now().difference(hashStartTime);
     debugPrint('📝 Hash calculated in ${hashDuration.inSeconds}s');
@@ -426,7 +429,7 @@ class ParallelTransferService {
     final url = Uri.parse(
         'http://${receiver.ipAddress}:${receiver.port}/transfer/parallel/initiate');
 
-    debugPrint('📤 Initiating parallel transfer to ${receiver.ipAddress}:${receiver.port}');
+    debugPrint('📤 Initiating parallel transfer to ${AppLogger.sanitize('${receiver.ipAddress}:${receiver.port}')}');
 
     try {
       final response = await http
@@ -686,16 +689,6 @@ class ParallelTransferService {
     debugPrint('✅ ParallelTransferService disposed');
   }
 
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    }
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / 1024 / 1024 / 1024).toStringAsFixed(2)} GB';
-  }
 }
 
 /// State for tracking parallel transfer progress
@@ -709,7 +702,7 @@ class ParallelTransferState {
   int _bytesSent = 0;
   bool _isCancelled = false;
 
-  final _SimpleLock _lock = _SimpleLock();
+  final SynchronizedLock<void> _lock = SynchronizedLock<void>();
 
   ParallelTransferState({
     required this.transferId,
@@ -763,56 +756,6 @@ class ParallelProgress {
   @override
   String toString() =>
       'Progress: $chunksSent/$totalChunks chunks (${(percentage * 100).toStringAsFixed(1)}%)';
-}
-
-class _SimpleLock {
-  Future<void>? _lock;
-  bool _isDisposed = false;
-  Completer<void>? _disposeCompleter;
-
-  Future<T> synchronized<T>(FutureOr<T> Function() action) async {
-    if (_isDisposed) {
-      throw StateError('Lock has been disposed');
-    }
-
-    // Wait for any existing lock to be released, checking for disposal
-    while (_lock != null && !_isDisposed) {
-      try {
-        await _lock;
-      } catch (e) {
-        // If the lock future throws (e.g., due to disposal), re-throw
-        if (_isDisposed) {
-          throw StateError('Lock has been disposed');
-        }
-        rethrow;
-      }
-    }
-
-    // Check again after waiting
-    if (_isDisposed) {
-      throw StateError('Lock has been disposed');
-    }
-
-    final completer = Completer<void>();
-    _lock = completer.future;
-
-    try {
-      return await action();
-    } finally {
-      _lock = null;
-      if (!completer.isCompleted) {
-        completer.complete();
-      }
-    }
-  }
-  
-  void dispose() {
-    _isDisposed = true;
-    // Complete any pending lock to release waiters
-    if (_lock != null && _disposeCompleter != null && !_disposeCompleter!.isCompleted) {
-      _disposeCompleter!.complete();
-    }
-  }
 }
 
 /// Custom exception for decryption errors in parallel transfers

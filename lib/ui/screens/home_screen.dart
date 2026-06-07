@@ -16,6 +16,7 @@ import 'file_picker_screen.dart';
 import 'browser_share_screen.dart';
 import 'browser_receive_screen.dart';
 import 'home_screen_strings.dart';
+import '../../core/utils/byte_formatter.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -579,7 +580,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'You are about to share ${_formatBytes(totalSize)}.',
+              'You are about to share ${ByteFormatter.format(totalSize)}.',
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 16),
@@ -632,15 +633,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     return result ?? false;
   }
   
-  /// Format bytes to human readable string
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-  }
+
 
   void _openBrowserShareScreen(List<File> files, ShareMode shareMode) {
     if (!mounted) return;
@@ -1158,9 +1151,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Widget _buildDeviceList(
-    AsyncValue<List<dynamic>> devicesAsync,
+    AsyncValue<List<Device>> devicesAsync,
     bool isInitialized,
-    dynamic selectedDevice,
+    Device? selectedDevice,
   ) {
     if (!isInitialized) {
       return const Center(

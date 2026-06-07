@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:window_manager/window_manager.dart';
 
+import 'core/utils/window_listener_adapter.dart';
 import 'core/config/app_config.dart';
 import 'core/database/database_helper.dart';
 import 'core/models/transfer.dart';
@@ -94,8 +96,7 @@ void main(List<String> args) async {
         await windowManager.focus();
       });
 
-      // Listen for window events to save settings
-      windowManager.addListener(_WindowEventListener());
+      // Window events handled by _SyndroAppState.onWindowClose()
 
       // Initialize desktop notification service
       await DesktopNotificationService.initialize();
@@ -147,7 +148,7 @@ class SyndroApp extends ConsumerStatefulWidget {
 }
 
 class _SyndroAppState extends ConsumerState<SyndroApp>
-    with WidgetsBindingObserver, WindowListener {
+    with WidgetsBindingObserver, WindowListenerAdapter {
   bool _initialized = false;
   String? _initError;
   bool _windowListenerAdded = false;
@@ -157,6 +158,9 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   List<File>? _browserShareFiles;
   bool _hasShareIntent = false;
   AndroidShareMode _shareMode = AndroidShareMode.appToApp;
+  StreamSubscription<List<SharedFile>>? _sharedFilesSubscription;
+  StreamSubscription<AndroidShareMode>? _shareModeSubscription;
+  bool _shareIntentHandled = false;
 
   @override
   void initState() {
@@ -180,6 +184,10 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
 
+    // Cancel share intent stream subscriptions
+    _sharedFilesSubscription?.cancel();
+    _shareModeSubscription?.cancel();
+
     // Only remove listener if we added it
     if (_windowListenerAdded) {
       try {
@@ -189,16 +197,11 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       }
     }
 
-    // BUG-007 FIX: Handle async disposal properly in sync dispose()
-    // Cannot await in sync dispose(), so use fire-and-forget with error handling
+    // Prevent double dispose — fire-and-forget is correct for sync dispose()
     SystemTrayService.dispose().timeout(
-      const Duration(seconds: 5),
-      onTimeout: () {
-        debugPrint('⚠️ SystemTrayService disposal timed out');
-      },
-    ).catchError((e) {
-      debugPrint('⚠️ ERROR disposing SystemTrayService: $e');
-    });
+      const Duration(seconds: 3),
+      onTimeout: () => debugPrint('⚠️ SystemTrayService disposal timed out'),
+    ).catchError((e) => debugPrint('⚠️ SystemTrayService disposal error: $e'));
     super.dispose();
   }
 
@@ -230,7 +233,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
         await shareIntentService.initialize();
         
         // Listen for share intents
-        shareIntentService.sharedFilesStream.listen((files) {
+        _sharedFilesSubscription = shareIntentService.sharedFilesStream.listen((files) {
           if (files.isNotEmpty && mounted) {
             debugPrint('📥 Received ${files.length} file(s) from share intent');
             // Get the share mode from the service
@@ -246,7 +249,7 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
         });
         
         // Also listen for share mode changes
-        shareIntentService.shareModeStream.listen((mode) {
+        _shareModeSubscription = shareIntentService.shareModeStream.listen((mode) {
           if (mounted) {
             debugPrint('📱 Share mode changed to: $mode');
             setState(() {
@@ -298,6 +301,20 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   @override
   void onWindowClose() async {
     try {
+      // Save window bounds before handling close
+      try {
+        final size = await windowManager.getSize();
+        final position = await windowManager.getPosition();
+        final maximized = await windowManager.isMaximized();
+        await WindowSettingsService.saveWindowBounds(
+          size: size,
+          position: position,
+          maximized: maximized,
+        );
+      } catch (e) {
+        debugPrint('⚠️ Error saving window bounds: $e');
+      }
+
       final isPreventClose = await windowManager.isPreventClose();
 
       if (isPreventClose && SystemTrayService.isInitialized) {
@@ -350,45 +367,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       }
     }
   }
-
-  @override
-  void onWindowFocus() {}
-
-  @override
-  void onWindowBlur() {}
-
-  @override
-  void onWindowMaximize() {}
-
-  @override
-  void onWindowUnmaximize() {}
-
-  @override
-  void onWindowMinimize() {}
-
-  @override
-  void onWindowRestore() {}
-
-  @override
-  void onWindowResize() {}
-
-  @override
-  void onWindowMove() {}
-
-  @override
-  void onWindowEnterFullScreen() {}
-
-  @override
-  void onWindowLeaveFullScreen() {}
-
-  @override
-  void onWindowEvent(String eventName) {}
-
-  @override
-  void onWindowMoved() {}
-
-  @override
-  void onWindowResized() {}
 
   @override
   Widget build(BuildContext context) {
@@ -491,14 +469,31 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
     // If we have browser share files, show browser share screen
     if (_browserShareFiles != null && _browserShareFiles!.isNotEmpty && _initialized) {
       final files = _browserShareFiles!;
-      _browserShareFiles = null; // Clear after use
+      // Defer state mutation to post-frame callback (build must be pure)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _browserShareFiles = null;
+          });
+        }
+      });
       return BrowserShareScreen(
         files: files,
       );
     }
 
     // Show share intent dialog if app was opened from another app
-    if (_hasShareIntent && _sharedFilesFromIntent != null && _initialized) {
+    if (_hasShareIntent && _sharedFilesFromIntent != null && _initialized && !_shareIntentHandled) {
+      _shareIntentHandled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          if (_shareMode == AndroidShareMode.browserShare) {
+            _handleBrowserShare();
+          } else {
+            _handleAppToAppShare();
+          }
+        }
+      });
       return _buildShareIntentScreen();
     }
 
@@ -513,16 +508,6 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   // Build screen for handling share intents from other apps
   // On Android, directly navigates based on share mode (no dialog)
   Widget _buildShareIntentScreen() {
-    // Directly handle based on share mode - no dialog needed
-    // The mode was set by the activity-alias selected in Android share sheet
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_shareMode == AndroidShareMode.browserShare) {
-        _handleBrowserShare();
-      } else {
-        _handleAppToAppShare();
-      }
-    });
-
     // Show loading while processing
     return Scaffold(
       body: Container(
@@ -677,69 +662,4 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
       _browserShareFiles = files;
     });
   }
-}
-
-/// Window event listener for saving window bounds on close/resize
-class _WindowEventListener with WindowListener {
-  @override
-  void onWindowClose() async {
-    // Save window bounds before closing
-    try {
-      final size = await windowManager.getSize();
-      final position = await windowManager.getPosition();
-      final maximized = await windowManager.isMaximized();
-      
-      await WindowSettingsService.saveWindowBounds(
-        size: size,
-        position: position,
-        maximized: maximized,
-      );
-    } catch (e) {
-      debugPrint('❌ Error saving window bounds on close: $e');
-    }
-  }
-
-  @override
-  void onWindowResize() async {
-    // Debounce is handled by saving only on close for simplicity
-    // For real-time saving, you'd use a timer to debounce
-  }
-
-  @override
-  void onWindowMove() async {
-    // Debounce is handled by saving only on close for simplicity
-  }
-
-  @override
-  void onWindowFocus() {}
-
-  @override
-  void onWindowBlur() {}
-
-  @override
-  void onWindowMaximize() {}
-
-  @override
-  void onWindowUnmaximize() {}
-
-  @override
-  void onWindowMinimize() {}
-
-  @override
-  void onWindowRestore() {}
-
-  @override
-  void onWindowEnterFullScreen() {}
-
-  @override
-  void onWindowLeaveFullScreen() {}
-
-  @override
-  void onWindowEvent(String eventName) {}
-
-  @override
-  void onWindowMoved() {}
-
-  @override
-  void onWindowResized() {}
 }

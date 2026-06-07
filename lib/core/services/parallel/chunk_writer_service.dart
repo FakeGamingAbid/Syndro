@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'parallel_config.dart';
+import '../../utils/byte_formatter.dart';
 
 /// RAM-efficient chunk writer service
 /// 
@@ -67,7 +68,7 @@ class ChunkWriterService {
       await _file!.writeByte(0);
       await _file!.setPosition(0);
       
-      debugPrint('📁 Pre-allocated file: $tempPath (${_formatBytes(totalSize)})');
+      debugPrint('📁 Pre-allocated file: $tempPath (${ByteFormatter.format(totalSize)})');
     } catch (e) {
       debugPrint('Error initializing chunk writer: $e');
       rethrow;
@@ -214,12 +215,6 @@ class ChunkWriterService {
     }
   }
 
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
-    return '${(bytes / 1024 / 1024 / 1024).toStringAsFixed(2)} GB';
-  }
 }
 
 /// Manages multiple chunk writers for a transfer session

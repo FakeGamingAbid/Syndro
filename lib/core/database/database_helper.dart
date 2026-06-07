@@ -11,12 +11,14 @@ class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._internal();
   static Database? _database;
   static Future<Database>? _initFuture;
+  bool _isClosed = false;
 
   DatabaseHelper._internal();
 
   /// Get the database instance, initializing if necessary.
   /// Uses a simple future-based lock to prevent concurrent initialization.
   Future<Database> get database async {
+    if (_isClosed) throw StateError('DatabaseHelper has been closed');
     if (_database != null) return _database!;
 
     // If already initializing, wait for the existing future
@@ -409,11 +411,13 @@ class DatabaseHelper {
 
   // Close database
   Future<void> close() async {
+    if (_isClosed) return;
+    _isClosed = true;
     final db = _database;
+    _database = null;
+    _initFuture = null;
     if (db != null) {
       await db.close();
-      _database = null;
-      _initFuture = null; // Reset to allow re-initialization
     }
   }
 }

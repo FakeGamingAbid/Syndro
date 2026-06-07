@@ -9,6 +9,8 @@ import 'chunk_writer_service.dart';
 import '../streaming_hash_service.dart';
 import '../file_service.dart';
 import '../encryption_service.dart';
+import '../../utils/byte_formatter.dart';
+import '../../utils/synchronized.dart';
 
 /// Handles receiving parallel chunk transfers
 class ParallelReceiverHandler {
@@ -16,7 +18,7 @@ class ParallelReceiverHandler {
   final ChunkWriterManager _writerManager = ChunkWriterManager();
   final Map<String, ParallelReceiveSession> _sessions = {};
 
-  final _SimpleLock _sessionsLock = _SimpleLock();
+  final SynchronizedLock<void> _sessionsLock = SynchronizedLock<void>();
 
   // BUG-005 FIX: Use shared AesGcm from EncryptionService
   final AesGcm _aesGcm = EncryptionService.aesGcm;
@@ -54,7 +56,7 @@ class ParallelReceiverHandler {
     }
 
     debugPrint('📥 Parallel transfer initiated: $fileName');
-    debugPrint('   Size: ${_formatBytes(fileSize)}, Chunks: $totalChunks');
+    debugPrint('   Size: ${ByteFormatter.format(fileSize)}, Chunks: $totalChunks');
 
     try {
       final downloadDir = await _fileService.getDownloadDirectory();
@@ -321,16 +323,7 @@ class ParallelReceiverHandler {
     await _writerManager.closeAll();
   }
 
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) {
-      return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    }
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / 1024 / 1024).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / 1024 / 1024 / 1024).toStringAsFixed(2)} GB';
-  }
+
 }
 
 /// Session state for receiving parallel transfer
@@ -349,7 +342,7 @@ class ParallelReceiveSession {
 
   int _chunksReceived = 0;
   int _bytesReceived = 0;
-  final _SimpleLock _lock = _SimpleLock();
+  final SynchronizedLock<void> _lock = SynchronizedLock<void>();
 
   DateTime startTime = DateTime.now();
 
@@ -386,25 +379,5 @@ class ParallelReceiveSession {
     final seconds = elapsed.inMilliseconds / 1000;
     if (seconds <= 0) return 0;
     return _bytesReceived / seconds;
-  }
-}
-
-class _SimpleLock {
-  Future<void>? _lock;
-
-  Future<T> synchronized<T>(FutureOr<T> Function() action) async {
-    while (_lock != null) {
-      await _lock;
-    }
-
-    final completer = Completer<void>();
-    _lock = completer.future;
-
-    try {
-      return await action();
-    } finally {
-      _lock = null;
-      completer.complete();
-    }
   }
 }

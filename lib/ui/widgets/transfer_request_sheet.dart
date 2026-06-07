@@ -6,6 +6,7 @@ import '../../core/providers/transfer_provider.dart';
 import '../theme/app_theme.dart';
 import '../screens/transfer_progress_screen.dart';
 import 'transfer_request_strings.dart';
+import '../../core/utils/byte_formatter.dart';
 
 class TransferRequestSheet extends ConsumerWidget {
   final PendingTransferRequest request;
@@ -143,7 +144,7 @@ class TransferRequestSheet extends ConsumerWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _formatBytes(totalSize),
+                        ByteFormatter.format(totalSize),
                         style: const TextStyle(
                           color: AppTheme.textTertiary,
                           fontSize: 12,
@@ -195,7 +196,7 @@ class TransferRequestSheet extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          _formatBytes(item.size),
+                          ByteFormatter.format(item.size),
                           style: const TextStyle(
                             fontSize: 11,
                             color: AppTheme.textTertiary,
@@ -300,14 +301,5 @@ class TransferRequestSheet extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
   }
 }

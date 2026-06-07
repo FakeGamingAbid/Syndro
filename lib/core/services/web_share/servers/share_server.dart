@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 
+import '../../../utils/app_logger.dart';
 import '../utils/network_utils.dart';
 import '../utils/file_type_utils.dart';
 import '../templates/share_page_template.dart';
@@ -158,7 +159,7 @@ class ShareServer {
       confirmation.confirmed = true;
       // Activate the connection after confirmation
       _activateConnection(ipAddress, confirmation.userAgent);
-      debugPrint('✅ Connection confirmed for $ipAddress');
+      debugPrint('✅ Connection confirmed for ${AppLogger.sanitize(ipAddress)}');
       return true;
     }
     return false;
@@ -169,7 +170,7 @@ class ShareServer {
     final confirmation = _pendingConfirmations[ipAddress];
     if (confirmation != null && confirmation.isPending) {
       confirmation.denied = true;
-      debugPrint('❌ Connection denied for $ipAddress');
+      debugPrint('❌ Connection denied for ${AppLogger.sanitize(ipAddress)}');
       return true;
     }
     return false;
@@ -201,7 +202,7 @@ class ShareServer {
     
     // Check if over limit
     if (timestamps.length >= _maxRequestsPerMinute) {
-      debugPrint('⚠️ Rate limit exceeded for $ipAddress: ${timestamps.length} requests in last minute');
+      debugPrint('⚠️ Rate limit exceeded for ${AppLogger.sanitize(ipAddress)}: ${timestamps.length} requests in last minute');
       _requestTimestamps[ipAddress] = timestamps;
       return false;
     }
@@ -389,14 +390,14 @@ class ShareServer {
 
       // Emit event for UI to show confirmation dialog
       _confirmationRequestController.add(confirmation);
-      debugPrint('⏳ Connection confirmation requested for $ipAddress');
+      debugPrint('⏳ Connection confirmation requested for ${AppLogger.sanitize(ipAddress)}');
 
       // Set timeout to auto-deny after 1 minute
       Timer(_confirmationTimeout, () {
         final conf = _pendingConfirmations[ipAddress];
         if (conf != null && conf.isPending) {
           conf.denied = true;
-          debugPrint('⏱️ Connection confirmation timed out for $ipAddress');
+          debugPrint('⏱️ Connection confirmation timed out for ${AppLogger.sanitize(ipAddress)}');
         }
       });
 
@@ -421,7 +422,7 @@ class ShareServer {
       ipAddress: ipAddress,
       userAgent: userAgent,
     ));
-    debugPrint('✅ Client connected: $ipAddress (Total: ${_activeConnections.length})');
+    debugPrint('✅ Client connected: ${AppLogger.sanitize(ipAddress)} (Total: ${_activeConnections.length})');
   }
 
   /// Called when confirmation is granted - activates the connection
@@ -438,7 +439,7 @@ class ShareServer {
       fileName: fileName,
       fileSize: fileSize,
     ));
-    debugPrint('Download started: $fileName by $ipAddress');
+    debugPrint('Download started: $fileName by ${AppLogger.sanitize(ipAddress)}');
   }
 
   void _onDownloadCompleted(String ipAddress, String fileName, int fileSize) {
@@ -448,7 +449,7 @@ class ShareServer {
       fileName: fileName,
       fileSize: fileSize,
     ));
-    debugPrint('Download completed: $fileName by $ipAddress');
+    debugPrint('Download completed: $fileName by ${AppLogger.sanitize(ipAddress)}');
   }
 
   /// Serve HTTP requests
@@ -508,6 +509,16 @@ class ShareServer {
     // Track connection when accessing index page
     if (requestPath == '/' || requestPath == '/index.html') {
       _onClientConnected(clientIp, userAgent); // MODIFIED
+    }
+
+    // SECURITY: Require connection confirmation for file list, connected clients, and thumbnails
+    if (requestPath == '/api/files' || requestPath == '/api/connected-clients' || requestPath.startsWith('/thumbnail/')) {
+      if (!isConnectionAllowed(clientIp)) {
+        request.response.statusCode = HttpStatus.forbidden;
+        request.response.write('Forbidden: Connection not confirmed');
+        await request.response.close();
+        return;
+      }
     }
 
     // Route requests
@@ -857,7 +868,7 @@ class ShareServer {
         // Notify download completed (partial content)
         _onDownloadCompleted(clientIp, fileName, contentLength);
         
-        debugPrint('✅ Range served: $fileName ($contentLength bytes) to $clientIp');
+        debugPrint('✅ Range served: $fileName ($contentLength bytes) to ${AppLogger.sanitize(clientIp)}');
       } finally {
         await randomAccessFile.close();
       }

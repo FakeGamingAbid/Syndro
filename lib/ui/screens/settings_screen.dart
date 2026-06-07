@@ -100,7 +100,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 16),
             TextField(
               controller: controller,
-              autofocus: !Platform.isAndroid, // FIXED (Bug #14): Disable on Android to prevent keyboard trap
+              autofocus: false, // FIXED (Bug #14): Disable autofocus to prevent keyboard trap
               maxLength: 30,
               textInputAction: TextInputAction.done, // FIXED (Bug #13): Add text input action
               inputFormatters: [

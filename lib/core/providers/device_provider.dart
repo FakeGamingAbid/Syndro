@@ -39,16 +39,7 @@ final deviceDiscoveryServiceProvider = Provider<DeviceDiscoveryService>((ref) {
 final currentDeviceProvider = Provider<Device>((ref) {
   final service = ref.watch(deviceDiscoveryServiceProvider);
   // FIX (Bug #10): Check if service is initialized before returning device
-  if (!service.isInitialized) {
-    return Device(
-      id: '',
-      name: 'Initializing...',
-      platform: DevicePlatform.unknown,
-      ipAddress: '0.0.0.0',
-      port: AppConfig.defaultTransferPort,
-      lastSeen: DateTime.now(),
-    );
-  }
+  if (!service.isInitialized) return Device.initializing();
   return service.currentDevice;
 });
 
@@ -89,9 +80,9 @@ final isDeviceServiceInitializedProvider = Provider<bool>((ref) {
 });
 
 // FIX (Bug #14): Use StreamProvider for reactive scanning state
-final isScanningProvider = Provider<bool>((ref) {
+final isScanningProvider = StreamProvider<bool>((ref) {
   final service = ref.watch(deviceDiscoveryServiceProvider);
-  return service.isScanning;
+  return service.scanningStream;
 });
 
 /// Provider for local IP addresses (for subnet filtering)
@@ -167,6 +158,7 @@ final currentDeviceNicknameProvider =
 // ============================================
 
 class DeviceDiscoveryNotifier extends StateNotifier<List<Device>> {
+  final Ref _ref;
   final DeviceDiscoveryService _service;
   bool _isScanning = false;
   bool _isDisposed = false;
@@ -174,7 +166,7 @@ class DeviceDiscoveryNotifier extends StateNotifier<List<Device>> {
   // FIX (Bug #6): Type the subscription properly
   StreamSubscription<List<Device>>? _subscription;
 
-  DeviceDiscoveryNotifier(this._service) : super([]) {
+  DeviceDiscoveryNotifier(this._ref, this._service) : super([]) {
     // Listen to the service's device stream
     _subscription = _service.devicesStream.listen(
       (devices) {
@@ -194,6 +186,7 @@ class DeviceDiscoveryNotifier extends StateNotifier<List<Device>> {
     if (_isScanning || _isDisposed) return;
 
     _isScanning = true;
+    _ref.read(isDiscoveryScanningProvider.notifier).state = true;
 
     try {
       // Initialize if not already done, then refresh
@@ -207,12 +200,14 @@ class DeviceDiscoveryNotifier extends StateNotifier<List<Device>> {
     } finally {
       if (!_isDisposed) {
         _isScanning = false;
+        _ref.read(isDiscoveryScanningProvider.notifier).state = false;
       }
     }
   }
 
   Future<void> stopDiscovery() async {
     _isScanning = false;
+    _ref.read(isDiscoveryScanningProvider.notifier).state = false;
   }
 
   @override
@@ -226,7 +221,7 @@ class DeviceDiscoveryNotifier extends StateNotifier<List<Device>> {
 final deviceDiscoveryProvider =
     StateNotifierProvider<DeviceDiscoveryNotifier, List<Device>>((ref) {
   final service = ref.watch(deviceDiscoveryServiceProvider);
-  return DeviceDiscoveryNotifier(service);
+  return DeviceDiscoveryNotifier(ref, service);
 });
 
 // ============================================
@@ -235,7 +230,4 @@ final deviceDiscoveryProvider =
 
 /// A provider that exposes whether discovery is currently scanning
 /// This can be used by UI to show scanning indicators
-final isDiscoveryScanningProvider = Provider<bool>((ref) {
-  final notifier = ref.watch(deviceDiscoveryProvider.notifier);
-  return notifier.isScanning;
-});
+final isDiscoveryScanningProvider = StateProvider<bool>((ref) => false);

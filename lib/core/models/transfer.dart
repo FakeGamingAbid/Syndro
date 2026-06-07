@@ -1,7 +1,9 @@
-import 'dart:math' as math;
+import 'dart:math';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
+
+import '../utils/byte_formatter.dart';
 
 enum TransferStatus {
   pending,
@@ -64,7 +66,7 @@ class TransferProgress extends Equatable {
     final percent = (bytesTransferred / totalBytes) * 100;
 
     // FIX: Clamp to valid range
-    return math.max(0, math.min(100, percent));
+    return max(0, min(100, percent));
   }
 
   // FIX: Safe percentage as int
@@ -78,27 +80,14 @@ class TransferProgress extends Equatable {
     if (bytesTransferred <= 0) return 0;
     if (bytesTransferred >= totalBytes) return 1.0;
 
-    return math.max(0, math.min(1, bytesTransferred / totalBytes));
+    return max(0, min(1, bytesTransferred / totalBytes));
   }
 
   // Format bytes transferred as human-readable string
-  String get bytesTransferredFormatted => _formatBytes(bytesTransferred);
+  String get bytesTransferredFormatted => ByteFormatter.format(bytesTransferred);
 
   // Format total bytes as human-readable string
-  String get totalBytesFormatted => _formatBytes(totalBytes);
-
-  // Helper function to format bytes
-  String _formatBytes(int bytes) {
-    if (bytes <= 0) return '0 B';
-    const suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    var i = 0;
-    double size = bytes.toDouble();
-    while (size >= 1024 && i < suffixes.length - 1) {
-      size /= 1024;
-      i++;
-    }
-    return '${size.toStringAsFixed(size >= 10 ? 1 : 2)} ${suffixes[i]}';
-  }
+  String get totalBytesFormatted => ByteFormatter.format(totalBytes);
 
   String get speedFormatted {
     if (speed <= 0) return '0 B/s';
@@ -115,7 +104,7 @@ class TransferProgress extends Equatable {
   }
 
   String get progressFormatted {
-    return '${_formatBytes(bytesTransferred)} / ${_formatBytes(totalBytes)}';
+    return '${ByteFormatter.format(bytesTransferred)} / ${ByteFormatter.format(totalBytes)}';
   }
 
   String get etaFormatted {
@@ -139,9 +128,9 @@ class TransferProgress extends Equatable {
     Duration? eta,
   }) {
     return TransferProgress(
-      bytesTransferred: math.max(0, bytesTransferred ?? this.bytesTransferred),
-      totalBytes: math.max(0, totalBytes ?? this.totalBytes),
-      speed: math.max(0, speed ?? this.speed),
+      bytesTransferred: max(0, bytesTransferred ?? this.bytesTransferred),
+      totalBytes: max(0, totalBytes ?? this.totalBytes),
+      speed: max(0, speed ?? this.speed),
       eta: eta ?? this.eta,
     );
   }
@@ -154,9 +143,9 @@ class TransferProgress extends Equatable {
     Duration? eta,
   }) {
     return TransferProgress(
-      bytesTransferred: math.max(0, bytesTransferred),
-      totalBytes: math.max(0, totalBytes),
-      speed: math.max(0, speed),
+      bytesTransferred: max(0, bytesTransferred),
+      totalBytes: max(0, totalBytes),
+      speed: max(0, speed),
       eta: eta,
     );
   }
@@ -180,9 +169,9 @@ class TransferProgress extends Equatable {
     }
 
     return TransferProgress(
-      bytesTransferred: math.max(0, bytesTransferred),
-      totalBytes: math.max(0, totalBytes),
-      speed: math.max(0, speed),
+      bytesTransferred: max(0, bytesTransferred),
+      totalBytes: max(0, totalBytes),
+      speed: max(0, speed),
       eta: eta,
     );
   }
@@ -287,10 +276,10 @@ class TransferItem extends Equatable {
     return TransferItem(
       name: name,
       path: path,
-      size: math.max(0, size),
+      size: max(0, size),
       isDirectory: json['isDirectory'] as bool? ?? false,
       parentPath: json['parentPath'] as String?,
-      itemCount: math.max(0, json['itemCount'] as int? ?? 0),
+      itemCount: max(0, json['itemCount'] as int? ?? 0),
       createdAt: createdAt,
       modifiedAt: modifiedAt,
     );

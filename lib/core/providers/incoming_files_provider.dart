@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/transfer.dart';
+import '../utils/byte_formatter.dart';
 
 /// Provider for managing files received from command line arguments (right-click send)
 final incomingFilesProvider =
@@ -90,7 +91,7 @@ class IncomingFilesNotifier extends StateNotifier<IncomingFilesState> {
             isDirectory: false,
           ));
           
-          debugPrint('📁 Added file: $name (${_formatBytes(stat.size)})');
+          debugPrint('📁 Added file: $name (${ByteFormatter.format(stat.size)})');
         } else if (await directory.exists()) {
           // Calculate folder size
           int folderSize = 0;
@@ -112,7 +113,7 @@ class IncomingFilesNotifier extends StateNotifier<IncomingFilesState> {
             isDirectory: true,
           ));
           
-          debugPrint('📂 Added folder: $name ($fileCount files, ${_formatBytes(folderSize)})');
+          debugPrint('📂 Added folder: $name ($fileCount files, ${ByteFormatter.format(folderSize)})');
         } else {
           debugPrint('⚠️ Path does not exist: $path');
         }
@@ -195,13 +196,5 @@ class IncomingFilesNotifier extends StateNotifier<IncomingFilesState> {
   /// Get total size of all files
   int get totalSize => state.files.fold(0, (sum, item) => sum + item.size);
 
-  /// Format bytes to human readable string
-  String _formatBytes(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(2)} GB';
-  }
+
 }

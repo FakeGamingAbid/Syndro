@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 
 import '../models/transfer.dart';
 import '../models/folder_structure.dart';
+import '../utils/app_logger.dart';
 
 /// Custom exception for file service errors
 ///
@@ -772,7 +773,7 @@ class FileService {
             await testFile.writeAsString('test');
             await testFile.delete();
 
-            debugPrint('📁 Using download directory: ${syndroDir.path}');
+            debugPrint('📁 Using download directory: ${AppLogger.sanitize(syndroDir.path)}');
             return syndroDir.path;
           } catch (e) {
             debugPrint('⚠️ Cannot use $downloadPath: $e');
@@ -901,7 +902,7 @@ class FileService {
       final file = File(filePath);
       await file.writeAsBytes(bytes);
 
-      debugPrint('✅ File saved to: $filePath');
+      debugPrint('✅ File saved to: ${AppLogger.sanitize(filePath)}');
       return file;
     } catch (e) {
       if (e is FileServiceException) rethrow;
