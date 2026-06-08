@@ -1,5 +1,3 @@
- import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +5,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../theme/app_theme.dart';
 import '../../core/providers/device_provider.dart';
+import '../../core/providers/transfer_provider.dart';
 import '../../core/services/app_settings_service.dart';
+import '../../core/services/transfer_service/models.dart';
+import '../../core/services/transfer_service/transfer_service_impl.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -417,6 +418,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             const SizedBox(height: 32),
 
             // ============================================
+            // TRUSTED DEVICES SECTION
+            // ============================================
+            _buildSectionHeader('Trusted Devices'),
+            const SizedBox(height: 12),
+
+            _buildTrustedDevicesSection(),
+
+            const SizedBox(height: 32),
+
+            // ============================================
             // ABOUT SECTION
             // ============================================
             _buildSectionHeader('About'),
@@ -539,6 +550,166 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildTrustedDevicesSection() {
+    final trustedDevices = ref.watch(trustedDevicesProvider);
+    final transferService = ref.read(transferServiceProvider);
+
+    if (trustedDevices.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.cardColor.withOpacity(0.8),
+              AppTheme.surfaceColor.withOpacity(0.6),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppTheme.primaryColor.withOpacity(0.15),
+            width: 1,
+          ),
+        ),
+        child: _buildSettingsTile(
+          icon: Icons.shield_outlined,
+          iconColor: AppTheme.textTertiary,
+          iconBgColor: AppTheme.textTertiary.withOpacity(0.15),
+          title: const Text('No trusted devices'),
+          subtitle: const Text(
+            'Devices you approve for transfer will appear here',
+            style: TextStyle(fontSize: 12),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.cardColor.withOpacity(0.8),
+            AppTheme.surfaceColor.withOpacity(0.6),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.primaryColor.withOpacity(0.15),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryColor.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          for (int i = 0; i < trustedDevices.length; i++) ...[
+            if (i > 0) const Divider(height: 1, indent: 60),
+            _buildTrustedDeviceTile(trustedDevices[i], transferService),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTrustedDeviceTile(
+      TrustedDevice device, TransferService transferService) {
+    final hasPin = device.hasActivePin;
+    final lastTrusted = device.trustedAt;
+    final timeAgo = _formatTimeAgo(lastTrusted);
+
+    return _buildSettingsTile(
+      icon: hasPin ? Icons.verified_user : Icons.person_outline,
+      iconColor: hasPin ? AppTheme.successColor : AppTheme.secondaryColor,
+      iconBgColor: (hasPin ? AppTheme.successColor : AppTheme.secondaryColor)
+          .withOpacity(0.15),
+      title: Text(device.senderName),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            hasPin ? 'Pinned \u2022 $timeAgo' : 'No pin \u2022 $timeAgo',
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
+      trailing: PopupMenuButton<String>(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceColor.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Icon(Icons.more_vert_rounded, size: 18),
+        ),
+        onSelected: (value) async {
+          if (value == 'rotate') {
+            await transferService.rotatePinnedKey(device.senderId);
+            if (mounted) {
+              ref.invalidate(trustedDevicesProvider);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                      'Pin reset for ${device.senderName} \u2014 re-pair on next transfer'),
+                  backgroundColor: AppTheme.secondaryColor,
+                ),
+              );
+            }
+          } else if (value == 'revoke') {
+            await transferService.revokeTrust(device.senderId);
+            if (mounted) {
+              ref.invalidate(trustedDevicesProvider);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Trust revoked for ${device.senderName}'),
+                  backgroundColor: AppTheme.errorColor,
+                ),
+              );
+            }
+          }
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'rotate',
+            child: Row(
+              children: [
+                Icon(Icons.refresh, size: 18),
+                SizedBox(width: 8),
+                Text('Reset trust'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'revoke',
+            child: Row(
+              children: [
+                Icon(Icons.delete_outline, size: 18, color: AppTheme.errorColor),
+                SizedBox(width: 8),
+                Text('Revoke trust',
+                    style: TextStyle(color: AppTheme.errorColor)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTimeAgo(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
   }
 
   Widget _buildSettingsTile({

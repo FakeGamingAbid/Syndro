@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
 
 import '../models/qr_pairing_payload.dart';
-import 'http_response_helper.dart';
+import 'transfer_service/http_response_helper.dart';
 
 /// Custom exception for QR pairing errors
 class QrPairingException implements Exception {
@@ -187,7 +187,7 @@ class QrPairingService {
     required String senderToken,
   }) async {
     try {
-      final payload = QrPairingPayload.decode(data);
+      QrPairingPayload.decode(data);
     } catch (_) {
       return null;
     }

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
@@ -444,6 +446,81 @@ class EncryptionService {
   /// Consider generating a new key pair and performing
   /// a new key exchange when this returns true.
   bool get shouldRotateKey => _nonceCount > _maxNoncesPerKey ~/ 2;
+
+  // ─────────────────────────────────────────────
+  //  TOFU public-key pin verification
+  // ─────────────────────────────────────────────
+
+  /// Verify that the presented ephemeral public key matches the TOFU pin
+  /// stored for the given device.
+  ///
+  /// Throws [SecurityException] when:
+  /// - A pin IS set and the presented key bytes differ (MITM detected).
+  ///
+  /// Returns normally (does NOT pin the key) when:
+  /// - No pin is set yet (first use → caller should call `pinKey` after
+  ///   this returns).
+  /// - The presented key matches the pin exactly.
+  ///
+  /// Call this **before** calling [deriveSharedSecret] — abort early on
+  /// MITM.
+  static Future<void> verifyPinnedKey({
+    required String deviceId,
+    required Uint8List presentedPubKeyBytes,
+    required String? pinnedPubKeyBase64Url,
+  }) async {
+    if (pinnedPubKeyBase64Url == null || pinnedPubKeyBase64Url.isEmpty) {
+      // First use — no pin to check. Caller should pin after exchange.
+      return;
+    }
+
+    final presentedBase64 = base64Url.encode(presentedPubKeyBytes);
+    if (!secureBytesEqual(pinnedPubKeyBase64Url, presentedBase64)) {
+      throw SecurityException(
+        'Public key mismatch for device $deviceId — possible MITM',
+        deviceId: deviceId,
+        code: 'KEY_MISMATCH',
+      );
+    }
+  }
+
+  /// Derive a bound token that binds the static sender token to the
+  /// pinned public key: `HMAC-SHA256(senderToken, pinnedPubKey)` (32 bytes).
+  ///
+  /// The bound token replaces the raw `senderToken` in the
+  /// `X-Sender-Token` header for pinned devices, preventing an attacker
+  /// who stole the static token from using it without also possessing the
+  /// correct public key.
+  ///
+  /// Returns a base64url-encoded (no padding) 32-byte HMAC.
+  static Future<String> deriveBoundToken({
+    required String senderToken,
+    required String pinnedPubKeyBase64Url,
+  }) async {
+    final hmac = Hmac.sha256();
+    final keyBytes = utf8.encode(senderToken);
+    final secretKey = SecretKey(keyBytes);
+    final messageBytes = utf8.encode(pinnedPubKeyBase64Url);
+
+    final mac = await hmac.calculateMac(
+      messageBytes,
+      secretKey: secretKey,
+    );
+
+    return base64Url.encode(mac.bytes);
+  }
+
+  /// Constant-time comparison of two strings (no length leak beyond a
+  /// fast-path rejection for different lengths).  Used to compare
+  /// HMAC outputs without timing side-channels.
+  static bool secureBytesEqual(String a, String b) {
+    if (a.length != b.length) return false;
+    int result = 0;
+    for (int i = 0; i < a.length; i++) {
+      result |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+    }
+    return result == 0;
+  }
 }
 
 /// Custom exception for encryption errors
@@ -476,6 +553,28 @@ class EncryptionException implements Exception {
     }
     return 'EncryptionException: $message';
   }
+}
+
+/// Security exception thrown when a TOFU public-key pin mismatch is
+/// detected during key exchange.
+///
+/// This indicates a possible MITM attack: the remote device presented
+/// a public key different from the one pinned during the initial QR
+/// pairing. The connection must be aborted.
+///
+/// The caller should surface this to the user as an actionable prompt
+/// to "Reset trust" for the affected device via the settings UI.
+class SecurityException implements Exception {
+  final String message;
+  final String? deviceId;
+  final String? code;
+
+  SecurityException(this.message, {this.deviceId, this.code});
+
+  @override
+  String toString() => 'SecurityException: $message'
+      '${deviceId != null ? ' [device=$deviceId]' : ''}'
+      '${code != null ? ' (code=$code)' : ''}';
 }
 
 /// Thread-safe mutex lock for nonce operations

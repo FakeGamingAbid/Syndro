@@ -53,25 +53,71 @@ class PendingTransferRequest {
   int get totalSize => items.fold<int>(0, (sum, item) => sum + item.size);
 }
 
-/// Trusted device with verification token
+/// Trusted device with verification token and optional TOFU pin
+///
+/// `pinnedPubKey` is the base64url-encoded X25519 public key that was
+/// pinned during the first QR pairing handshake. When set, every key
+/// exchange must present this exact public key; a mismatch aborts the
+/// connection (MITM detection).
+///
+/// `pendingRepin` is a flag set by `rotatePinnedKey()`. It signals that
+/// the next successful QR pairing scan from this device should overwrite
+/// the (now-invalid) pin with the freshly scanned public key.
 class TrustedDevice {
   final String senderId;
   final String senderName;
   final String token;
   final DateTime trustedAt;
 
+  /// Base64url-encoded X25519 public key pinned via TOFU.
+  ///
+  /// `null` when the device has not been QR-paired yet or when a pin
+  /// rotation was triggered (see [pendingRepin]).
+  final String? pinnedPubKey;
+
+  /// `true` when the user has pressed "Reset trust" and we are waiting
+  /// for the next QR re-pairing to re-pin a new key.
+  final bool pendingRepin;
+
   TrustedDevice({
     required this.senderId,
     required this.senderName,
     required this.token,
     required this.trustedAt,
+    this.pinnedPubKey,
+    this.pendingRepin = false,
   });
+
+  /// Returns `true` if a pinned public key is set and rotation is NOT
+  /// pending — i.e. we expect key-exchange responses to match [pinnedPubKey].
+  bool get hasActivePin => pinnedPubKey != null && pinnedPubKey!.isNotEmpty && !pendingRepin;
+
+  TrustedDevice copyWith({
+    String? senderId,
+    String? senderName,
+    String? token,
+    DateTime? trustedAt,
+    bool clearPin = false,
+    String? pinnedPubKey,
+    bool? pendingRepin,
+  }) {
+    return TrustedDevice(
+      senderId: senderId ?? this.senderId,
+      senderName: senderName ?? this.senderName,
+      token: token ?? this.token,
+      trustedAt: trustedAt ?? this.trustedAt,
+      pinnedPubKey: clearPin ? null : (pinnedPubKey ?? this.pinnedPubKey),
+      pendingRepin: pendingRepin ?? this.pendingRepin,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
         'senderId': senderId,
         'senderName': senderName,
         'token': token,
         'trustedAt': trustedAt.toIso8601String(),
+        if (pinnedPubKey != null) 'pinnedPubKey': pinnedPubKey,
+        if (pendingRepin) 'pendingRepin': true,
       };
 
   factory TrustedDevice.fromJson(Map<String, dynamic> json) {
@@ -88,6 +134,8 @@ class TrustedDevice {
       senderName: json['senderName'] as String,
       token: json['token'] as String,
       trustedAt: trustedAt,
+      pinnedPubKey: json['pinnedPubKey'] as String?,
+      pendingRepin: json['pendingRepin'] as bool? ?? false,
     );
   }
 }

@@ -16,7 +16,6 @@ import '../../models/device.dart';
 import '../../models/transfer.dart';
 import '../../models/transfer_checkpoint.dart';
 import '../../database/database_helper.dart';
-import '../../utils/app_logger.dart';
 import '../encryption_service.dart';
 import '../file_service.dart';
 import '../app_settings_service.dart';
@@ -401,7 +400,10 @@ class TransferService {
       final autoAcceptTrusted = await _settingsService.getAutoAcceptTrusted();
 
       if (trustedDevice != null &&
-          _secureTokenCompare(trustedDevice.token, senderToken) &&
+          await _verifyDeviceToken(
+            senderId: senderId,
+            presentedToken: senderToken,
+          ) &&
           autoAcceptTrusted) {
         // Auto-accept: proceed with transfer immediately
         debugPrint('✅ Auto-accepting parallel transfer from trusted device: $senderName');
@@ -930,6 +932,47 @@ class TransferService {
       final theirPublicKeyBytes =
           Uint8List.fromList(theirPublicKeyList.cast<int>());
 
+      // TOFU PIN CHECK: if the sender is trusted and has a pinned
+      // public key, verify the presented key matches the pin. A
+      // mismatch indicates a possible MITM — abort immediately.
+      final trustedDevice = _trustedDevices[theirDeviceId];
+      if (trustedDevice != null && trustedDevice.hasActivePin) {
+        try {
+          await EncryptionService.verifyPinnedKey(
+            deviceId: theirDeviceId,
+            presentedPubKeyBytes: theirPublicKeyBytes,
+            pinnedPubKeyBase64Url: trustedDevice.pinnedPubKey,
+          );
+        } on SecurityException catch (secEx) {
+          if (kDebugMode) {
+            debugPrint('🚫 TOFU pin mismatch during key exchange: $secEx');
+          }
+          await _sendUnauthorized(
+            request,
+            'Security: public key mismatch — device key may have changed',
+          );
+          return;
+        }
+      } else if (trustedDevice != null &&
+          !trustedDevice.hasActivePin &&
+          theirPublicKeyBytes.isNotEmpty) {
+        // First key exchange after trust without a pin (legacy trust
+        // or after rotatePinnedKey). Automatically pin the key now
+        // so subsequent connections are protected.
+        try {
+          final pubKeyBase64 = base64Url.encode(theirPublicKeyBytes);
+          await _pinTrustedDeviceKey(trustedDevice, pubKeyBase64);
+          if (kDebugMode) {
+            debugPrint(
+                '📌 Auto-pinned public key for trusted device $theirDeviceId');
+          }
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('⚠️ Auto-pin failed for $theirDeviceId: $e');
+          }
+        }
+      }
+
       final sharedSecret = await _performKeyExchange(theirPublicKeyBytes);
 
       _encryptionSessions[theirDeviceId] = EncryptionSession(
@@ -1064,6 +1107,87 @@ class TransferService {
     return result == 0;
   }
 
+  // ─────────────────────────────────────────────
+  //  TOFU pin helpers
+  // ─────────────────────────────────────────────
+
+  /// Store a public key pin for a trusted device, updating both the
+  /// in-memory map and the secure-storage entry. Called when a new key
+  /// is auto-pinned during key exchange or explicitly pinned via QR scan.
+  Future<void> _pinTrustedDeviceKey(
+      TrustedDevice device, String pubKeyBase64) async {
+    final updated = device.copyWith(
+      pinnedPubKey: pubKeyBase64,
+      pendingRepin: false,
+    );
+    _trustedDevices[device.senderId] = updated;
+    await _saveTrustedDevices();
+
+    // Also persist to the namespaced pin key for fast lookups
+    await _secureStorage.write(
+      key: 'syndro.pin.${device.senderId}',
+      value: pubKeyBase64,
+    );
+  }
+
+  /// Verify the presented token against the trusted device's record.
+  ///
+  /// Returns `true` when the raw static token matches (legacy path)
+  /// OR when a pinned public key is set and the bound token matches
+  /// (new TOFU path). Always falls back to static token for backward
+  /// compatibility with unpinned devices.
+  Future<bool> _verifyDeviceToken({
+    required String senderId,
+    required String presentedToken,
+  }) async {
+    final trustedDevice = _trustedDevices[senderId];
+    if (trustedDevice == null) return false;
+
+    // Fast path: raw static token matches (legacy / unpinned)
+    if (_secureTokenCompare(trustedDevice.token, presentedToken)) {
+      return true;
+    }
+
+    // New path: pinned device → compare bound token
+    if (trustedDevice.hasActivePin) {
+      try {
+        final expectedBound = await EncryptionService.deriveBoundToken(
+          senderToken: trustedDevice.token,
+          pinnedPubKeyBase64Url: trustedDevice.pinnedPubKey!,
+        );
+        return _secureTokenCompare(expectedBound, presentedToken);
+      } catch (_) {
+        return false;
+      }
+    }
+
+    return false;
+  }
+
+  /// Return the appropriate sender token for a specific receiver device.
+  ///
+  /// When we have a pinned public key for the receiver (meaning we've
+  /// previously done a QR pairing or key exchange with them), we send
+  /// the **bound token** = HMAC(senderToken, pinnedPubKey) to prove
+  /// possession of the pinned key. Otherwise, fall back to the raw
+  /// `_deviceToken` for backward compatibility with unpinned devices.
+  Future<String> _getSenderTokenForDevice(String receiverId) async {
+    final trustedDevice = _trustedDevices[receiverId];
+
+    if (trustedDevice != null && trustedDevice.hasActivePin) {
+      try {
+        return await EncryptionService.deriveBoundToken(
+          senderToken: _deviceToken,
+          pinnedPubKeyBase64Url: trustedDevice.pinnedPubKey!,
+        );
+      } catch (_) {
+        // Fall through to raw token on derivation failure
+      }
+    }
+
+    return _deviceToken;
+  }
+
   Future<void> _handleTransferInitiate(HttpRequest request) async {
     try {
       final body = await utf8.decoder.bind(request).join();
@@ -1114,7 +1238,10 @@ class TransferService {
       final autoAcceptTrusted = await _settingsService.getAutoAcceptTrusted();
       
       if (trustedDevice != null &&
-          _secureTokenCompare(trustedDevice.token, senderToken) &&
+          await _verifyDeviceToken(
+            senderId: senderId,
+            presentedToken: senderToken,
+          ) &&
           autoAcceptTrusted) {
         if (senderPublicKey != null && encryptionEnabled) {
           final sharedSecret = await _performKeyExchange(senderPublicKey);
@@ -1986,11 +2113,13 @@ class TransferService {
 
       int lastReportedProgress = -1;
       try {
+        // Compute sender token — uses bound token for pinned devices
+        final senderToken = await _getSenderTokenForDevice(receiver.id);
         await parallelSender.sendFileParallel(
           transferId: transferId,
           file: file,
           receiver: receiver,
-          senderToken: _deviceToken,
+          senderToken: senderToken,
           sender: sender,
           encryptionKey: encryptionKey,
           onProgress: (sent, total) {
@@ -2090,6 +2219,8 @@ class TransferService {
 
     try {
       final myPublicKey = await getPublicKey();
+      // Compute sender token — uses bound token for pinned devices
+      final senderToken = await _getSenderTokenForDevice(receiver.id);
 
       final initiateUrl =
           'http://${receiver.ipAddress}:${receiver.port}/transfer/initiate';
@@ -2102,7 +2233,7 @@ class TransferService {
             'id': transferId,
             'senderId': sender.id,
             'senderName': sender.name,
-            'senderToken': _deviceToken,
+            'senderToken': senderToken,
             'receiverId': receiver.id,
             'items': items.map((item) => item.toJson()).toList(),
             'publicKey': myPublicKey?.toList(),
@@ -2306,12 +2437,14 @@ class TransferService {
         'http://${receiver.ipAddress}:${receiver.port}/transfer/upload-encrypted';
 
     final fileHash = await _calculateHashFromFile(file);
+    // Compute sender token — uses bound token for pinned devices
+    final senderToken = await _getSenderTokenForDevice(receiver.id);
 
     final request = http.StreamedRequest('POST', Uri.parse(uploadUrl));
 
     request.headers['x-transfer-id'] = transferId;
     request.headers['x-sender-id'] = sender.id;
-    request.headers['x-sender-token'] = _deviceToken;
+    request.headers['x-sender-token'] = senderToken;
     request.headers['x-file-name'] = item.name;
     request.headers['x-original-size'] = fileSize.toString();
     request.headers['x-file-hash'] = fileHash;
@@ -2428,11 +2561,14 @@ class TransferService {
     final uploadUrl =
         'http://${receiver.ipAddress}:${receiver.port}/transfer/upload';
 
+    // Compute sender token — uses bound token for pinned devices
+    final senderToken = await _getSenderTokenForDevice(receiver.id);
+
     final request = http.StreamedRequest('POST', Uri.parse(uploadUrl));
 
     request.headers['x-transfer-id'] = transferId;
     request.headers['x-sender-id'] = sender.id;
-    request.headers['x-sender-token'] = _deviceToken;
+    request.headers['x-sender-token'] = senderToken;
     request.headers['x-file-name'] = item.name;
     request.headers['x-file-size'] = fileSize.toString();
     request.headers['x-relative-path'] = item.parentPath ?? '';
@@ -2617,6 +2753,28 @@ class TransferService {
         debugPrint('Revoked trust for device: ${removed.senderName}');
       }
       await _saveTrustedDevices();
+    }
+  }
+
+  /// Reset the TOFU pin for a trusted device, forcing re-verification
+  /// on the next key exchange. Clears the pinned public key and sets
+  /// the pendingRepin flag so the next connection auto-pins a fresh key.
+  Future<void> rotatePinnedKey(String deviceId) async {
+    final device = _trustedDevices[deviceId];
+    if (device == null) return;
+
+    // Clear the pin from secure storage
+    await _secureStorage.delete(key: 'syndro.pin.$deviceId');
+
+    // Update in-memory record
+    _trustedDevices[deviceId] = device.copyWith(
+      pinnedPubKey: null,
+      pendingRepin: true,
+    );
+    await _saveTrustedDevices();
+
+    if (kDebugMode) {
+      debugPrint('🔄 Rotated pin for device: ${device.senderName} ($deviceId)');
     }
   }
 
