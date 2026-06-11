@@ -1858,7 +1858,6 @@ class TransferService {
 
       int bytesReceived = 0;
       int lastProgressPercent = 0;
-      int lastProgressBytes = 0;
 
       await for (final chunk in request) {
         fileSink.add(chunk);
@@ -1869,7 +1868,6 @@ class TransferService {
 
         if (progressPercent != lastProgressPercent) {
           lastProgressPercent = progressPercent;
-          lastProgressBytes = bytesReceived;
 
           await BackgroundTransferService.updateProgress(
             title: 'Receiving files...',

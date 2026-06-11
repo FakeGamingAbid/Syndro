@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart';
@@ -75,7 +74,7 @@ class EncryptionService {
   int _nonceCount = 0;
   
   // Thread-safe lock for nonce operations using proper mutex pattern
-  final _nonceLock = SynchronizedLock<void>();
+  final _nonceLock = SynchronizedLock<Uint8List>();
 
   /// Generate a new key pair for key exchange
   ///

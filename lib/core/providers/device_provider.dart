@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../config/app_config.dart';
 import '../models/device.dart';
 import '../services/device_discovery_service.dart';
 import '../services/device_nickname_service.dart';

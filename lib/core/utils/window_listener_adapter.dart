@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Mixin with no-op defaults for all [WindowListener] methods.
@@ -53,4 +54,10 @@ mixin WindowListenerAdapter on Widget implements WindowListener {
 
   @override
   void onWindowResized() {}
+
+  @override
+  void onWindowDocked() {}
+
+  @override
+  void onWindowUndocked() {}
 }
