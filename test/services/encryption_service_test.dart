@@ -149,8 +149,8 @@ void main() {
       // Should not throw
       await EncryptionService.verifyPinnedKey(
         deviceId: 'test-device',
-        presentedPubKeyBytes: publicKey.bytes,
-        pinnedPubKeyBase64Url: base64Url.encode(publicKey.bytes),
+        presentedPubKeyBytes: Uint8List.fromList(publicKey.bytes),
+        pinnedPubKeyBase64Url: base64Url.encode(Uint8List.fromList(publicKey.bytes)),
       );
     });
 
@@ -164,8 +164,8 @@ void main() {
       expect(
         () => EncryptionService.verifyPinnedKey(
           deviceId: 'test-device',
-          presentedPubKeyBytes: publicKey2.bytes,
-          pinnedPubKeyBase64Url: base64Url.encode(publicKey1.bytes),
+          presentedPubKeyBytes: Uint8List.fromList(publicKey2.bytes),
+          pinnedPubKeyBase64Url: base64Url.encode(Uint8List.fromList(publicKey1.bytes)),
         ),
         throwsA(isA<SecurityException>()),
       );
@@ -178,7 +178,7 @@ void main() {
       // Should not throw — null pin means no pin check
       await EncryptionService.verifyPinnedKey(
         deviceId: 'test-device',
-        presentedPubKeyBytes: publicKey.bytes,
+        presentedPubKeyBytes: Uint8List.fromList(publicKey.bytes),
         pinnedPubKeyBase64Url: null,
       );
     });

@@ -1,38 +1,17 @@
-import 'dart:convert';
-
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:syndro/core/services/transfer_service/models.dart';
 import 'package:syndro/core/services/transfer_service/trusted_devices_handler.dart';
-
-/// Minimal in-memory mock of FlutterSecureStorage that intercepts
-/// the method channel calls used by the real implementation.
-class MockFlutterSecureStorage {
-  final Map<String, String> _store = {};
-
-  Future<String?> read({required String key}) async => _store[key];
-
-  Future<void> write({required String key, required String value}) async =>
-      _store[key] = value;
-
-  Future<void> delete({required String key}) async => _store.remove(key);
-
-  Future<void> deleteAll() async => _store.clear();
-}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('TrustedDevicesHandler', () {
     late TrustedDevicesHandler handler;
-    late MockFlutterSecureStorage mockStorage;
 
     setUp(() {
       // We'll test the in-memory behavior by directly manipulating
       // the handler's internal state through the public API.
       handler = TrustedDevicesHandler();
-      mockStorage = MockFlutterSecureStorage();
     });
 
     tearDown(() {
