@@ -18,7 +18,7 @@ void main() {
     service = QrPairingService();
   });
 
-  QrPairingPayload _makePayload({
+  QrPairingPayload makePayload({
     String? sig,
     String? pubKey,
   }) {
@@ -37,7 +37,7 @@ void main() {
   group('QrPairingService', () {
     group('signPayload / verifyPayload', () {
       test('round-trip: sign then verify succeeds', () async {
-        final payload = _makePayload();
+        final payload = makePayload();
 
         final signed = await service.signPayload(
           payload: payload,
@@ -54,7 +54,7 @@ void main() {
       });
 
       test('verify fails with wrong sender token', () async {
-        final payload = _makePayload();
+        final payload = makePayload();
 
         final signed = await service.signPayload(
           payload: payload,
@@ -69,7 +69,7 @@ void main() {
       });
 
       test('verify fails when payload fields are changed', () async {
-        final payload = _makePayload();
+        final payload = makePayload();
 
         final signed = await service.signPayload(
           payload: payload,
@@ -95,7 +95,7 @@ void main() {
       });
 
       test('verify fails with empty sender token', () async {
-        final payload = _makePayload();
+        final payload = makePayload();
 
         expect(
           () => service.signPayload(
@@ -107,7 +107,7 @@ void main() {
       });
 
       test('verify returns false for empty signature', () async {
-        final payload = _makePayload(sig: '');
+        final payload = makePayload(sig: '');
 
         final verified = await service.verifyPayload(
           payload: payload,
@@ -120,7 +120,9 @@ void main() {
     group('generatePayload / decodeAndVerify', () {
       test('generates a valid payload that decodes and verifies', () async {
         final keyBytes = Uint8List(32);
-        for (int i = 0; i < 32; i++) keyBytes[i] = i;
+        for (int i = 0; i < 32; i++) {
+          keyBytes[i] = i;
+        }
 
         final payload = await service.generatePayload(
           deviceId: testSenderId,
@@ -159,7 +161,9 @@ void main() {
 
       test('decodeAndVerify returns null for tampered signature', () async {
         final keyBytes = Uint8List(32);
-        for (int i = 0; i < 32; i++) keyBytes[i] = i;
+        for (int i = 0; i < 32; i++) {
+          keyBytes[i] = i;
+        }
 
         final payload = await service.generatePayload(
           deviceId: testSenderId,
@@ -185,7 +189,7 @@ void main() {
 
   group('QrPairingPayload', () {
     test('toJson/fromJson round-trip', () {
-      final payload = _makePayload(sig: 'test-signature');
+      final payload = makePayload(sig: 'test-signature');
 
       final json = payload.toJson();
       final restored = QrPairingPayload.fromJson(json);
@@ -199,7 +203,7 @@ void main() {
     });
 
     test('encode/decode round-trip', () {
-      final payload = _makePayload(sig: 'test-sig');
+      final payload = makePayload(sig: 'test-sig');
 
       final encoded = payload.encode();
       final decoded = QrPairingPayload.decode(encoded);
@@ -210,7 +214,7 @@ void main() {
     });
 
     test('version defaults to currentVersion', () {
-      final payload = _makePayload();
+      final payload = makePayload();
       expect(payload.version, equals(QrPairingPayload.currentVersion));
     });
 
@@ -234,7 +238,9 @@ void main() {
 
     test('encodePubKey / decodePubKey round-trip', () {
       final key = Uint8List(32);
-      for (int i = 0; i < 32; i++) key[i] = i * 7;
+      for (int i = 0; i < 32; i++) {
+        key[i] = i * 7;
+      }
 
       final encoded = QrPairingPayload.encodePubKey(key);
       final decoded = QrPairingPayload.decodePubKey(encoded);
