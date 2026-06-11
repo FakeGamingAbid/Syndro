@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:window_manager/window_manager.dart';
 
 /// Mixin with no-op defaults for all [WindowListener] methods.
@@ -12,7 +11,7 @@ import 'package:window_manager/window_manager.dart';
 ///   }
 /// }
 /// ```
-mixin WindowListenerAdapter on Widget implements WindowListener {
+mixin WindowListenerAdapter implements WindowListener {
   @override
   void onWindowClose() {}
 
