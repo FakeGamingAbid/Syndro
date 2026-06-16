@@ -97,7 +97,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
       button: true,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()..scaleByDouble(_isTapped ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scale(_isTapped ? 0.97 : 1.0, _isTapped ? 0.97 : 1.0, 1.0),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
