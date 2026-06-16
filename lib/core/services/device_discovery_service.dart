@@ -12,7 +12,6 @@ import 'package:uuid/uuid.dart';
 import '../config/app_config.dart';
 import '../models/device.dart';
 import '../utils/app_logger.dart';
-import '../utils/synchronized.dart';
 import 'device_nickname_service.dart';
 
 /// Service for discovering and tracking devices on the local network.
@@ -60,10 +59,6 @@ class DeviceDiscoveryService {
   int _udpPort = AppConfig.udpDiscoveryPort; // Dedicated UDP port for discovery (can change if port is busy)
   static const String _deviceIdKey = 'syndro_device_id';
 
-  // Rate limiting configuration
-  final List<DateTime> _discoveryTimestamps = [];
-  final _rateLimitLock = SynchronizedLock<void>();
-
   final _uuid = const Uuid();
   final _networkInfo = NetworkInfo();
   final _deviceController = StreamController<List<Device>>.broadcast();
@@ -104,30 +99,6 @@ class DeviceDiscoveryService {
 
   List<String> _localIps = [];
   List<String> _subnets = [];
-
-  /// Check if discovery can proceed based on rate limits
-  /// 
-  /// Returns true if we're within the rate limit, false if too many requests
-  Future<bool> _canDiscover() async {
-    bool canProceed = false;
-    await _rateLimitLock.synchronized(() {
-      final now = DateTime.now();
-      final oneMinuteAgo = now.subtract(const Duration(minutes: 1));
-      
-      // Remove timestamps older than 1 minute
-      _discoveryTimestamps.removeWhere((t) => t.isBefore(oneMinuteAgo));
-      
-      if (_discoveryTimestamps.length >= AppConfig.maxDiscoveryRatePerMinute) {
-        debugPrint('⚠️ Rate limit reached: ${_discoveryTimestamps.length} discoveries in the last minute');
-        canProceed = false;
-        return;
-      }
-      
-      _discoveryTimestamps.add(now);
-      canProceed = true;
-    });
-    return canProceed;
-  }
 
   Stream<List<Device>> get devicesStream {
     if (!_hasEmitted) {
@@ -918,9 +889,6 @@ class DeviceDiscoveryService {
     } catch (e) {
       debugPrint('Error cancelling UDP broadcast timer: $e');
     }
-
-    // Clear rate limiter
-    _discoveryTimestamps.clear();
 
     // Close UDP socket properly
     try {
