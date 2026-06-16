@@ -53,19 +53,10 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Patch permission_handler_windows for VS 2026
+      - name: Set CMake flags for VS 2026
         run: |
-          $file = Get-ChildItem -Path "$env:PUB_CACHE" -Recurse -Filter "CMakeLists.txt" |
-            Where-Object { $_.FullName -match "permission_handler_windows" } |
-            Select-Object -First 1
-          if ($file) {
-            $content = Get-Content $file.FullName -Raw
-            $content = $content -replace 'target_compile_options\(([^)]+)\)',
-              'target_compile_options($1)
-            target_compile_definitions($1 PRIVATE _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)'
-            Set-Content $file.FullName $content
-            Write-Host "Patched: $($file.FullName)"
-          }
+          echo "CXXFLAGS=/D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS" >> $env:GITHUB_ENV
+          echo "CFLAGS=/D_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS" >> $env:GITHUB_ENV
         shell: powershell
 
       - name: Build Windows Release
