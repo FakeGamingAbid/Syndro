@@ -32,7 +32,8 @@ dependencies:
   # ============================================
   # PERMISSIONS
   # ============================================
-  permission_handler: ^11.1.0
+  permission_handler: 11.3.1
+  permission_handler_windows: 0.2.1
 
   # ============================================
   # QR CODE
