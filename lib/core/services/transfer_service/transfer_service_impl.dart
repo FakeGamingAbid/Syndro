@@ -29,6 +29,7 @@ import '../parallel/parallel_receiver_handler.dart';
 import '../parallel/parallel_transfer_service.dart';
 import '../live_activity_service.dart';
 import '../../config/app_config.dart';
+import '../../utils/app_logger.dart';
 
 /// Core transfer service for peer-to-peer file transfers.
 ///
@@ -2807,6 +2808,13 @@ class TransferService {
       _sessionCleanupTimer = null;
     } catch (e) {
       if (kDebugMode) debugPrint('Error cancelling session cleanup timer: $e');
+    }
+
+    try {
+      _trustedDevicesCleanupTimer?.cancel();
+      _trustedDevicesCleanupTimer = null;
+    } catch (e) {
+      AppLogger.warn('Failed to cancel trusted devices cleanup timer: $e');
     }
 
     // Cancel notification subscription

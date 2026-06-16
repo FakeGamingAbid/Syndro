@@ -62,8 +62,6 @@ class ReceiveServer {
   final Map<String, UploadPendingConfirmation> _pendingConfirmations = {};
   final StreamController<UploadPendingConfirmation> _confirmationRequestController =
       StreamController<UploadPendingConfirmation>.broadcast();
-  static const Duration _confirmationTimeout = Duration(minutes: 1);
-
   // Rate limiting - track requests per IP
   static const int _maxRequestsPerMinute = 60;
   final Map<String, List<DateTime>> _requestTimestamps = {};
