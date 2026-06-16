@@ -149,7 +149,7 @@ class _DropZoneWidgetState extends State<DropZoneWidget>
                     child: Container(
                       margin: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withOpacity(0.1),
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: AppTheme.primaryColor,
@@ -164,7 +164,7 @@ class _DropZoneWidgetState extends State<DropZoneWidget>
                             Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withOpacity(0.2),
+                                color: AppTheme.primaryColor.withValues(alpha: 0.2),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -307,13 +307,13 @@ class _EmptyDropZoneState extends State<EmptyDropZone>
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: _isDragging
-            ? AppTheme.primaryColor.withOpacity(0.1)
-            : AppTheme.surfaceColor.withOpacity(0.5),
+            ? AppTheme.primaryColor.withValues(alpha: 0.1)
+            : AppTheme.surfaceColor.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: _isDragging
               ? AppTheme.primaryColor
-              : AppTheme.borderColor.withOpacity(0.3),
+              : AppTheme.borderColor.withValues(alpha: 0.3),
           width: _isDragging ? 3 : 2,
           strokeAlign: BorderSide.strokeAlignInside,
         ),
@@ -330,8 +330,8 @@ class _EmptyDropZoneState extends State<EmptyDropZone>
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: _isDragging
-                        ? AppTheme.primaryColor.withOpacity(0.2)
-                        : AppTheme.primaryColor.withOpacity(0.1),
+                        ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                        : AppTheme.primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -424,10 +424,10 @@ class _ActionButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
             ),
           ),
           child: Row(

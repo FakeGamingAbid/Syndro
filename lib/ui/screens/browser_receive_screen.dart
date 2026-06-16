@@ -571,7 +571,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.1),
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Row(
@@ -596,7 +596,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
             decoration: BoxDecoration(
               color: AppTheme.surfaceColor,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppTheme.textTertiary.withOpacity(0.3)),
+              border: Border.all(color: AppTheme.textTertiary.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -626,18 +626,18 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.surfaceColor.withOpacity(0.9),
-                  AppTheme.cardColor.withOpacity(0.7),
+                  AppTheme.surfaceColor.withValues(alpha: 0.9),
+                  AppTheme.cardColor.withValues(alpha: 0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.3),
+                color: AppTheme.primaryColor.withValues(alpha: 0.3),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.15),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.15),
                   blurRadius: 30,
                   offset: const Offset(0, 15),
                 ),
@@ -652,13 +652,13 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 25,
                         offset: const Offset(0, 10),
                       ),
                     ],
                     border: Border.all(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
                       width: 1,
                     ),
                   ),
@@ -704,13 +704,13 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppTheme.cardColor.withOpacity(0.9),
-                        AppTheme.surfaceColor.withOpacity(0.7),
+                        AppTheme.cardColor.withValues(alpha: 0.9),
+                        AppTheme.surfaceColor.withValues(alpha: 0.7),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: AppTheme.primaryColor.withOpacity(0.2),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -719,7 +719,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.15),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -746,7 +746,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.15),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Icon(
@@ -772,7 +772,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
               color: AppTheme.surfaceColor,
               borderRadius: BorderRadius.circular(12),
               border:
-                  Border.all(color: AppTheme.primaryColor.withOpacity(0.3)),
+                  Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -855,7 +855,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.warningColor.withOpacity(0.2),
+                  color: AppTheme.warningColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -872,7 +872,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.successColor.withOpacity(0.2),
+                  color: AppTheme.successColor.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -941,7 +941,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
             itemCount: _pendingFiles.length,
             separatorBuilder: (_, __) => Divider(
               height: 1,
-              color: AppTheme.textTertiary.withOpacity(0.2),
+              color: AppTheme.textTertiary.withValues(alpha: 0.2),
             ),
             itemBuilder: (context, index) {
               final file = _pendingFiles[index];
@@ -1059,7 +1059,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF472B6).withOpacity(0.15),
+                  color: const Color(0xFFF472B6).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Center(
@@ -1113,7 +1113,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: const Color(0xFFFB923C).withOpacity(0.15),
+          color: const Color(0xFFFB923C).withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Stack(
@@ -1204,7 +1204,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
       width: 48,
       height: 48,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(icon, color: color, size: 24),
@@ -1241,7 +1241,7 @@ class _BrowserReceiveScreenState extends State<BrowserReceiveScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -1387,7 +1387,7 @@ class _ImageGalleryPreviewState extends State<ImageGalleryPreview> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withOpacity(0.7),
+                    Colors.black.withValues(alpha: 0.7),
                     Colors.transparent,
                   ],
                 ),
@@ -1525,7 +1525,7 @@ class _ImageGalleryPreviewState extends State<ImageGalleryPreview> {
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,
                     colors: [
-                      Colors.black.withOpacity(0.7),
+                      Colors.black.withValues(alpha: 0.7),
                       Colors.transparent,
                     ],
                   ),

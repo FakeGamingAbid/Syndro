@@ -36,7 +36,7 @@ class FileSummaryWidget extends StatelessWidget {
       children: [
         // Summary card
         Card(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -87,8 +87,8 @@ class FileSummaryWidget extends StatelessWidget {
               return Chip(
                 avatar: Icon(icon, size: 16, color: color),
                 label: Text('$count ${_getTypeName(type)}'),
-                backgroundColor: color.withOpacity(0.1),
-                side: BorderSide(color: color.withOpacity(0.3)),
+                backgroundColor: color.withValues(alpha: 0.1),
+                side: BorderSide(color: color.withValues(alpha: 0.3)),
               );
             }).toList(),
           ),

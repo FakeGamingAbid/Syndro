@@ -72,7 +72,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               color: AppTheme.surfaceColor,
               border: Border(
                 right: BorderSide(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   width: 1,
                 ),
               ),
@@ -81,7 +81,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               selectedIndex: _selectedIndex,
               onDestinationSelected: _onDestinationSelected,
               backgroundColor: Colors.transparent,
-              indicatorColor: AppTheme.primaryColor.withOpacity(0.2),
+              indicatorColor: AppTheme.primaryColor.withValues(alpha: 0.2),
               selectedIconTheme: const IconThemeData(
                 color: AppTheme.primaryColor,
               ),
@@ -108,7 +108,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -146,9 +146,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.1),
-                  AppTheme.primaryColor.withOpacity(0.3),
-                  AppTheme.primaryColor.withOpacity(0.1),
+                  AppTheme.primaryColor.withValues(alpha: 0.1),
+                  AppTheme.primaryColor.withValues(alpha: 0.3),
+                  AppTheme.primaryColor.withValues(alpha: 0.1),
                 ],
               ),
             ),
@@ -184,20 +184,20 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      AppTheme.surfaceColor.withOpacity(0.95),
-                      AppTheme.surfaceColor.withOpacity(0.85),
+                      AppTheme.surfaceColor.withValues(alpha: 0.95),
+                      AppTheme.surfaceColor.withValues(alpha: 0.85),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(34),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.15),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.15),
                       blurRadius: 30,
                       offset: const Offset(0, 15),
                     ),
                   ],
                   border: Border.all(
-                    color: AppTheme.primaryColor.withOpacity(0.2),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
                     width: 1.5,
                   ),
                 ),
@@ -254,22 +254,22 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.primaryColor.withOpacity(0.2),
-                    AppTheme.primaryColor.withOpacity(0.1),
+                    AppTheme.primaryColor.withValues(alpha: 0.2),
+                    AppTheme.primaryColor.withValues(alpha: 0.1),
                   ],
                 )
               : null,
           borderRadius: BorderRadius.circular(24),
           border: isSelected
               ? Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.4),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.4),
                   width: 1.5,
                 )
               : null,
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.2),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

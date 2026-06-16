@@ -306,7 +306,7 @@ class _PermissionsOnboardingScreenState
                             backgroundColor: AppTheme.primaryColor,
                             foregroundColor: Colors.white,
                             disabledBackgroundColor:
-                                AppTheme.primaryColor.withOpacity(0.6),
+                                AppTheme.primaryColor.withValues(alpha: 0.6),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -371,18 +371,18 @@ class _PermissionsOnboardingScreenState
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.25),
-                  AppTheme.primaryColor.withOpacity(0.1),
+                  AppTheme.primaryColor.withValues(alpha: 0.25),
+                  AppTheme.primaryColor.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(32),
               border: Border.all(
-                color: AppTheme.primaryColor.withOpacity(0.4),
+                color: AppTheme.primaryColor.withValues(alpha: 0.4),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
                   blurRadius: 30,
                   offset: const Offset(0, 15),
                 ),
@@ -395,8 +395,8 @@ class _PermissionsOnboardingScreenState
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.primaryColor.withOpacity(0.15),
-                    AppTheme.primaryColor.withOpacity(0.05),
+                    AppTheme.primaryColor.withValues(alpha: 0.15),
+                    AppTheme.primaryColor.withValues(alpha: 0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
@@ -457,9 +457,9 @@ class _PermissionsOnboardingScreenState
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
-                  AppTheme.primaryColor.withOpacity(0.3),
-                  AppTheme.primaryColor.withOpacity(0.8),
-                  AppTheme.primaryColor.withOpacity(0.3),
+                  AppTheme.primaryColor.withValues(alpha: 0.3),
+                  AppTheme.primaryColor.withValues(alpha: 0.8),
+                  AppTheme.primaryColor.withValues(alpha: 0.3),
                 ],
               ),
               borderRadius: BorderRadius.circular(2),
@@ -477,18 +477,18 @@ class _PermissionsOnboardingScreenState
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.9),
-            AppTheme.surfaceColor.withOpacity(0.7),
+            AppTheme.cardColor.withValues(alpha: 0.9),
+            AppTheme.surfaceColor.withValues(alpha: 0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.15),
+          color: AppTheme.primaryColor.withValues(alpha: 0.15),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.08),
+            color: AppTheme.primaryColor.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -507,7 +507,7 @@ class _PermissionsOnboardingScreenState
               _buildPermissionTile(permission, isGranted),
               if (!isLast)
                 Divider(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   height: 1,
                   indent: 70,
                   endIndent: 16,
@@ -533,13 +533,13 @@ class _PermissionsOnboardingScreenState
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  permission.iconColor.withOpacity(0.2),
-                  permission.iconColor.withOpacity(0.1),
+                  permission.iconColor.withValues(alpha: 0.2),
+                  permission.iconColor.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: permission.iconColor.withOpacity(0.3),
+                color: permission.iconColor.withValues(alpha: 0.3),
                 width: 1,
               ),
             ),
@@ -589,19 +589,19 @@ class _PermissionsOnboardingScreenState
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppTheme.successColor.withOpacity(0.3),
-                          AppTheme.successColor.withOpacity(0.2),
+                          AppTheme.successColor.withValues(alpha: 0.3),
+                          AppTheme.successColor.withValues(alpha: 0.2),
                         ],
                       )
                     : null,
                 color: isGranted
                     ? Colors.transparent
-                    : AppTheme.surfaceColor.withOpacity(0.5),
+                    : AppTheme.surfaceColor.withValues(alpha: 0.5),
                 shape: BoxShape.circle,
                 border: Border.all(
                   color: isGranted
-                      ? AppTheme.successColor.withOpacity(0.5)
-                      : AppTheme.textTertiary.withOpacity(0.3),
+                      ? AppTheme.successColor.withValues(alpha: 0.5)
+                      : AppTheme.textTertiary.withValues(alpha: 0.3),
                   width: 1.5,
                 ),
               ),

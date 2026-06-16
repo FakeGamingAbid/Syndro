@@ -47,7 +47,7 @@ class TransferRequestSheet extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withOpacity(0.2),
+              color: AppTheme.primaryColor.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(
@@ -83,10 +83,10 @@ class TransferRequestSheet extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: AppTheme.successColor.withOpacity(0.2),
+                    color: AppTheme.successColor.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppTheme.successColor.withOpacity(0.5),
+                      color: AppTheme.successColor.withValues(alpha: 0.5),
                       width: 1,
                     ),
                   ),
@@ -163,7 +163,7 @@ class TransferRequestSheet extends ConsumerWidget {
             Container(
               constraints: const BoxConstraints(maxHeight: 150),
               decoration: BoxDecoration(
-                color: AppTheme.cardColor.withOpacity(0.5),
+                color: AppTheme.cardColor.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: ListView.builder(

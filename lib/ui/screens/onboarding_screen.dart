@@ -179,7 +179,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         backgroundColor: AppTheme.primaryColor,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor:
-                            AppTheme.primaryColor.withOpacity(0.6),
+                            AppTheme.primaryColor.withValues(alpha: 0.6),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -229,18 +229,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  page.iconColor.withOpacity(0.25),
-                  page.iconColor.withOpacity(0.1),
+                  page.iconColor.withValues(alpha: 0.25),
+                  page.iconColor.withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(32),
               border: Border.all(
-                color: page.iconColor.withOpacity(0.4),
+                color: page.iconColor.withValues(alpha: 0.4),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: page.iconColor.withOpacity(0.2),
+                  color: page.iconColor.withValues(alpha: 0.2),
                   blurRadius: 30,
                   offset: const Offset(0, 15),
                 ),
@@ -253,8 +253,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    page.iconColor.withOpacity(0.15),
-                    page.iconColor.withOpacity(0.05),
+                    page.iconColor.withValues(alpha: 0.15),
+                    page.iconColor.withValues(alpha: 0.05),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
@@ -276,7 +276,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               end: Alignment.bottomRight,
               colors: [
                 page.iconColor,
-                page.iconColor.withOpacity(0.7),
+                page.iconColor.withValues(alpha: 0.7),
               ],
             ).createShader(bounds),
             child: Text(
@@ -317,9 +317,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 begin: Alignment.centerLeft,
                 end: Alignment.centerRight,
                 colors: [
-                  page.iconColor.withOpacity(0.3),
-                  page.iconColor.withOpacity(0.8),
-                  page.iconColor.withOpacity(0.3),
+                  page.iconColor.withValues(alpha: 0.3),
+                  page.iconColor.withValues(alpha: 0.8),
+                  page.iconColor.withValues(alpha: 0.3),
                 ],
               ),
               borderRadius: BorderRadius.circular(2),

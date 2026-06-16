@@ -75,7 +75,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.2),
+                color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: const Icon(
@@ -273,18 +273,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.cardColor.withOpacity(0.8),
-                    AppTheme.surfaceColor.withOpacity(0.6),
+                    AppTheme.cardColor.withValues(alpha: 0.8),
+                    AppTheme.surfaceColor.withValues(alpha: 0.6),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.15),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.15),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.08),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.08),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -295,7 +295,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.devices_rounded,
                     iconColor: AppTheme.primaryColor,
-                    iconBgColor: AppTheme.primaryColor.withOpacity(0.15),
+                    iconBgColor: AppTheme.primaryColor.withValues(alpha: 0.15),
                     title: Row(
                       children: [
                         const Text('Device Name'),
@@ -327,7 +327,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       icon: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor.withOpacity(0.5),
+                          color: AppTheme.surfaceColor.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.edit_rounded, size: 18),
@@ -341,14 +341,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.wifi_rounded,
                     iconColor: AppTheme.secondaryColor,
-                    iconBgColor: AppTheme.secondaryColor.withOpacity(0.15),
+                    iconBgColor: AppTheme.secondaryColor.withValues(alpha: 0.15),
                     title: const Text('IP Address'),
                     subtitle: Text(currentDevice.ipAddress),
                     trailing: IconButton(
                       icon: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor.withOpacity(0.5),
+                          color: AppTheme.surfaceColor.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.copy_rounded, size: 18),
@@ -372,7 +372,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     secondary: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppTheme.successColor.withOpacity(0.15),
+                        color: AppTheme.successColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -439,18 +439,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.cardColor.withOpacity(0.8),
-                    AppTheme.surfaceColor.withOpacity(0.6),
+                    AppTheme.cardColor.withValues(alpha: 0.8),
+                    AppTheme.surfaceColor.withValues(alpha: 0.6),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.15),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.15),
                   width: 1,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.08),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.08),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -461,7 +461,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.info_outline,
                     iconColor: AppTheme.primaryColor,
-                    iconBgColor: AppTheme.primaryColor.withOpacity(0.15),
+                    iconBgColor: AppTheme.primaryColor.withValues(alpha: 0.15),
                     title: const Text('Version'),
                     subtitle: Text(_version),
                   ),
@@ -469,7 +469,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   _buildSettingsTile(
                     icon: Icons.share,
                     iconColor: AppTheme.primaryColor,
-                    iconBgColor: AppTheme.primaryColor.withOpacity(0.15),
+                    iconBgColor: AppTheme.primaryColor.withValues(alpha: 0.15),
                     title: const Text('Syndro'),
                     subtitle: const Text('Fast & secure file sharing'),
                   ),
@@ -515,7 +515,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       // ignore: prefer_const_literals_to_create_immutables
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withOpacity(0.3),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.3),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -563,20 +563,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.cardColor.withOpacity(0.8),
-              AppTheme.surfaceColor.withOpacity(0.6),
+              AppTheme.cardColor.withValues(alpha: 0.8),
+              AppTheme.surfaceColor.withValues(alpha: 0.6),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.15),
+            color: AppTheme.primaryColor.withValues(alpha: 0.15),
             width: 1,
           ),
         ),
         child: _buildSettingsTile(
           icon: Icons.shield_outlined,
           iconColor: AppTheme.textTertiary,
-          iconBgColor: AppTheme.textTertiary.withOpacity(0.15),
+          iconBgColor: AppTheme.textTertiary.withValues(alpha: 0.15),
           title: const Text('No trusted devices'),
           subtitle: const Text(
             'Devices you approve for transfer will appear here',
@@ -592,18 +592,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.8),
-            AppTheme.surfaceColor.withOpacity(0.6),
+            AppTheme.cardColor.withValues(alpha: 0.8),
+            AppTheme.surfaceColor.withValues(alpha: 0.6),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.15),
+          color: AppTheme.primaryColor.withValues(alpha: 0.15),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.08),
+            color: AppTheme.primaryColor.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -630,7 +630,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       icon: hasPin ? Icons.verified_user : Icons.person_outline,
       iconColor: hasPin ? AppTheme.successColor : AppTheme.secondaryColor,
       iconBgColor: (hasPin ? AppTheme.successColor : AppTheme.secondaryColor)
-          .withOpacity(0.15),
+          .withValues(alpha: 0.15),
       title: Text(device.senderName),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -645,7 +645,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         icon: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.surfaceColor.withOpacity(0.5),
+            color: AppTheme.surfaceColor.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(10),
           ),
           child: const Icon(Icons.more_vert_rounded, size: 18),
@@ -737,13 +737,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      iconColor.withOpacity(0.2),
-                      iconColor.withOpacity(0.1),
+                      iconColor.withValues(alpha: 0.2),
+                      iconColor.withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: iconColor.withOpacity(0.3),
+                    color: iconColor.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),

@@ -189,7 +189,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
     // FIX (Bug #17): Improved PopScope with proper state handling
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         
         final status = _currentTransfer?.status;
@@ -313,8 +313,8 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.9),
-            AppTheme.surfaceColor.withOpacity(0.7),
+            AppTheme.cardColor.withValues(alpha: 0.9),
+            AppTheme.surfaceColor.withValues(alpha: 0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
@@ -322,7 +322,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
           color: (widget.isSender
                   ? AppTheme.primaryColor
                   : AppTheme.successColor)
-              .withOpacity(0.3),
+              .withValues(alpha: 0.3),
           width: 1.5,
         ),
         boxShadow: [
@@ -330,7 +330,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
             color: (widget.isSender
                     ? AppTheme.primaryColor
                     : AppTheme.successColor)
-                .withOpacity(0.15),
+                .withValues(alpha: 0.15),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -348,11 +348,11 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                   (widget.isSender
                           ? AppTheme.primaryColor
                           : AppTheme.successColor)
-                      .withOpacity(0.25),
+                      .withValues(alpha: 0.25),
                   (widget.isSender
                           ? AppTheme.primaryColor
                           : AppTheme.successColor)
-                      .withOpacity(0.1),
+                      .withValues(alpha: 0.1),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
@@ -360,7 +360,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                 color: (widget.isSender
                         ? AppTheme.primaryColor
                         : AppTheme.successColor)
-                    .withOpacity(0.4),
+                    .withValues(alpha: 0.4),
                 width: 1.5,
               ),
             ),
@@ -439,7 +439,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: color.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -482,7 +482,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor
-                    .withOpacity(0.1 + _pulseController.value * 0.1),
+                    .withValues(alpha: 0.1 + _pulseController.value * 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -528,7 +528,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
             color: AppTheme.surfaceColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppTheme.primaryColor.withOpacity(0.3),
+              color: AppTheme.primaryColor.withValues(alpha: 0.3),
             ),
           ),
           child: Column(
@@ -539,7 +539,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.2),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -699,9 +699,9 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isCompleted
-                    ? AppTheme.successColor.withOpacity(0.2)
+                    ? AppTheme.successColor.withValues(alpha: 0.2)
                     : isCurrent
-                        ? AppTheme.primaryColor.withOpacity(0.2)
+                        ? AppTheme.primaryColor.withValues(alpha: 0.2)
                         : AppTheme.cardColor,
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -746,7 +746,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppTheme.successColor.withOpacity(0.2),
+            color: AppTheme.successColor.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -783,7 +783,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppTheme.errorColor.withOpacity(0.2),
+            color: AppTheme.errorColor.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(
@@ -824,7 +824,7 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: AppTheme.textTertiary.withOpacity(0.2),
+            color: AppTheme.textTertiary.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
           child: const Icon(

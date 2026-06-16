@@ -580,18 +580,18 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    AppTheme.cardColor.withOpacity(0.9),
-                    AppTheme.surfaceColor.withOpacity(0.7),
+                    AppTheme.cardColor.withValues(alpha: 0.9),
+                    AppTheme.surfaceColor.withValues(alpha: 0.7),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     blurRadius: 20,
                     offset: const Offset(0, 8),
                   ),
@@ -608,7 +608,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -670,13 +670,13 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppTheme.successColor.withOpacity(0.2),
-                          AppTheme.successColor.withOpacity(0.1),
+                          AppTheme.successColor.withValues(alpha: 0.2),
+                          AppTheme.successColor.withValues(alpha: 0.1),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppTheme.successColor.withOpacity(0.3),
+                        color: AppTheme.successColor.withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -768,7 +768,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.primaryColor.withOpacity(0.2),
+                                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -875,7 +875,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                 child: Container(
                   margin: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: AppTheme.primaryColor,
@@ -889,7 +889,7 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen>
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.2),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -1211,13 +1211,13 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: widget.isDragging
-                  ? AppTheme.primaryColor.withOpacity(0.1)
-                  : AppTheme.surfaceColor.withOpacity(0.3),
+                  ? AppTheme.primaryColor.withValues(alpha: 0.1)
+                  : AppTheme.surfaceColor.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
                 color: widget.isDragging
                     ? AppTheme.primaryColor
-                    : AppTheme.borderColor.withOpacity(0.3),
+                    : AppTheme.borderColor.withValues(alpha: 0.3),
                 width: widget.isDragging ? 3 : 2,
               ),
             ),
@@ -1237,8 +1237,8 @@ class _AnimatedEmptyStateWithDropState extends State<_AnimatedEmptyStateWithDrop
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
                           color: widget.isDragging
-                              ? AppTheme.primaryColor.withOpacity(0.2)
-                              : AppTheme.primaryColor.withOpacity(0.1),
+                              ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                              : AppTheme.primaryColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
@@ -1473,7 +1473,7 @@ class _AnimatedSendButton extends StatelessWidget {
             vertical: 16,
           ),
           backgroundColor:
-              isSending ? AppTheme.primaryColor.withOpacity(0.7) : null,
+              isSending ? AppTheme.primaryColor.withValues(alpha: 0.7) : null,
         ),
       ),
     );
@@ -1507,18 +1507,18 @@ class _FileListTile extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.9),
-            AppTheme.surfaceColor.withOpacity(0.7),
+            AppTheme.cardColor.withValues(alpha: 0.9),
+            AppTheme.surfaceColor.withValues(alpha: 0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.1),
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1529,8 +1529,8 @@ class _FileListTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          splashColor: AppTheme.primaryColor.withOpacity(0.1),
-          highlightColor: AppTheme.primaryColor.withOpacity(0.05),
+          splashColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+          highlightColor: AppTheme.primaryColor.withValues(alpha: 0.05),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(
@@ -1545,13 +1545,13 @@ class _FileListTile extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          FileTypeHelper.getIconColor(fileType).withOpacity(0.2),
-                          FileTypeHelper.getIconColor(fileType).withOpacity(0.1),
+                          FileTypeHelper.getIconColor(fileType).withValues(alpha: 0.2),
+                          FileTypeHelper.getIconColor(fileType).withValues(alpha: 0.1),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: FileTypeHelper.getIconColor(fileType).withOpacity(0.3),
+                        color: FileTypeHelper.getIconColor(fileType).withValues(alpha: 0.3),
                         width: 1,
                       ),
                     ),
@@ -1593,7 +1593,7 @@ class _FileListTile extends StatelessWidget {
                                 end: Alignment.bottomRight,
                                 colors: [
                                   FileTypeHelper.getBackgroundColor(fileType),
-                                  FileTypeHelper.getBackgroundColor(fileType).withOpacity(0.7),
+                                  FileTypeHelper.getBackgroundColor(fileType).withValues(alpha: 0.7),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(8),
@@ -1637,7 +1637,7 @@ class _FileListTile extends StatelessWidget {
                 if (onRemove != null)
                   Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.surfaceColor.withOpacity(0.5),
+                      color: AppTheme.surfaceColor.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: IconButton(
@@ -1794,7 +1794,7 @@ class _InfoChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.1),
+        color: chipColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(

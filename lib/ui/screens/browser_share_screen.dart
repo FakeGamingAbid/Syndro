@@ -213,7 +213,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: _accentColor.withOpacity(0.3),
+            color: _accentColor.withValues(alpha: 0.3),
           ),
         ),
         title: Row(
@@ -306,7 +306,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-            color: _accentColor.withOpacity(0.3),
+            color: _accentColor.withValues(alpha: 0.3),
           ),
         ),
         title: Row(
@@ -342,7 +342,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: _accentColor.withOpacity(0.15),
+                          color: _accentColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
@@ -810,13 +810,13 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: _activeConnections > 0
-                        ? AppTheme.successColor.withOpacity(0.2)
+                        ? AppTheme.successColor.withValues(alpha: 0.2)
                         : AppTheme.surfaceColor,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: _activeConnections > 0
                           ? AppTheme.successColor
-                          : AppTheme.textTertiary.withOpacity(0.3),
+                          : AppTheme.textTertiary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -911,18 +911,18 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.surfaceColor.withOpacity(0.9),
-                  AppTheme.cardColor.withOpacity(0.7),
+                  AppTheme.surfaceColor.withValues(alpha: 0.9),
+                  AppTheme.cardColor.withValues(alpha: 0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: _accentColor.withOpacity(0.3),
+                color: _accentColor.withValues(alpha: 0.3),
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: _accentColor.withOpacity(0.15),
+                  color: _accentColor.withValues(alpha: 0.15),
                   blurRadius: 30,
                   offset: const Offset(0, 15),
                 ),
@@ -940,13 +940,13 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppTheme.successColor.withOpacity(0.2),
-                          AppTheme.successColor.withOpacity(0.1),
+                          AppTheme.successColor.withValues(alpha: 0.2),
+                          AppTheme.successColor.withValues(alpha: 0.1),
                         ],
                       ),
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                        color: AppTheme.successColor.withOpacity(0.3),
+                        color: AppTheme.successColor.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -985,13 +985,13 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 25,
                         offset: const Offset(0, 10),
                       ),
                     ],
                     border: Border.all(
-                      color: _accentColor.withOpacity(0.1),
+                      color: _accentColor.withValues(alpha: 0.1),
                       width: 1,
                     ),
                   ),
@@ -1017,7 +1017,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                     end: Alignment.bottomRight,
                     colors: [
                       _accentColor,
-                      _accentColor.withOpacity(0.7),
+                      _accentColor.withValues(alpha: 0.7),
                     ],
                   ).createShader(bounds),
                   child: Text(
@@ -1047,13 +1047,13 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        AppTheme.cardColor.withOpacity(0.9),
-                        AppTheme.surfaceColor.withOpacity(0.7),
+                        AppTheme.cardColor.withValues(alpha: 0.9),
+                        AppTheme.surfaceColor.withValues(alpha: 0.7),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: _accentColor.withOpacity(0.2),
+                      color: _accentColor.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -1062,7 +1062,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: _accentColor.withOpacity(0.15),
+                          color: _accentColor.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
@@ -1089,7 +1089,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: _accentColor.withOpacity(0.15),
+                            color: _accentColor.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
@@ -1219,7 +1219,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: _getFileIconColor(fileType)
-                                            .withOpacity(0.15),
+                                            .withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: Text(
@@ -1253,7 +1253,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
                             iconSize: 20,
                             style: IconButton.styleFrom(
                               backgroundColor:
-                                  AppTheme.errorColor.withOpacity(0.1),
+                                  AppTheme.errorColor.withValues(alpha: 0.1),
                               foregroundColor: AppTheme.errorColor,
                               padding: const EdgeInsets.all(8),
                               minimumSize: const Size(36, 36),
@@ -1338,7 +1338,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: _getFileIconColor(fileType).withOpacity(0.15),
+        color: _getFileIconColor(fileType).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Icon(
@@ -1354,7 +1354,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: const Color(0xFFFB923C).withOpacity(0.15),
+        color: const Color(0xFFFB923C).withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
       ),
       child: const Stack(

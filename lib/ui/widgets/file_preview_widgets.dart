@@ -182,7 +182,7 @@ class _FilePreviewWidgetState extends State<FilePreviewWidget> {
               child: Container(
                 padding: EdgeInsets.all(widget.size * 0.1),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -325,7 +325,7 @@ class _LargeFilePreviewState extends State<LargeFilePreview> {
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.black.withValues(alpha: 0.6),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -611,7 +611,7 @@ class FileTypeHelper {
   }
 
   static Color getBackgroundColor(FileType type) {
-    return getIconColor(type).withOpacity(0.15);
+    return getIconColor(type).withValues(alpha: 0.15);
   }
 
   static bool supportsPreview(String fileName) {

@@ -68,7 +68,7 @@ class _SuccessAnimationState extends State<SuccessAnimation>
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: AppTheme.successColor.withOpacity(0.2),
+              color: AppTheme.successColor.withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -154,7 +154,7 @@ class _ErrorAnimationState extends State<ErrorAnimation>
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppTheme.errorColor.withOpacity(0.2),
+                color: AppTheme.errorColor.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
               child: const Center(

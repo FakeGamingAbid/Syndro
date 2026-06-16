@@ -214,7 +214,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               icon: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.errorColor.withOpacity(0.15),
+                  color: AppTheme.errorColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -286,18 +286,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.cardColor.withOpacity(0.9),
-            AppTheme.surfaceColor.withOpacity(0.7),
+            AppTheme.cardColor.withValues(alpha: 0.9),
+            AppTheme.surfaceColor.withValues(alpha: 0.7),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withOpacity(0.2),
+          color: AppTheme.primaryColor.withValues(alpha: 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.1),
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -338,13 +338,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                (color ?? AppTheme.primaryColor).withOpacity(0.2),
-                (color ?? AppTheme.primaryColor).withOpacity(0.1),
+                (color ?? AppTheme.primaryColor).withValues(alpha: 0.2),
+                (color ?? AppTheme.primaryColor).withValues(alpha: 0.1),
               ],
             ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: (color ?? AppTheme.primaryColor).withOpacity(0.3),
+              color: (color ?? AppTheme.primaryColor).withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -407,19 +407,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppTheme.cardColor.withOpacity(0.9),
-                  AppTheme.surfaceColor.withOpacity(0.7),
+                  AppTheme.cardColor.withValues(alpha: 0.9),
+                  AppTheme.surfaceColor.withValues(alpha: 0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: _getStatusColor(status)
-                    .withOpacity(0.2),
+                    .withValues(alpha: 0.2),
                 width: 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -442,15 +442,15 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                             end: Alignment.bottomRight,
                             colors: [
                               _getStatusColor(status)
-                                  .withOpacity(0.2),
+                                  .withValues(alpha: 0.2),
                               _getStatusColor(status)
-                                  .withOpacity(0.1),
+                                  .withValues(alpha: 0.1),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: _getStatusColor(status)
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -480,7 +480,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                                     vertical: 3,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.surfaceColor.withOpacity(0.5),
+                                    color: AppTheme.surfaceColor.withValues(alpha: 0.5),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Row(
@@ -534,7 +534,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceColor.withOpacity(0.5),
+                          color: AppTheme.surfaceColor.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(

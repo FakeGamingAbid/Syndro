@@ -120,7 +120,7 @@ class _FullScreenImageViewerState extends State<FullScreenImageViewer> {
                     const SizedBox(height: 16),
                     Text(
                       'Cannot load image',
-                      style: TextStyle(color: Colors.white.withOpacity(0.7)),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
                     ),
                   ],
                 ),

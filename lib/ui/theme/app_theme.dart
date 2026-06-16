@@ -49,7 +49,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: cardColor,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -201,7 +201,7 @@ class AppTheme {
       ),
 
       // Dialog Theme
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
@@ -234,7 +234,7 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return primaryColor.withOpacity(0.5);
+            return primaryColor.withValues(alpha: 0.5);
           }
           return cardColor;
         }),
@@ -269,13 +269,13 @@ class AppTheme {
         activeTrackColor: primaryColor,
         inactiveTrackColor: cardColor,
         thumbColor: primaryColor,
-        overlayColor: primaryColor.withOpacity(0.2),
+        overlayColor: primaryColor.withValues(alpha: 0.2),
       ),
 
       // Navigation Bar Theme (Android)
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surfaceColor,
-        indicatorColor: primaryColor.withOpacity(0.2),
+        indicatorColor: primaryColor.withValues(alpha: 0.2),
         labelTextStyle: WidgetStateProperty.all(
           const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
         ),
@@ -286,7 +286,7 @@ class AppTheme {
         backgroundColor: surfaceColor,
         selectedIconTheme: const IconThemeData(color: primaryColor),
         unselectedIconTheme: const IconThemeData(color: textTertiary),
-        indicatorColor: primaryColor.withOpacity(0.2),
+        indicatorColor: primaryColor.withValues(alpha: 0.2),
       ),
     );
   }
@@ -316,7 +316,7 @@ class AppTheme {
         ),
       ),
 
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: const Color(0xFFF8FAFC),
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -351,15 +351,15 @@ class AppTheme {
     double opacity = 0.1,
   }) {
     return BoxDecoration(
-      color: (color ?? Colors.white).withOpacity(opacity),
+      color: (color ?? Colors.white).withValues(alpha: opacity),
       borderRadius: BorderRadius.circular(16),
       border: Border.all(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         width: 1,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.2),
+          color: Colors.black.withValues(alpha: 0.2),
           blurRadius: blur,
           offset: const Offset(0, 4),
         ),

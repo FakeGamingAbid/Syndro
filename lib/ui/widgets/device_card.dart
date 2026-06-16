@@ -85,7 +85,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
     final hasNickname = nickname != null;
 
     final cardColor = widget.isSelected
-        ? AppTheme.primaryColor.withOpacity(0.12)
+        ? AppTheme.primaryColor.withValues(alpha: 0.12)
         : AppTheme.cardColor;
     final borderColor = widget.isSelected
         ? AppTheme.primaryColor
@@ -97,7 +97,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
       button: true,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        transform: Matrix4.identity()..scale(_isTapped ? 0.97 : 1.0),
+        transform: Matrix4.identity()..scaleByDouble(_isTapped ? 0.97 : 1.0),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -105,7 +105,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
               end: Alignment.bottomRight,
               colors: [
                 cardColor,
-                cardColor.withOpacity(0.8),
+                cardColor.withValues(alpha: 0.8),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
@@ -116,14 +116,14 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
             boxShadow: widget.isSelected
                 ? [
                     BoxShadow(
-                      color: AppTheme.primaryColor.withOpacity(0.25),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.25),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
                   ]
                 : [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -135,8 +135,8 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
               onTap: _handleTap,
               onLongPress: _handleLongPress,
               borderRadius: BorderRadius.circular(20),
-              splashColor: AppTheme.primaryColor.withOpacity(0.15),
-              highlightColor: AppTheme.primaryColor.withOpacity(0.08),
+              splashColor: AppTheme.primaryColor.withValues(alpha: 0.15),
+              highlightColor: AppTheme.primaryColor.withValues(alpha: 0.08),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -150,13 +150,13 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            widget.device.platform.iconColor.withOpacity(0.2),
-                            widget.device.platform.iconColor.withOpacity(0.08),
+                            widget.device.platform.iconColor.withValues(alpha: 0.2),
+                            widget.device.platform.iconColor.withValues(alpha: 0.08),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: widget.device.platform.iconColor.withOpacity(0.3),
+                          color: widget.device.platform.iconColor.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -198,7 +198,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.primaryColor.withOpacity(0.15),
+                                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: const Icon(
@@ -230,7 +230,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                               Container(
                                 padding: const EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.surfaceColor.withOpacity(0.5),
+                                  color: AppTheme.surfaceColor.withValues(alpha: 0.5),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Icon(
@@ -287,7 +287,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                             boxShadow: widget.device.isOnline
                                 ? [
                                     BoxShadow(
-                                      color: AppTheme.successColor.withOpacity(0.5),
+                                      color: AppTheme.successColor.withValues(alpha: 0.5),
                                       blurRadius: 8,
                                       spreadRadius: 2,
                                     ),
@@ -305,7 +305,7 @@ class _DeviceCardState extends ConsumerState<DeviceCard> {
                             color: (widget.device.isOnline
                                     ? AppTheme.successColor
                                     : AppTheme.textTertiary)
-                                .withOpacity(0.1),
+                                .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
