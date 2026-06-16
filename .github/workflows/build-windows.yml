@@ -11,7 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  FLUTTER_VERSION: '3.22.0'
   SQLITE_VERSION: '3450000'
   SQLITE_SHA256: '9778943E830EEAAB3557119E531DFF51BC6A0C4B153CF6256FC806369F5F8023'
 
@@ -25,7 +24,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
+          flutter-version: ''
           channel: 'stable'
           cache: true
 
@@ -54,10 +53,17 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Check VS installations
+        run: |
+          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all -format json
+        shell: powershell
+
+      - name: Configure CMake manually
+        run: cmake -S windows -B build/windows/runner/Release -G "Visual Studio 17 2022" -A x64
+        working-directory: ${{ github.workspace }}
+
       - name: Build Windows Release
         run: flutter build windows --release
-        env:
-          CMAKE_GENERATOR: "Visual Studio 17 2022"
 
       - name: Download and verify SQLite DLL
         run: |
