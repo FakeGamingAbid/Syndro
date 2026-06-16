@@ -53,15 +53,6 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Check VS installations
-        run: |
-          & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -all -format json
-        shell: powershell
-
-      - name: Configure CMake manually
-        run: cmake -S windows -B build/windows/runner/Release -G "Visual Studio 17 2022" -A x64
-        working-directory: ${{ github.workspace }}
-
       - name: Build Windows Release
         run: flutter build windows --release
 
