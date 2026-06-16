@@ -90,7 +90,11 @@ class TrustedDevicesHandler {
   Future<void> revokeTrust(String senderId) async {
     _trustedDevices.remove(senderId);
     // Also remove the persisted TOFU pin for this device
-    await _secureStorage.delete(key: '$_pinKeyPrefix$senderId');
+    try {
+      await _secureStorage.delete(key: '$_pinKeyPrefix$senderId');
+    } catch (e) {
+      debugPrint('Error removing pinned key: $e');
+    }
     await saveTrustedDevices();
   }
 
@@ -98,7 +102,11 @@ class TrustedDevicesHandler {
     // Remove all namespaced pin keys
     final keys = _trustedDevices.keys.toList();
     for (final id in keys) {
-      await _secureStorage.delete(key: '$_pinKeyPrefix$id');
+      try {
+        await _secureStorage.delete(key: '$_pinKeyPrefix$id');
+      } catch (e) {
+        debugPrint('Error removing pinned key for $id: $e');
+      }
     }
     _trustedDevices.clear();
     await saveTrustedDevices();
@@ -115,10 +123,14 @@ class TrustedDevicesHandler {
   /// `syndro_trusted_devices`. This avoids bloating the JSON blob and
   /// keeps the pin on its own lifecycle.
   Future<void> pinKey(String deviceId, String pubKeyBase64Url) async {
-    await _secureStorage.write(
-      key: '$_pinKeyPrefix$deviceId',
-      value: pubKeyBase64Url,
-    );
+    try {
+      await _secureStorage.write(
+        key: '$_pinKeyPrefix$deviceId',
+        value: pubKeyBase64Url,
+      );
+    } catch (e) {
+      debugPrint('Error persisting pinned key: $e');
+    }
     // Also update the in-memory TrustedDevice (if present)
     final existing = _trustedDevices[deviceId];
     if (existing != null) {
@@ -151,7 +163,11 @@ class TrustedDevicesHandler {
   /// pin and clear the pending flag. Call this from a "Reset trust"
   /// UI action.
   Future<void> rotatePinnedKey(String deviceId) async {
-    await _secureStorage.delete(key: '$_pinKeyPrefix$deviceId');
+    try {
+      await _secureStorage.delete(key: '$_pinKeyPrefix$deviceId');
+    } catch (e) {
+      debugPrint('Error removing pinned key during rotation: $e');
+    }
     final existing = _trustedDevices[deviceId];
     if (existing != null) {
       _trustedDevices[deviceId] = existing.copyWith(
