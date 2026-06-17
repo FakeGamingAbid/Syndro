@@ -258,7 +258,7 @@ class TransferRequestSheet extends ConsumerWidget {
           const SizedBox(height: 8),
 
           // Trust option - warning label
-          Text(
+          const Text(
             '⚠ This will permanently trust this device',
             style: TextStyle(
               color: AppTheme.textTertiary,
@@ -277,9 +277,9 @@ class TransferRequestSheet extends ConsumerWidget {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: BorderSide(
-                  color: AppTheme.warningColor.withOpacity(0.6),
+                  color: AppTheme.warningColor.withValues(alpha: 0.6),
                 ),
-                backgroundColor: AppTheme.warningColor.withOpacity(0.08),
+                backgroundColor: AppTheme.warningColor.withValues(alpha: 0.08),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -289,7 +289,7 @@ class TransferRequestSheet extends ConsumerWidget {
                 size: 16,
                 color: AppTheme.warningColor,
               ),
-              label: Text(
+              label: const Text(
                 TransferRequestStrings.acceptAndTrust,
                 style: const TextStyle(
                   color: AppTheme.warningColor,

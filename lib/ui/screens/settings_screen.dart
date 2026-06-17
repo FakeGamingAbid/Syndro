@@ -498,7 +498,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         return AppTheme.textSecondary;
                       }),
                       side: WidgetStateProperty.all(
-                        BorderSide(color: AppTheme.borderColor),
+                        const BorderSide(color: AppTheme.borderColor),
                       ),
                       shape: WidgetStateProperty.all(
                         RoundedRectangleBorder(
