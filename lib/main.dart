@@ -15,6 +15,7 @@ import 'core/models/transfer.dart';
 import 'core/providers/device_provider.dart';
 import 'core/providers/transfer_provider.dart';
 import 'core/providers/incoming_files_provider.dart';
+import 'core/providers/theme_provider.dart';
 import 'core/services/system_tray_service.dart';
 import 'core/services/share_intent_service.dart';
 import 'core/services/desktop_notification_service.dart';
@@ -371,11 +372,14 @@ class _SyndroAppState extends ConsumerState<SyndroApp>
   @override
   Widget build(BuildContext context) {
     final incomingFilesState = ref.watch(incomingFilesProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
       title: 'Syndro',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeMode,
       home: _buildHome(incomingFilesState),
     );
   }

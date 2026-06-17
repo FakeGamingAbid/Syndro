@@ -6,6 +6,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../theme/app_theme.dart';
 import '../../core/providers/device_provider.dart';
 import '../../core/providers/transfer_provider.dart';
+import '../../core/providers/theme_provider.dart';
 import '../../core/services/app_settings_service.dart';
 import '../../core/services/transfer_service/models.dart';
 import '../../core/services/transfer_service/transfer_service_impl.dart';
@@ -410,6 +411,101 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         );
                       }
                     },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // ============================================
+            // APPEARANCE SECTION
+            // ============================================
+            _buildSectionHeader('Appearance'),
+            const SizedBox(height: 12),
+
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppTheme.borderColor,
+                  width: 1,
+                ),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.palette_outlined,
+                          color: AppTheme.primaryColor,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Theme',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  SegmentedButton<ThemeMode>(
+                    segments: const [
+                      ButtonSegment<ThemeMode>(
+                        value: ThemeMode.dark,
+                        icon: Icon(Icons.dark_mode_outlined, size: 18),
+                        label: Text('Dark'),
+                      ),
+                      ButtonSegment<ThemeMode>(
+                        value: ThemeMode.light,
+                        icon: Icon(Icons.light_mode_outlined, size: 18),
+                        label: Text('Light'),
+                      ),
+                      ButtonSegment<ThemeMode>(
+                        value: ThemeMode.system,
+                        icon: Icon(Icons.brightness_auto_outlined, size: 18),
+                        label: Text('System'),
+                      ),
+                    ],
+                    selected: {ref.watch(themeModeProvider)},
+                    onSelectionChanged: (Set<ThemeMode> selected) {
+                      ref.read(themeModeProvider.notifier).setThemeMode(selected.first);
+                    },
+                    style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return AppTheme.primaryColor;
+                        }
+                        return Colors.transparent;
+                      }),
+                      foregroundColor: WidgetStateProperty.resolveWith((states) {
+                        if (states.contains(WidgetState.selected)) {
+                          return Colors.white;
+                        }
+                        return AppTheme.textSecondary;
+                      }),
+                      side: WidgetStateProperty.all(
+                        BorderSide(color: AppTheme.borderColor),
+                      ),
+                      shape: WidgetStateProperty.all(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),

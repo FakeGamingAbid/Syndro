@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../theme/app_theme.dart';
+import '../animations/pulse_animation.dart';
 import '../widgets/device_card.dart';
 import '../../core/models/device.dart';
 import '../../core/providers/device_provider.dart';
@@ -1203,70 +1204,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
-                            Icons.devices,
-                            size: 64,
-                            color: AppTheme.textTertiary,
+                          PulseAnimation(
+                            child: Icon(
+                              Icons.radar,
+                              size: 72,
+                              color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                            ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
                           Text(
-                            HomeScreenStrings.noDevicesFound,
+                            'Scanning for devices...',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
                                 ?.copyWith(
-                                  color: AppTheme.textTertiary,
+                                  color: AppTheme.textSecondary,
                                 ),
                           ),
                           const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: Text(
-                              HomeScreenStrings.noDevicesTip,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: AppTheme.textTertiary,
-                                  ),
-                              textAlign: TextAlign.center,
-                            ),
+                          Text(
+                            'Make sure other devices are on the\nsame Wi-Fi network and have Syndro open.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: AppTheme.textTertiary,
+                                ),
+                            textAlign: TextAlign.center,
                           ),
-                          const SizedBox(height: 16),
-                          // Troubleshooting steps
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: Text(
-                              'Troubleshooting:',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(
-                                    color: AppTheme.textSecondary,
-                                  ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: Text(
-                              '1. Make sure both devices are on the same Wi-Fi\n'
-                              '2. Disable VPN if active\n'
-                              '3. Check that your firewall allows port ${AppConfig.defaultTransferPort} and ${AppConfig.udpDiscoveryPort}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: AppTheme.textTertiary,
-                                  ),
-                              textAlign: TextAlign.left,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 32),
                           OutlinedButton.icon(
                             onPressed: _isRefreshing ? null : _refreshDevices,
                             icon: const Icon(Icons.refresh),
                             label: const Text(HomeScreenStrings.scanAgain),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.primaryColor,
+                              side: BorderSide(
+                                color: AppTheme.primaryColor.withValues(alpha: 0.6),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
                           ),
                         ],
                       ),
