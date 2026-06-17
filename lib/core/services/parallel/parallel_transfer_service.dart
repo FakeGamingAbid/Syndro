@@ -123,6 +123,7 @@ class ParallelTransferService {
           receiver: receiver,
           requestId: requestId,
           timeout: const Duration(minutes: 5),
+          senderId: sender.id,
         );
         
         if (!approved) {
@@ -197,6 +198,7 @@ class ParallelTransferService {
         receiver: receiver,
         transferId: transferId,
         fileHash: fileHash,
+        senderId: sender.id,
       );
 
       debugPrint('✅ Parallel transfer complete: $fileName');
@@ -398,6 +400,7 @@ class ParallelTransferService {
             'X-Sender-Token': senderToken,
             'X-Sender-Id': senderId,
             'X-Encrypted': encrypted.toString(),
+            'x-device-id': senderId,
           },
           body: chunkData,
         )
@@ -435,7 +438,10 @@ class ParallelTransferService {
       final response = await http
           .post(
             url,
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'x-device-id': sender.id,
+            },
             body: jsonEncode({
               'transferId': transferId,
               'fileName': fileName,
@@ -482,6 +488,7 @@ class ParallelTransferService {
     required Device receiver,
     required String transferId,
     required String fileHash,
+    required String senderId,
   }) async {
     final url = Uri.parse(
         'http://${receiver.ipAddress}:${receiver.port}/transfer/parallel/complete');
@@ -490,7 +497,10 @@ class ParallelTransferService {
       await http
           .post(
             url,
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              'x-device-id': senderId,
+            },
             body: jsonEncode({
               'transferId': transferId,
               'fileHash': fileHash,
@@ -513,6 +523,7 @@ class ParallelTransferService {
     required Device receiver,
     required String requestId,
     required Duration timeout,
+    required String senderId,
   }) async {
     final startTime = DateTime.now();
     final approvalUrl = 'http://${receiver.ipAddress}:${receiver.port}/transfer/approval/$requestId';
@@ -520,7 +531,10 @@ class ParallelTransferService {
     while (DateTime.now().difference(startTime) < timeout) {
       try {
         final response = await http
-            .get(Uri.parse(approvalUrl))
+            .get(
+              Uri.parse(approvalUrl),
+              headers: {'x-device-id': senderId},
+            )
             .timeout(const Duration(seconds: 5));
         
         if (response.statusCode == 200) {

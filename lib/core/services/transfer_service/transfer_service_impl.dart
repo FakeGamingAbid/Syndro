@@ -2227,7 +2227,10 @@ class TransferService {
       final initiateResponse = await _retryRequest(
         () => http.post(
           Uri.parse(initiateUrl),
-          headers: {'Content-Type': 'application/json'},
+          headers: {
+            'Content-Type': 'application/json',
+            'x-device-id': sender.id,
+          },
           body: jsonEncode({
             'id': transferId,
             'senderId': sender.id,
@@ -2296,6 +2299,7 @@ class TransferService {
           receiver: receiver,
           requestId: transferId,
           timeout: const Duration(minutes: 5),
+          senderId: sender.id,
         );
 
         if (!approved) {
@@ -2455,6 +2459,7 @@ class TransferService {
       request.headers['x-file-created'] = item.createdAt!.millisecondsSinceEpoch.toString();
     }
     request.headers['Content-Type'] = 'application/octet-stream';
+    request.headers['x-device-id'] = sender.id;
 
     int bytesSent = 0;
     int lastReportedProgress = -1;
@@ -2573,6 +2578,7 @@ class TransferService {
     request.headers['x-relative-path'] = item.parentPath ?? '';
     request.headers['Content-Type'] = 'application/octet-stream';
     request.headers['Content-Length'] = fileSize.toString();
+    request.headers['x-device-id'] = sender.id;
 
     int bytesSent = 0;
     int lastReportedProgress = -1;
@@ -2634,6 +2640,7 @@ class TransferService {
     required Device receiver,
     required String requestId,
     required Duration timeout,
+    required String senderId,
   }) async {
     final endTime = DateTime.now().add(timeout);
     final checkUrl =
@@ -2641,7 +2648,10 @@ class TransferService {
 
     while (DateTime.now().isBefore(endTime) && !_isDisposed) {
       try {
-        final response = await http.get(Uri.parse(checkUrl)).timeout(
+        final response = await http.get(
+              Uri.parse(checkUrl),
+              headers: {'x-device-id': senderId},
+            ).timeout(
               const Duration(seconds: 5),
             );
 
