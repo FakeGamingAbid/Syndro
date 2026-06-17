@@ -112,7 +112,7 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
   Future<void> _clearFilePickerCache() async {
     // Method 1: Use FilePicker's built-in clear
     try {
-      await FilePicker.platform.clearTemporaryFiles();
+      await FilePicker.clearTemporaryFiles();
     } catch (e) {
       debugPrint('FilePicker.clearTemporaryFiles failed: $e');
     }
@@ -481,12 +481,12 @@ class _BrowserShareScreenState extends State<BrowserShareScreen> {
       final FilePickerResult? result;
 
       if (widget.shareMode == ShareMode.media) {
-        result = await FilePicker.platform.pickFiles(
+        result = await FilePicker.pickFiles(
           allowMultiple: true,
           type: FileType.media,
         );
       } else {
-        result = await FilePicker.platform.pickFiles(
+        result = await FilePicker.pickFiles(
           allowMultiple: true,
           type: FileType.any,
         );

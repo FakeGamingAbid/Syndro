@@ -223,7 +223,7 @@ class FileService {
 
   Future<List<TransferItem>> pickFiles() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         allowMultiple: true,
         type: FileType.any,
       );
@@ -258,7 +258,7 @@ class FileService {
   /// Pick only media files (images and videos) - similar to browser share
   Future<List<TransferItem>> pickMedia() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         allowMultiple: true,
         type: FileType.media, // This picks images and videos
       );
@@ -292,7 +292,7 @@ class FileService {
 
   Future<String?> pickFolder() async {
     try {
-      final result = await FilePicker.platform.getDirectoryPath();
+      final result = await FilePicker.getDirectoryPath();
       return result;
     } catch (e) {
       debugPrint('Error picking folder: $e');

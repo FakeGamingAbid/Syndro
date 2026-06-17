@@ -440,20 +440,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   // FIXED: _pickAndShareMedia with loading dialog
   // ============================================
   Future<void> _pickAndShareMedia() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.media,
     );
 
     if (result != null && result.files.isNotEmpty && mounted) {
       // Calculate total size for large file warning
-      int totalSize = 0;
+      double totalSize = 0;
       for (final file in result.files) {
         totalSize += file.size;
       }
       
       // Show warning for large files (> 2GB)
-      const int largeFileThreshold = 2 * 1024 * 1024 * 1024;
+      const double largeFileThreshold = 2 * 1024 * 1024 * 1024;
       if (totalSize > largeFileThreshold) {
         final shouldProceed = await _showLargeFileWarningDialog(totalSize);
         if (!shouldProceed) return;
@@ -498,20 +498,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   }
 
   Future<void> _pickAndShareFiles() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       allowMultiple: true,
       type: FileType.any,
     );
 
     if (result != null && result.files.isNotEmpty && mounted) {
       // Calculate total size for large file warning
-      int totalSize = 0;
+      double totalSize = 0;
       for (final file in result.files) {
         totalSize += file.size;
       }
       
       // Show warning for large files (> 2GB)
-      const int largeFileThreshold = 2 * 1024 * 1024 * 1024;
+      const double largeFileThreshold = 2 * 1024 * 1024 * 1024;
       if (totalSize > largeFileThreshold) {
         final shouldProceed = await _showLargeFileWarningDialog(totalSize);
         if (!shouldProceed) return;
@@ -557,7 +557,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   
   /// Show warning dialog for large file transfers
   /// Returns true if user wants to proceed, false otherwise
-  Future<bool> _showLargeFileWarningDialog(int totalSize) async {
+  Future<bool> _showLargeFileWarningDialog(num totalSize) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -580,7 +580,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'You are about to share ${ByteFormatter.format(totalSize)}.',
+              'You are about to share ${ByteFormatter.format(totalSize.toInt())}.',
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 16),

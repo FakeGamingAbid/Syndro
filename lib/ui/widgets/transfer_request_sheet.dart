@@ -188,7 +188,7 @@ class TransferRequestSheet extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             item.name,
-                            style: const TextStyle(
+                style: TextStyle(
                               fontSize: 12,
                               color: AppTheme.textSecondary,
                             ),
