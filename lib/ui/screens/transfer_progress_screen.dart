@@ -212,17 +212,25 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
             context: context,
             builder: (dialogContext) => AlertDialog(
               backgroundColor: AppTheme.surfaceColor,
-              title: const Text('Cancel transfer?'),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text('Cancel Transfer?'),
               content: const Text(
-                  'The file transfer is in progress. Cancelling will discard any progress.'),
+                  'The transfer is still in progress. Going back will cancel it. Are you sure?'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, false),
-                  child: const Text('Continue Transfer'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.primaryColor,
+                  ),
+                  child: const Text('Keep Transferring'),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext, true),
-                  style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.errorColor,
+                  ),
                   child: const Text('Cancel Transfer'),
                 ),
               ],
@@ -256,17 +264,25 @@ class _TransferProgressScreenState extends ConsumerState<TransferProgressScreen>
                   context: context,
                   builder: (dialogContext) => AlertDialog(
                     backgroundColor: AppTheme.surfaceColor,
-                    title: const Text('Cancel transfer?'),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    title: const Text('Cancel Transfer?'),
                     content: const Text(
-                        'The file transfer is in progress. Cancelling will discard any progress.'),
+                        'The transfer is still in progress. Going back will cancel it. Are you sure?'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(dialogContext, false),
-                        child: const Text('Continue Transfer'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryColor,
+                        ),
+                        child: const Text('Keep Transferring'),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(dialogContext, true),
-                        style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.errorColor,
+                        ),
                         child: const Text('Cancel Transfer'),
                       ),
                     ],
